@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import '../models/furniture.dart';
+import '../models/app_theme.dart';
 import '../utils/isometric_math.dart';
 
 class FurnitureRenderer extends CustomPainter {
   final List<Furniture> items;
   final String? selectedId;
   final String? draggingId;
+  final AppTheme theme;
 
   FurnitureRenderer({
     required this.items,
+    required this.theme,
     this.selectedId,
     this.draggingId,
   });
@@ -73,7 +76,7 @@ class FurnitureRenderer extends CustomPainter {
     // Selection border
     if (isSelected && !f.hasCollision) {
       final selectPaint = Paint()
-        ..color = Colors.white
+        ..color = theme.accent
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
       _drawOutline(canvas, topFace, leftFace, rightFace, selectPaint);

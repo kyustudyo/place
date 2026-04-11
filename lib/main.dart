@@ -17,8 +17,7 @@ class PlaceApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F0F23),
-        colorSchemeSeed: const Color(0xFF5B8DEF),
+        colorSchemeSeed: const Color(0xFFE8A838),
       ),
       home: const PlacementScreen(),
     );

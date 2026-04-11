@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/furniture.dart';
+import '../models/app_theme.dart';
 import '../providers/placement_provider.dart';
+import '../providers/theme_provider.dart';
 
 class FurniturePanel extends ConsumerWidget {
   const FurniturePanel({super.key});
@@ -9,6 +11,7 @@ class FurniturePanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(placementProvider);
+    final theme = ref.watch(currentThemeProvider);
     final furniture = state.furniture;
 
     if (furniture.isEmpty) {
@@ -17,7 +20,7 @@ class FurniturePanel extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        color: theme.panelBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -38,15 +41,15 @@ class FurniturePanel extends ConsumerWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF5BCA8A),
+                    color: theme.accentSecondary,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   '가구 목록',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: theme.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     letterSpacing: -0.3,
@@ -56,7 +59,7 @@ class FurniturePanel extends ConsumerWidget {
                 Text(
                   '${state.placedCount}/${furniture.length}',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: theme.textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -71,6 +74,7 @@ class FurniturePanel extends ConsumerWidget {
                 final item = furniture[index];
                 return _FurnitureCard(
                   item: item,
+                  theme: theme,
                   isSelected: state.selectedId == item.id,
                   onTap: () {
                     ref
@@ -106,6 +110,7 @@ class FurniturePanel extends ConsumerWidget {
 
 class _FurnitureCard extends StatelessWidget {
   final Furniture item;
+  final AppTheme theme;
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onPlace;
@@ -114,6 +119,7 @@ class _FurnitureCard extends StatelessWidget {
 
   const _FurnitureCard({
     required this.item,
+    required this.theme,
     required this.isSelected,
     required this.onTap,
     required this.onPlace,
@@ -132,7 +138,7 @@ class _FurnitureCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? item.color.withValues(alpha: 0.15)
-              : const Color(0xFF16213E),
+              : theme.cardBg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
@@ -170,17 +176,17 @@ class _FurnitureCard extends StatelessWidget {
                 children: [
                   Text(
                     item.name,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: theme.textPrimary,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${item.size.x}×${item.size.z}×${item.size.y}m',
+                    '${item.size.x}\u00d7${item.size.z}\u00d7${item.size.y}m',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: theme.textSecondary,
                       fontSize: 11,
                     ),
                   ),
@@ -200,7 +206,7 @@ class _FurnitureCard extends StatelessWidget {
               _IconBtn(
                 icon: Icons.rotate_right,
                 onTap: onRotate,
-                tooltip: '${item.rotation}°',
+                color: theme.textSecondary,
               ),
               const SizedBox(width: 4),
               _IconBtn(
@@ -212,7 +218,7 @@ class _FurnitureCard extends StatelessWidget {
               _IconBtn(
                 icon: Icons.add,
                 onTap: onPlace,
-                color: const Color(0xFF5BCA8A),
+                color: theme.accentSecondary,
               ),
           ],
         ),
@@ -225,13 +231,11 @@ class _IconBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final Color color;
-  final String? tooltip;
 
   const _IconBtn({
     required this.icon,
     required this.onTap,
     this.color = Colors.white54,
-    this.tooltip,
   });
 
   @override

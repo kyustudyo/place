@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/room.dart';
+import '../models/app_theme.dart';
 import '../utils/isometric_math.dart';
 
 class GridPainter extends CustomPainter {
   final Room room;
+  final AppTheme theme;
 
-  GridPainter({required this.room});
+  GridPainter({required this.room, required this.theme});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -16,7 +18,7 @@ class GridPainter extends CustomPainter {
 
   void _drawFloor(Canvas canvas) {
     final paint = Paint()
-      ..color = const Color(0xFFF0EDE6)
+      ..color = theme.floorColor
       ..style = PaintingStyle.fill;
 
     final path = Path()
@@ -39,9 +41,9 @@ class GridPainter extends CustomPainter {
 
   void _drawGrid(Canvas canvas) {
     final paint = Paint()
-      ..color = const Color(0xFFD5D0C8)
+      ..color = theme.gridColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
+      ..strokeWidth = theme.gridLineWidth;
 
     // X-axis lines
     for (int i = 0; i <= room.gridSize; i++) {
@@ -61,9 +63,37 @@ class GridPainter extends CustomPainter {
   }
 
   void _drawWalls(Canvas canvas) {
-    // Back wall (along x-axis at z=0)
+    final wallBorderPaint = Paint()
+      ..color = theme.wallBorderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = theme.wallBorderWidth;
+
+    // Left wall (along z-axis at x=0) — upper-left edge
+    final leftWallPaint = Paint()
+      ..color = theme.leftWallColor
+      ..style = PaintingStyle.fill;
+
+    final leftWall = Path()
+      ..moveTo(
+          IsometricMath.worldToScreen(0, 0, 0).dx,
+          IsometricMath.worldToScreen(0, 0, 0).dy)
+      ..lineTo(
+          IsometricMath.worldToScreen(0, 0, room.depth).dx,
+          IsometricMath.worldToScreen(0, 0, room.depth).dy)
+      ..lineTo(
+          IsometricMath.worldToScreen(0, room.height, room.depth).dx,
+          IsometricMath.worldToScreen(0, room.height, room.depth).dy)
+      ..lineTo(
+          IsometricMath.worldToScreen(0, room.height, 0).dx,
+          IsometricMath.worldToScreen(0, room.height, 0).dy)
+      ..close();
+
+    canvas.drawPath(leftWall, leftWallPaint);
+    canvas.drawPath(leftWall, wallBorderPaint);
+
+    // Back wall (along x-axis at z=0) — upper-right edge
     final backWallPaint = Paint()
-      ..color = const Color(0xFFE8E4DC)
+      ..color = theme.backWallColor
       ..style = PaintingStyle.fill;
 
     final backWall = Path()
@@ -82,38 +112,10 @@ class GridPainter extends CustomPainter {
       ..close();
 
     canvas.drawPath(backWall, backWallPaint);
-
-    // Back wall border
-    final wallBorderPaint = Paint()
-      ..color = const Color(0xFFBDB8AE)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
     canvas.drawPath(backWall, wallBorderPaint);
-
-    // Right wall (along z-axis at x=room.width)
-    final rightWallPaint = Paint()
-      ..color = const Color(0xFFDDD8D0)
-      ..style = PaintingStyle.fill;
-
-    final rightWall = Path()
-      ..moveTo(
-          IsometricMath.worldToScreen(room.width, 0, 0).dx,
-          IsometricMath.worldToScreen(room.width, 0, 0).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(room.width, 0, room.depth).dx,
-          IsometricMath.worldToScreen(room.width, 0, room.depth).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(room.width, room.height, room.depth).dx,
-          IsometricMath.worldToScreen(room.width, room.height, room.depth).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(room.width, room.height, 0).dx,
-          IsometricMath.worldToScreen(room.width, room.height, 0).dy)
-      ..close();
-
-    canvas.drawPath(rightWall, rightWallPaint);
-    canvas.drawPath(rightWall, wallBorderPaint);
   }
 
   @override
-  bool shouldRepaint(covariant GridPainter oldDelegate) => false;
+  bool shouldRepaint(covariant GridPainter oldDelegate) =>
+      oldDelegate.theme.id != theme.id;
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/furniture.dart';
 import '../providers/placement_provider.dart';
+import '../providers/theme_provider.dart';
 import '../utils/isometric_math.dart';
 import 'grid_painter.dart';
 import 'furniture_renderer.dart';
@@ -19,6 +20,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(placementProvider);
+    final theme = ref.watch(currentThemeProvider);
     final room = state.room;
 
     if (room == null) {
@@ -26,12 +28,13 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.view_in_ar, size: 80, color: Colors.grey.shade300),
+            Icon(Icons.view_in_ar, size: 80,
+                color: theme.textSecondary.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             Text(
               'JSON을 붙여넣어 시작하세요',
               style: TextStyle(
-                color: Colors.grey.shade500,
+                color: theme.textSecondary,
                 fontSize: 16,
               ),
             ),
@@ -42,7 +45,6 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate scale to fit room in view
         final maxW = constraints.maxWidth * 0.85;
         final maxH = constraints.maxHeight * 0.65;
         final roomScreenW =
@@ -54,10 +56,10 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         final scaleH = maxH / roomScreenH;
         IsometricMath.scale = scaleW < scaleH ? scaleW : scaleH;
 
-        // Center the room
         IsometricMath.origin = Offset(
           constraints.maxWidth / 2,
-          constraints.maxHeight * 0.35 + room.height * IsometricMath.scale * 0.5,
+          constraints.maxHeight * 0.35 +
+              room.height * IsometricMath.scale * 0.5,
         );
 
         return GestureDetector(
@@ -66,12 +68,13 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
               _handleDragStart(details.localPosition, state),
           onPanUpdate: (details) =>
               _handleDragUpdate(details.localPosition, state),
-          onPanEnd: (_) => _handleDragEnd(state),
+          onPanEnd: (_) => _handleDragEnd(),
           child: CustomPaint(
             size: Size(constraints.maxWidth, constraints.maxHeight),
-            painter: GridPainter(room: room),
+            painter: GridPainter(room: room, theme: theme),
             foregroundPainter: FurnitureRenderer(
               items: state.furniture,
+              theme: theme,
               selectedId: state.selectedId,
               draggingId: _draggingId,
             ),
@@ -113,14 +116,13 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         .placeFurniture(_draggingId!, worldPos.dx, worldPos.dy);
   }
 
-  void _handleDragEnd(PlacementState state) {
+  void _handleDragEnd() {
     setState(() {
       _draggingId = null;
     });
   }
 
   Furniture? _hitTest(Offset screenPos, PlacementState state) {
-    // Test from front to back (reverse depth order)
     final placed = state.furniture.where((f) => f.isPlaced).toList()
       ..sort((a, b) {
         final da = a.position.x + a.position.z;
@@ -130,33 +132,20 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
 
     for (final item in placed) {
       final topFace = IsometricMath.getTopFace(
-        item.position.x,
-        item.position.y,
-        item.position.z,
-        item.effectiveWidth,
-        item.size.y,
-        item.effectiveDepth,
+        item.position.x, item.position.y, item.position.z,
+        item.effectiveWidth, item.size.y, item.effectiveDepth,
       );
-
       if (_pointInPolygon(screenPos, topFace)) return item;
 
       final leftFace = IsometricMath.getLeftFace(
-        item.position.x,
-        item.position.y,
-        item.position.z,
-        item.effectiveWidth,
-        item.size.y,
-        item.effectiveDepth,
+        item.position.x, item.position.y, item.position.z,
+        item.effectiveWidth, item.size.y, item.effectiveDepth,
       );
       if (_pointInPolygon(screenPos, leftFace)) return item;
 
       final rightFace = IsometricMath.getRightFace(
-        item.position.x,
-        item.position.y,
-        item.position.z,
-        item.effectiveWidth,
-        item.size.y,
-        item.effectiveDepth,
+        item.position.x, item.position.y, item.position.z,
+        item.effectiveWidth, item.size.y, item.effectiveDepth,
       );
       if (_pointInPolygon(screenPos, rightFace)) return item;
     }
