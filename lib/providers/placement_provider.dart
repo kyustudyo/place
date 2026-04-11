@@ -69,20 +69,28 @@ class PlacementState {
 class PlacementNotifier extends Notifier<PlacementState> {
   @override
   PlacementState build() {
-    // Start with default room and one default furniture piece
-    final defaultFurniture = Furniture(
-      id: 'item_1',
-      name: '가구 1',
-      size: const Vec3(x: 1.5, y: 0.8, z: 1.0),
-      position: const Vec3(x: 3.0, y: 0.0, z: 3.0),
-      rotation: 0,
-      color: _furnitureColors[0],
-      isPlaced: true,
+    // Start with default room, no furniture yet (guided flow adds them)
+    return const PlacementState(room: _defaultRoom);
+  }
+
+  /// Update room dimensions
+  void setRoom({
+    required double width,
+    required double depth,
+    required double height,
+    required double tileSize,
+  }) {
+    final gridSize = (width / tileSize).round();
+    final room = Room(
+      width: width,
+      height: height,
+      depth: depth,
+      tileSize: tileSize,
+      gridSize: gridSize,
     );
-    return PlacementState(
-      room: _defaultRoom,
-      furniture: [defaultFurniture],
-    );
+    // Re-check collisions with new room size
+    final checked = CollisionDetector.updateCollisions(state.furniture, room);
+    state = state.copyWith(room: room, furniture: checked);
   }
 
   /// Add a new furniture piece with given dimensions

@@ -16,21 +16,59 @@ class PlacementScreen extends ConsumerStatefulWidget {
 }
 
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
-  bool _initialDialogShown = false;
+  bool _initialFlowStarted = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialDialogShown) {
-      _initialDialogShown = true;
-      // Show dimension dialog on first frame
+    if (!_initialFlowStarted) {
+      _initialFlowStarted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showDimensionDialog();
+        _runInitialFlow();
       });
     }
   }
 
-  Future<void> _showDimensionDialog({String? editId}) async {
+  /// ① 공간 크기 → ② 가구 추가 순서
+  Future<void> _runInitialFlow() async {
+    // Step ① 공간 크기 설정
+    final roomResult = await _showRoomSizeDialog();
+    if (roomResult != null) {
+      ref.read(placementProvider.notifier).setRoom(
+            width: roomResult.width,
+            depth: roomResult.depth,
+            height: roomResult.height,
+            tileSize: roomResult.tileSize,
+          );
+    }
+
+    if (!mounted) return;
+
+    // Step ② 첫 가구 추가
+    await _showDimensionDialog(showStepNumber: true);
+  }
+
+  Future<RoomSizeResult?> _showRoomSizeDialog() async {
+    final theme = ref.read(currentThemeProvider);
+    final room = ref.read(placementProvider).room;
+
+    return showDialog<RoomSizeResult>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => RoomSizeDialog(
+        theme: theme,
+        initialWidth: room.width,
+        initialDepth: room.depth,
+        initialHeight: room.height,
+        initialTileSize: room.tileSize,
+      ),
+    );
+  }
+
+  Future<void> _showDimensionDialog({
+    String? editId,
+    bool showStepNumber = false,
+  }) async {
     final theme = ref.read(currentThemeProvider);
     final state = ref.read(placementProvider);
 
@@ -49,7 +87,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
     final result = await showDialog<DimensionResult>(
       context: context,
-      barrierDismissible: isEdit,
+      barrierDismissible: isEdit || !showStepNumber,
       builder: (ctx) => DimensionDialog(
         theme: theme,
         initialName: initialName,
@@ -57,6 +95,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         initialY: initialY,
         initialZ: initialZ,
         isEdit: isEdit,
+        showStepNumber: showStepNumber,
       ),
     );
 
