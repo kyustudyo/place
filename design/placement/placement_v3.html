@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Place - Blueprint</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', 'Consolas', monospace;
+    background: #1a3a5c;
+    color: #C8DCF0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #15304D;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    flex-shrink: 0;
+    min-height: 56px;
+  }
+  .top-bar-left { display: flex; flex-direction: column; }
+  .app-logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .app-subtitle {
+    font-size: 10px;
+    color: rgba(200,220,240,0.6);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .top-bar-actions { display: flex; gap: 8px; }
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #C8DCF0;
+    font-size: 16px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .btn-icon:active { background: rgba(255,255,255,0.15); }
+
+  .room-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    background:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .isometric-room {
+    width: 300px;
+    height: 260px;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .floor {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) rotateX(60deg) rotateZ(45deg);
+    background:
+      linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+    background-size: 30px 30px;
+    background-color: transparent;
+    border: 1.5px solid rgba(255,255,255,0.4);
+  }
+  /* Dimension labels */
+  .floor::before {
+    content: '4.0m';
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1px;
+  }
+  .floor::after {
+    content: '4.0m';
+    position: absolute;
+    top: 50%;
+    right: -22px;
+    transform: translateY(-50%) rotate(90deg);
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1px;
+  }
+  .wall-back {
+    position: absolute;
+    width: 170px;
+    height: 120px;
+    top: 10px;
+    left: 0;
+    transform: skewY(-30deg);
+    transform-origin: bottom left;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-bottom: none;
+  }
+  .wall-back::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  .wall-right {
+    position: absolute;
+    width: 170px;
+    height: 120px;
+    top: 10px;
+    right: 0;
+    transform: skewY(30deg);
+    transform-origin: bottom right;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-bottom: none;
+  }
+  .wall-right::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  /* Cross markers on walls */
+  .cross-marker {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+  }
+  .cross-marker::before, .cross-marker::after {
+    content: '';
+    position: absolute;
+    background: rgba(255,255,255,0.3);
+  }
+  .cross-marker::before {
+    width: 8px;
+    height: 1px;
+    top: 50%;
+    left: 0;
+  }
+  .cross-marker::after {
+    width: 1px;
+    height: 8px;
+    left: 50%;
+    top: 0;
+  }
+
+  .placed-item {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .placed-sofa {
+    width: 70px;
+    height: 30px;
+    background: transparent;
+    border: 1.5px solid #FFD700;
+    color: #FFD700;
+    bottom: 70px;
+    left: 70px;
+    transform: rotateX(60deg) rotateZ(45deg);
+  }
+  .placed-sofa::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,215,0,0.1) 3px, rgba(255,215,0,0.1) 6px);
+  }
+  .placed-table {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1.5px solid #FF6B6B;
+    color: #FF6B6B;
+    bottom: 85px;
+    left: 155px;
+    transform: rotateX(60deg) rotateZ(45deg);
+  }
+  .placed-table::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,107,107,0.1) 3px, rgba(255,107,107,0.1) 6px);
+  }
+
+  .furniture-panel {
+    background: #15304D;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding: 12px 16px;
+    flex-shrink: 0;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+  }
+  .panel-title::before {
+    content: '── ';
+    color: rgba(255,255,255,0.2);
+  }
+  .panel-title::after {
+    content: ' ──';
+    color: rgba(255,255,255,0.2);
+  }
+  .furniture-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .furniture-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 2px;
+    min-height: 56px;
+  }
+  .color-swatch {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: 1.5px solid currentColor;
+    background: transparent;
+    position: relative;
+  }
+  .color-swatch::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 0.5px dashed currentColor;
+    opacity: 0.5;
+  }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .item-size {
+    font-size: 11px;
+    color: rgba(200,220,240,0.5);
+    margin-top: 2px;
+  }
+  .item-actions { display: flex; gap: 6px; }
+  .btn-sm {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #C8DCF0;
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .btn-sm:active { background: rgba(255,255,255,0.1); }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #12294A;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+  .status-item {
+    font-size: 10px;
+    color: rgba(200,220,240,0.6);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ADE80;
+    box-shadow: 0 0 6px rgba(74,222,128,0.5);
+  }
+  .status-warning { color: #FFD700; }
+
+  @media (min-width: 768px) {
+    .main-content { display: flex; flex: 1; min-height: 0; }
+    .room-container { flex: 1; }
+    .furniture-panel {
+      width: 340px;
+      border-top: none;
+      border-left: 1px solid rgba(255,255,255,0.15);
+      max-height: none;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="app-logo">Place</div>
+      <div class="app-subtitle">가구 배치 도구 — BLUEPRINT</div>
+    </div>
+    <div class="top-bar-actions">
+      <button class="btn-icon" aria-label="붙여넣기">📋</button>
+      <button class="btn-icon" aria-label="JSON 복사">{ }</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="room-container">
+      <div class="isometric-room">
+        <div class="wall-back"></div>
+        <div class="wall-right"></div>
+        <div class="floor"></div>
+        <div class="placed-item placed-sofa">소파</div>
+        <div class="placed-item placed-table">탁자</div>
+      </div>
+    </div>
+
+    <div class="furniture-panel">
+      <div class="panel-title">가구 목록</div>
+      <div class="furniture-list">
+        <div class="furniture-item">
+          <div class="color-swatch" style="color: #FFD700;"></div>
+          <div class="item-info">
+            <div class="item-name">소파</div>
+            <div class="item-size">2.0 × 0.9 × 0.8m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="color: #FF6B6B;"></div>
+          <div class="item-info">
+            <div class="item-name">테이블</div>
+            <div class="item-size">1.5 × 0.6 × 1.0m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="color: #64B5F6;"></div>
+          <div class="item-info">
+            <div class="item-name">책장</div>
+            <div class="item-size">0.8 × 0.3 × 1.8m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="color: #81C784;"></div>
+          <div class="item-info">
+            <div class="item-name">의자</div>
+            <div class="item-size">0.5 × 0.5 × 0.9m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-dot"></span>
+      배치됨: 2 / 4
+    </div>
+    <div class="status-item status-warning">
+      ⚠ 충돌 없음
+    </div>
+  </div>
+</body>
+</html>

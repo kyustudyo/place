@@ -1,0 +1,24 @@
+# Build
+build/
+.dart_tool/
+.packages
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Platform specific
+ios/Pods/
+ios/.symlinks/
+android/.gradle/
+android/local.properties
+**/Flutter/ephemeral/

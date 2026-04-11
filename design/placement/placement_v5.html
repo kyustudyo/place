@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Place - Material 3</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+    background: #FEF7FF;
+    color: #1D1B20;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #FEF7FF;
+    flex-shrink: 0;
+    min-height: 64px;
+  }
+  .top-bar-left { display: flex; flex-direction: column; }
+  .app-logo {
+    font-size: 22px;
+    font-weight: 500;
+    color: #6750A4;
+    letter-spacing: 0;
+  }
+  .app-subtitle {
+    font-size: 12px;
+    color: #79747E;
+    font-weight: 400;
+  }
+  .top-bar-actions { display: flex; gap: 8px; }
+  .btn-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    border: none;
+    background: #E8DEF8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6750A4;
+    font-size: 18px;
+    min-width: 48px;
+    min-height: 48px;
+    transition: background 0.2s;
+  }
+  .btn-icon:active { background: #D0BCFF; }
+
+  .room-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    min-height: 0;
+    overflow: hidden;
+    background: #F3EDF7;
+    margin: 0 16px;
+    border-radius: 28px;
+  }
+  .isometric-room {
+    width: 300px;
+    height: 260px;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .floor {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) rotateX(60deg) rotateZ(45deg);
+    background:
+      linear-gradient(rgba(103,80,164,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(103,80,164,0.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+    background-color: #F3EDF7;
+    border: 2px solid #CAC4D0;
+    border-radius: 4px;
+  }
+  .wall-back {
+    position: absolute;
+    width: 170px;
+    height: 120px;
+    top: 10px;
+    left: 0;
+    transform: skewY(-30deg);
+    transform-origin: bottom left;
+    background: linear-gradient(180deg, #FEF7FF 0%, #F3EDF7 100%);
+    border: 2px solid #CAC4D0;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+  }
+  .wall-back::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(103,80,164,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(103,80,164,0.04) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  .wall-right {
+    position: absolute;
+    width: 170px;
+    height: 120px;
+    top: 10px;
+    right: 0;
+    transform: skewY(30deg);
+    transform-origin: bottom right;
+    background: linear-gradient(180deg, #F3EDF7 0%, #E8DEF8 100%);
+    border: 2px solid #CAC4D0;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+  }
+  .wall-right::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(103,80,164,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(103,80,164,0.04) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  .placed-item {
+    position: absolute;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 500;
+    color: #fff;
+  }
+  .placed-sofa {
+    width: 70px;
+    height: 30px;
+    background: #6750A4;
+    box-shadow: 0 2px 8px rgba(103,80,164,0.3);
+    bottom: 70px;
+    left: 70px;
+    transform: rotateX(60deg) rotateZ(45deg);
+  }
+  .placed-table {
+    width: 40px;
+    height: 40px;
+    background: #7DC8E8;
+    box-shadow: 0 2px 8px rgba(125,200,232,0.3);
+    color: #003544;
+    bottom: 85px;
+    left: 155px;
+    transform: rotateX(60deg) rotateZ(45deg);
+  }
+
+  .furniture-panel {
+    background: #FEF7FF;
+    padding: 12px 16px 12px;
+    flex-shrink: 0;
+    max-height: 230px;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6750A4;
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+  .furniture-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .furniture-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: #F3EDF7;
+    border-radius: 16px;
+    min-height: 56px;
+    transition: background 0.2s;
+  }
+  .furniture-item:active { background: #E8DEF8; }
+  .color-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #1D1B20;
+  }
+  .item-size {
+    font-size: 12px;
+    color: #79747E;
+    margin-top: 2px;
+  }
+  .item-actions { display: flex; gap: 8px; }
+  .btn-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: #E8DEF8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: #6750A4;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .btn-sm:active { background: #D0BCFF; }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #FEF7FF;
+    flex-shrink: 0;
+    min-height: 48px;
+  }
+  .status-item {
+    font-size: 12px;
+    color: #79747E;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4CAF50;
+  }
+  .status-chip {
+    background: #FFECD6;
+    color: #7A5900;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  @media (min-width: 768px) {
+    .main-content { display: flex; flex: 1; min-height: 0; gap: 0; }
+    .room-container { flex: 1; margin: 16px; margin-right: 0; }
+    .furniture-panel {
+      width: 360px;
+      max-height: none;
+      padding-top: 16px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="app-logo">Place</div>
+      <div class="app-subtitle">가구 배치 도구</div>
+    </div>
+    <div class="top-bar-actions">
+      <button class="btn-icon" aria-label="붙여넣기">📋</button>
+      <button class="btn-icon" aria-label="JSON 복사">{ }</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="room-container">
+      <div class="isometric-room">
+        <div class="wall-back"></div>
+        <div class="wall-right"></div>
+        <div class="floor"></div>
+        <div class="placed-item placed-sofa">소파</div>
+        <div class="placed-item placed-table">탁자</div>
+      </div>
+    </div>
+
+    <div class="furniture-panel">
+      <div class="panel-title">가구 목록</div>
+      <div class="furniture-list">
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #6750A4;"></div>
+          <div class="item-info">
+            <div class="item-name">소파</div>
+            <div class="item-size">2.0 × 0.9 × 0.8m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #7DC8E8;"></div>
+          <div class="item-info">
+            <div class="item-name">테이블</div>
+            <div class="item-size">1.5 × 0.6 × 1.0m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #B4607E;"></div>
+          <div class="item-info">
+            <div class="item-name">책장</div>
+            <div class="item-size">0.8 × 0.3 × 1.8m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #E8B931;"></div>
+          <div class="item-info">
+            <div class="item-name">의자</div>
+            <div class="item-size">0.5 × 0.5 × 0.9m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-dot"></span>
+      배치됨: 2 / 4
+    </div>
+    <span class="status-chip">충돌 없음</span>
+  </div>
+</body>
+</html>

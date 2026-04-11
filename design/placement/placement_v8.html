@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Place - Scandinavian</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', 'Segoe UI', sans-serif;
+    background: #F5F0EB;
+    color: #2C3E2D;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #F5F0EB;
+    border-bottom: 1px solid #DDD5CC;
+    flex-shrink: 0;
+    min-height: 56px;
+  }
+  .top-bar-left { display: flex; flex-direction: column; }
+  .app-logo {
+    font-size: 20px;
+    font-weight: 300;
+    color: #2C3E2D;
+    letter-spacing: 4px;
+    text-transform: lowercase;
+  }
+  .app-subtitle {
+    font-size: 10px;
+    color: #8B9A7E;
+    letter-spacing: 1px;
+    font-weight: 300;
+  }
+  .top-bar-actions { display: flex; gap: 10px; }
+  .btn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid #DDD5CC;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #2C3E2D;
+    font-size: 15px;
+    min-width: 42px;
+    min-height: 42px;
+    transition: background 0.3s;
+  }
+  .btn-icon:active { background: #EDE7E0; }
+
+  .room-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 0;
+    overflow: hidden;
+    background: #EDE7E0;
+  }
+  .isometric-room {
+    width: 300px;
+    height: 260px;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .floor {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) rotateX(60deg) rotateZ(45deg);
+    background-color: #E8DDD0;
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 29px,
+        rgba(0,0,0,0.03) 29px,
+        rgba(0,0,0,0.03) 30px
+      );
+    border: 1px solid #D0C5B5;
+  }
+  .wall-back {
+    position: absolute;
+    width: 170px;
+    height: 120px;
+    top: 10px;
+    left: 0;
+    transform: skewY(-30deg);
+    transform-origin: bottom left;
+    background: #F5F0EB;
+    border: 1px solid #DDD5CC;
+    border-bottom: none;
+  }
+  .wall-right {
+    position: absolute;
+    width: 170px;
+    height: 120px;
+    top: 10px;
+    right: 0;
+    transform: skewY(30deg);
+    transform-origin: bottom right;
+    background: #EDE7E0;
+    border: 1px solid #D0C5B5;
+    border-bottom: none;
+  }
+
+  .placed-item {
+    position: absolute;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .placed-sofa {
+    width: 70px;
+    height: 30px;
+    background: #8B9A7E;
+    border: 1px solid #6B7A5E;
+    bottom: 70px;
+    left: 70px;
+    transform: rotateX(60deg) rotateZ(45deg);
+  }
+  .placed-table {
+    width: 40px;
+    height: 40px;
+    background: #C4A882;
+    border: 1px solid #A88B66;
+    bottom: 85px;
+    left: 155px;
+    transform: rotateX(60deg) rotateZ(45deg);
+  }
+
+  .furniture-panel {
+    background: #F5F0EB;
+    border-top: 1px solid #DDD5CC;
+    padding: 14px 20px;
+    flex-shrink: 0;
+    max-height: 224px;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-size: 11px;
+    font-weight: 300;
+    color: #8B9A7E;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+  .furniture-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .furniture-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    min-height: 56px;
+    transition: background 0.2s;
+  }
+  .furniture-item:active { background: #F9F5F0; }
+  .color-swatch {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name {
+    font-size: 15px;
+    font-weight: 400;
+    color: #2C3E2D;
+    letter-spacing: 0.5px;
+  }
+  .item-size {
+    font-size: 12px;
+    color: #8B9A7E;
+    margin-top: 2px;
+    font-weight: 300;
+  }
+  .item-actions { display: flex; gap: 8px; }
+  .btn-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid #DDD5CC;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #8B9A7E;
+    min-width: 34px;
+    min-height: 34px;
+  }
+  .btn-sm:active { background: #EDE7E0; }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #F5F0EB;
+    border-top: 1px solid #DDD5CC;
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+  .status-item {
+    font-size: 11px;
+    color: #8B9A7E;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #8B9A7E;
+  }
+  .status-warning { color: #C4A882; }
+
+  @media (min-width: 768px) {
+    .main-content { display: flex; flex: 1; min-height: 0; }
+    .room-container { flex: 1; }
+    .furniture-panel {
+      width: 340px;
+      border-top: none;
+      border-left: 1px solid #DDD5CC;
+      max-height: none;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="app-logo">place</div>
+      <div class="app-subtitle">가구 배치 도구</div>
+    </div>
+    <div class="top-bar-actions">
+      <button class="btn-icon" aria-label="붙여넣기">📋</button>
+      <button class="btn-icon" aria-label="JSON 복사">{ }</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="room-container">
+      <div class="isometric-room">
+        <div class="wall-back"></div>
+        <div class="wall-right"></div>
+        <div class="floor"></div>
+        <div class="placed-item placed-sofa">소파</div>
+        <div class="placed-item placed-table">탁자</div>
+      </div>
+    </div>
+
+    <div class="furniture-panel">
+      <div class="panel-title">가구 목록</div>
+      <div class="furniture-list">
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #8B9A7E;"></div>
+          <div class="item-info">
+            <div class="item-name">소파</div>
+            <div class="item-size">2.0 × 0.9 × 0.8m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #C4A882;"></div>
+          <div class="item-info">
+            <div class="item-name">테이블</div>
+            <div class="item-size">1.5 × 0.6 × 1.0m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #B5C4B1;"></div>
+          <div class="item-info">
+            <div class="item-name">책장</div>
+            <div class="item-size">0.8 × 0.3 × 1.8m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+        <div class="furniture-item">
+          <div class="color-swatch" style="background: #D4B896;"></div>
+          <div class="item-info">
+            <div class="item-name">의자</div>
+            <div class="item-size">0.5 × 0.5 × 0.9m</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-sm" aria-label="회전">↻</button>
+            <button class="btn-sm" aria-label="삭제">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-dot"></span>
+      배치됨: 2 / 4
+    </div>
+    <div class="status-item status-warning">
+      충돌 없음
+    </div>
+  </div>
+</body>
+</html>

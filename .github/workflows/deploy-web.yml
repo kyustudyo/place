@@ -1,0 +1,52 @@
+# 웹 배포 워크플로우 템플릿
+# .github/workflows/deploy-web.yml에 복사 후 place 교체
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+          channel: 'stable'
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build web --release
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build/web --project-name place
+
+      - name: 배포 성공 알림
+        if: success()
+        continue-on-error: true
+        run: |
+          SAFE_MSG=$(echo "${{ github.event.head_commit.message }}" | tr -d "<>" | head -c 80 | tr "\n" " ")
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CI_CHAT_ID }}" \
+            -d text="✅ 배포 완료 - ${{ github.repository }} (${SAFE_MSG})"
+
+      - name: 배포 실패 알림
+        if: failure()
+        continue-on-error: true
+        run: |
+          SAFE_MSG=$(echo "${{ github.event.head_commit.message }}" | tr -d "<>" | head -c 80 | tr "\n" " ")
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CI_CHAT_ID }}" \
+            -d text="🔴 배포 실패 - ${{ github.repository }} (${SAFE_MSG})"
+
+# ─── 필요한 GitHub Secrets ───
+# CLOUDFLARE_API_TOKEN    — Cloudflare API 토큰
+# CLOUDFLARE_ACCOUNT_ID   — 7f53a3aec532c0d001c60211dbf9f673
+# TELEGRAM_BOT_TOKEN      — 텔레그램 봇 토큰
+# TELEGRAM_CI_CHAT_ID     — CI 봇 그룹 chat_id (-5053012598)
