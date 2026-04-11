@@ -23,26 +23,6 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     final theme = ref.watch(currentThemeProvider);
     final room = state.room;
 
-    if (room == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.view_in_ar, size: 80,
-                color: theme.textSecondary.withValues(alpha: 0.3)),
-            const SizedBox(height: 16),
-            Text(
-              'JSON을 붙여넣어 시작하세요',
-              style: TextStyle(
-                color: theme.textSecondary,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth * 0.85;
@@ -101,15 +81,13 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   void _handleDragStart(Offset pos, PlacementState state) {
     final hit = _hitTest(pos, state);
     if (hit != null) {
-      setState(() {
-        _draggingId = hit.id;
-      });
+      setState(() => _draggingId = hit.id);
       ref.read(placementProvider.notifier).selectFurniture(hit.id);
     }
   }
 
   void _handleDragUpdate(Offset pos, PlacementState state) {
-    if (_draggingId == null || state.room == null) return;
+    if (_draggingId == null) return;
     final worldPos = IsometricMath.screenToWorld(pos);
     ref
         .read(placementProvider.notifier)
@@ -117,9 +95,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 
   void _handleDragEnd() {
-    setState(() {
-      _draggingId = null;
-    });
+    setState(() => _draggingId = null);
   }
 
   Furniture? _hitTest(Offset screenPos, PlacementState state) {

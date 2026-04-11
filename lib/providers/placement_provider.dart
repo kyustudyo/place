@@ -1,17 +1,39 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/furniture.dart';
 import '../utils/collision.dart';
 import '../utils/json_parser.dart';
 import '../models/room.dart';
 
+const _defaultRoom = Room(
+  width: 7.5,
+  height: 4.0,
+  depth: 7.5,
+  tileSize: 0.5,
+  gridSize: 15,
+);
+
+const _furnitureColors = [
+  Color(0xFF5B8DEF),
+  Color(0xFF5BCA8A),
+  Color(0xFFE8A838),
+  Color(0xFFEF5B7B),
+  Color(0xFF9B59B6),
+  Color(0xFF1ABC9C),
+  Color(0xFFE67E22),
+  Color(0xFF3498DB),
+  Color(0xFFE74C3C),
+  Color(0xFF2ECC71),
+];
+
 class PlacementState {
-  final Room? room;
+  final Room room;
   final List<Furniture> furniture;
   final String? selectedId;
   final String? error;
 
   const PlacementState({
-    this.room,
+    this.room = _defaultRoom,
     this.furniture = const [],
     this.selectedId,
     this.error,
@@ -46,7 +68,97 @@ class PlacementState {
 
 class PlacementNotifier extends Notifier<PlacementState> {
   @override
-  PlacementState build() => const PlacementState();
+  PlacementState build() {
+    // Start with default room and one default furniture piece
+    final defaultFurniture = Furniture(
+      id: 'item_1',
+      name: '가구 1',
+      size: const Vec3(x: 1.5, y: 0.8, z: 1.0),
+      position: const Vec3(x: 3.0, y: 0.0, z: 3.0),
+      rotation: 0,
+      color: _furnitureColors[0],
+      isPlaced: true,
+    );
+    return PlacementState(
+      room: _defaultRoom,
+      furniture: [defaultFurniture],
+    );
+  }
+
+  /// Add a new furniture piece with given dimensions
+  Furniture addFurniture({
+    required String name,
+    required double x,
+    required double y,
+    required double z,
+  }) {
+    final index = state.furniture.length;
+    final id = 'item_${index + 1}';
+    final color = _furnitureColors[index % _furnitureColors.length];
+
+    // Place at center of room
+    final posX = (state.room.width / 2 - x / 2);
+    final posZ = (state.room.depth / 2 - z / 2);
+    final snappedX =
+        (posX / state.room.tileSize).round() * state.room.tileSize;
+    final snappedZ =
+        (posZ / state.room.tileSize).round() * state.room.tileSize;
+
+    final item = Furniture(
+      id: id,
+      name: name,
+      size: Vec3(x: x, y: y, z: z),
+      position: Vec3(x: snappedX, y: 0.0, z: snappedZ),
+      rotation: 0,
+      color: color,
+      isPlaced: true,
+    );
+
+    final updated = [...state.furniture, item];
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
+    state = state.copyWith(furniture: checked, selectedId: id);
+    return item;
+  }
+
+  /// Update dimensions of an existing furniture piece
+  void updateFurnitureSize(String id, double x, double y, double z) {
+    final updated = state.furniture.map((f) {
+      if (f.id == id) {
+        return Furniture(
+          id: f.id,
+          name: f.name,
+          size: Vec3(x: x, y: y, z: z),
+          position: f.position,
+          rotation: f.rotation,
+          color: f.color,
+          isPlaced: f.isPlaced,
+        );
+      }
+      return f;
+    }).toList();
+
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
+    state = state.copyWith(furniture: checked);
+  }
+
+  /// Update name of an existing furniture piece
+  void updateFurnitureName(String id, String name) {
+    final updated = state.furniture.map((f) {
+      if (f.id == id) {
+        return Furniture(
+          id: f.id,
+          name: name,
+          size: f.size,
+          position: f.position,
+          rotation: f.rotation,
+          color: f.color,
+          isPlaced: f.isPlaced,
+        );
+      }
+      return f;
+    }).toList();
+    state = state.copyWith(furniture: updated);
+  }
 
   void loadJson(String jsonStr) {
     try {
@@ -70,8 +182,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
   }
 
   void placeFurniture(String id, double x, double z) {
-    if (state.room == null) return;
-    final tileSize = state.room!.tileSize;
+    final tileSize = state.room.tileSize;
     final snappedX = (x / tileSize).round() * tileSize;
     final snappedZ = (z / tileSize).round() * tileSize;
 
@@ -85,12 +196,11 @@ class PlacementNotifier extends Notifier<PlacementState> {
       return f;
     }).toList();
 
-    final checked = CollisionDetector.updateCollisions(updated, state.room!);
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
     state = state.copyWith(furniture: checked);
   }
 
   void rotateFurniture(String id) {
-    if (state.room == null) return;
     final updated = state.furniture.map((f) {
       if (f.id == id) {
         return f.copyWith(rotation: (f.rotation + 90) % 360);
@@ -98,24 +208,13 @@ class PlacementNotifier extends Notifier<PlacementState> {
       return f;
     }).toList();
 
-    final checked = CollisionDetector.updateCollisions(updated, state.room!);
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
     state = state.copyWith(furniture: checked);
   }
 
-  void unplaceFurniture(String id) {
-    if (state.room == null) return;
-    final updated = state.furniture.map((f) {
-      if (f.id == id) {
-        return f.copyWith(
-          position: const Vec3(x: 0, y: 0, z: 0),
-          isPlaced: false,
-          hasCollision: false,
-        );
-      }
-      return f;
-    }).toList();
-
-    final checked = CollisionDetector.updateCollisions(updated, state.room!);
+  void removeFurniture(String id) {
+    final updated = state.furniture.where((f) => f.id != id).toList();
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
     state = state.copyWith(furniture: checked, clearSelected: true);
   }
 

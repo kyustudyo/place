@@ -6,6 +6,7 @@ import '../providers/placement_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/isometric_room.dart';
 import '../widgets/furniture_panel.dart';
+import '../widgets/dimension_dialog.dart';
 
 class PlacementScreen extends ConsumerStatefulWidget {
   const PlacementScreen({super.key});
@@ -15,19 +16,75 @@ class PlacementScreen extends ConsumerStatefulWidget {
 }
 
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
-  final _jsonController = TextEditingController();
+  bool _initialDialogShown = false;
 
   @override
-  void dispose() {
-    _jsonController.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialDialogShown) {
+      _initialDialogShown = true;
+      // Show dimension dialog on first frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showDimensionDialog();
+      });
+    }
+  }
+
+  Future<void> _showDimensionDialog({String? editId}) async {
+    final theme = ref.read(currentThemeProvider);
+    final state = ref.read(placementProvider);
+
+    String? initialName;
+    double? initialX, initialY, initialZ;
+    bool isEdit = false;
+
+    if (editId != null) {
+      final item = state.furniture.firstWhere((f) => f.id == editId);
+      initialName = item.name;
+      initialX = item.size.x;
+      initialY = item.size.y;
+      initialZ = item.size.z;
+      isEdit = true;
+    }
+
+    final result = await showDialog<DimensionResult>(
+      context: context,
+      barrierDismissible: isEdit,
+      builder: (ctx) => DimensionDialog(
+        theme: theme,
+        initialName: initialName,
+        initialX: initialX,
+        initialY: initialY,
+        initialZ: initialZ,
+        isEdit: isEdit,
+      ),
+    );
+
+    if (result == null) return;
+
+    final notifier = ref.read(placementProvider.notifier);
+    if (isEdit && editId != null) {
+      notifier.updateFurnitureSize(editId, result.x, result.y, result.z);
+      if (result.name.isNotEmpty) {
+        notifier.updateFurnitureName(editId, result.name);
+      }
+    } else {
+      notifier.addFurniture(
+        name: result.name,
+        x: result.x,
+        y: result.y,
+        z: result.z,
+      );
+    }
   }
 
   Future<void> _pasteJson() async {
     final theme = ref.read(currentThemeProvider);
+    final controller = TextEditingController();
+
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data?.text != null && data!.text!.isNotEmpty) {
-      _jsonController.text = data.text!;
+      controller.text = data.text!;
     }
 
     if (!mounted) return;
@@ -37,15 +94,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: theme.headerBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'JSON 붙여넣기',
-          style: TextStyle(color: theme.textPrimary, fontSize: 16),
-        ),
+        title: Text('JSON 가져오기',
+            style: TextStyle(color: theme.textPrimary, fontSize: 16)),
         content: SizedBox(
           width: 400,
           height: 300,
           child: TextField(
-            controller: _jsonController,
+            controller: controller,
             maxLines: null,
             expands: true,
             style: TextStyle(
@@ -54,7 +109,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
               fontFamily: 'monospace',
             ),
             decoration: InputDecoration(
-              hintText: 'furniture_sizes.json 내용을 붙여넣으세요...',
+              hintText: 'furniture_sizes.json...',
               hintStyle: TextStyle(color: theme.textSecondary),
               filled: true,
               fillColor: theme.cardBg,
@@ -74,7 +129,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             onPressed: () {
               ref
                   .read(placementProvider.notifier)
-                  .loadJson(_jsonController.text);
+                  .loadJson(controller.text);
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(
@@ -82,11 +137,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: Text('적용',
-                style: TextStyle(
-                    color: theme.brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.white)),
+            child:
+                const Text('적용', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -114,15 +166,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return _ThemePickerSheet(
-          currentIndex: currentIndex,
-          onSelect: (index) {
-            ref.read(themeProvider.notifier).setTheme(index);
-            Navigator.pop(ctx);
-          },
-        );
-      },
+      builder: (ctx) => _ThemePickerSheet(
+        currentIndex: currentIndex,
+        onSelect: (index) {
+          ref.read(themeProvider.notifier).setTheme(index);
+          Navigator.pop(ctx);
+        },
+      ),
     );
   }
 
@@ -170,9 +220,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: theme.headerBg,
-        border: Border(
-          bottom: BorderSide(color: theme.headerBorder),
-        ),
+        border: Border(bottom: BorderSide(color: theme.headerBorder)),
       ),
       child: Row(
         children: [
@@ -182,59 +230,43 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
               color: theme.accent,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
+            child: const Text(
               'Place',
               style: TextStyle(
-                color: theme.brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.white,
+                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.5,
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: Text(
-              '가구 배치 도구',
-              style: TextStyle(
-                color: theme.textSecondary,
-                fontSize: 13,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
           const Spacer(),
-          // Settings (theme) button
-          GestureDetector(
+          // Theme
+          _TopBarBtn(
+            icon: Icons.palette_outlined,
             onTap: _showThemePicker,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: theme.accent.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.accent.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Icon(Icons.palette_outlined, size: 18, color: theme.accent),
-            ),
+            theme: theme,
           ),
-          const SizedBox(width: 8),
-          _ActionButton(
-            icon: Icons.content_paste,
-            label: '붙여넣기',
+          const SizedBox(width: 6),
+          // Add furniture
+          _TopBarBtn(
+            icon: Icons.add_rounded,
+            onTap: _showDimensionDialog,
+            theme: theme,
+          ),
+          const SizedBox(width: 6),
+          // JSON import
+          _TopBarBtn(
+            icon: Icons.file_download_outlined,
             onTap: _pasteJson,
-            color: theme.accent,
+            theme: theme,
           ),
-          const SizedBox(width: 8),
-          _ActionButton(
-            icon: Icons.copy,
-            label: 'JSON',
+          const SizedBox(width: 6),
+          // JSON export
+          _TopBarBtn(
+            icon: Icons.file_upload_outlined,
             onTap: state.furniture.any((f) => f.isPlaced) ? _copyJson : null,
-            color: theme.accentSecondary,
+            theme: theme,
           ),
         ],
       ),
@@ -246,11 +278,14 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       children: [
         const Expanded(flex: 3, child: IsometricRoom()),
         if (state.furniture.isNotEmpty)
-          const SizedBox(
+          SizedBox(
             width: 280,
             child: Padding(
-              padding: EdgeInsets.all(12),
-              child: FurniturePanel(),
+              padding: const EdgeInsets.all(12),
+              child: FurniturePanel(
+                onEditDimension: (id) =>
+                    _showDimensionDialog(editId: id),
+              ),
             ),
           ),
       ],
@@ -262,11 +297,14 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       children: [
         const Expanded(flex: 3, child: IsometricRoom()),
         if (state.furniture.isNotEmpty)
-          const SizedBox(
+          SizedBox(
             height: 220,
             child: Padding(
-              padding: EdgeInsets.all(12),
-              child: FurniturePanel(),
+              padding: const EdgeInsets.all(12),
+              child: FurniturePanel(
+                onEditDimension: (id) =>
+                    _showDimensionDialog(editId: id),
+              ),
             ),
           ),
       ],
@@ -274,8 +312,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   Widget _buildStatusBar(PlacementState state, AppTheme theme) {
-    if (state.room == null) return const SizedBox.shrink();
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
@@ -313,6 +349,40 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 }
 
+class _TopBarBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  final AppTheme theme;
+
+  const _TopBarBtn({
+    required this.icon,
+    required this.onTap,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedOpacity(
+        opacity: disabled ? 0.3 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: theme.accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: theme.accent.withValues(alpha: 0.25)),
+          ),
+          child: Icon(icon, size: 20, color: theme.accent),
+        ),
+      ),
+    );
+  }
+}
+
 class _ThemePickerSheet extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelect;
@@ -324,10 +394,11 @@ class _ThemePickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cur = appThemes[currentIndex];
     return Container(
       constraints: const BoxConstraints(maxHeight: 420),
       decoration: BoxDecoration(
-        color: appThemes[currentIndex].headerBg,
+        color: cur.headerBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -338,7 +409,7 @@ class _ThemePickerSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: appThemes[currentIndex].textSecondary,
+              color: cur.textSecondary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -347,7 +418,7 @@ class _ThemePickerSheet extends StatelessWidget {
             child: Text(
               '테마 선택',
               style: TextStyle(
-                color: appThemes[currentIndex].textPrimary,
+                color: cur.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -365,7 +436,7 @@ class _ThemePickerSheet extends StatelessWidget {
               itemCount: appThemes.length,
               itemBuilder: (ctx, i) {
                 final t = appThemes[i];
-                final isSelected = i == currentIndex;
+                final selected = i == currentIndex;
                 return GestureDetector(
                   onTap: () => onSelect(i),
                   child: Container(
@@ -373,29 +444,24 @@ class _ThemePickerSheet extends StatelessWidget {
                       color: t.scaffoldBg,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected
+                        color: selected
                             ? t.accent
-                            : appThemes[currentIndex]
-                                .textSecondary
-                                .withValues(alpha: 0.3),
-                        width: isSelected ? 2.5 : 1,
+                            : cur.textSecondary.withValues(alpha: 0.3),
+                        width: selected ? 2.5 : 1,
                       ),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       children: [
-                        // Preview colors
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Row(
-                              children: [
-                                _dot(t.backWallColor, 8),
-                                const SizedBox(width: 2),
-                                _dot(t.leftWallColor, 8),
-                              ],
-                            ),
+                            Row(children: [
+                              _dot(t.backWallColor, 8),
+                              const SizedBox(width: 2),
+                              _dot(t.leftWallColor, 8),
+                            ]),
                             const SizedBox(height: 2),
                             _dot(t.floorColor, 10),
                           ],
@@ -406,28 +472,22 @@ class _ThemePickerSheet extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                t.nameKo,
-                                style: TextStyle(
-                                  color: t.textPrimary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                t.name,
-                                style: TextStyle(
-                                  color: t.textSecondary,
-                                  fontSize: 10,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              Text(t.nameKo,
+                                  style: TextStyle(
+                                      color: t.textPrimary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600),
+                                  overflow: TextOverflow.ellipsis),
+                              Text(t.name,
+                                  style: TextStyle(
+                                      color: t.textSecondary, fontSize: 10),
+                                  overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
-                        if (isSelected)
-                          Icon(Icons.check_circle, size: 16, color: t.accent),
+                        if (selected)
+                          Icon(Icons.check_circle,
+                              size: 16, color: t.accent),
                       ],
                     ),
                   ),
@@ -440,65 +500,12 @@ class _ThemePickerSheet extends StatelessWidget {
     );
   }
 
-  Widget _dot(Color color, double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final Color color;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = onTap == null;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: isDisabled ? 0.3 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _dot(Color c, double s) => Container(
+        width: s,
+        height: s,
+        decoration: BoxDecoration(
+            color: c, borderRadius: BorderRadius.circular(2)),
+      );
 }
 
 class _StatusChip extends StatelessWidget {
@@ -506,28 +513,17 @@ class _StatusChip extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _StatusChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+  const _StatusChip(
+      {required this.icon, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 6),
-        Text(
-          label,
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 14, color: color),
+      const SizedBox(width: 6),
+      Text(label,
           style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
+              color: color, fontSize: 12, fontWeight: FontWeight.w500)),
+    ]);
   }
 }

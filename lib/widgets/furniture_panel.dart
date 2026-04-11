@@ -6,7 +6,9 @@ import '../providers/placement_provider.dart';
 import '../providers/theme_provider.dart';
 
 class FurniturePanel extends ConsumerWidget {
-  const FurniturePanel({super.key});
+  final void Function(String id) onEditDimension;
+
+  const FurniturePanel({super.key, required this.onEditDimension});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,7 +36,7 @@ class FurniturePanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
             child: Row(
               children: [
                 Container(
@@ -57,7 +59,7 @@ class FurniturePanel extends ConsumerWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${state.placedCount}/${furniture.length}',
+                  '${furniture.length}개',
                   style: TextStyle(
                     color: theme.textSecondary,
                     fontSize: 12,
@@ -81,13 +83,7 @@ class FurniturePanel extends ConsumerWidget {
                         .read(placementProvider.notifier)
                         .selectFurniture(item.id);
                   },
-                  onPlace: () {
-                    if (!item.isPlaced) {
-                      ref
-                          .read(placementProvider.notifier)
-                          .placeFurniture(item.id, 1.0, 1.0);
-                    }
-                  },
+                  onEdit: () => onEditDimension(item.id),
                   onRotate: () {
                     ref
                         .read(placementProvider.notifier)
@@ -96,7 +92,7 @@ class FurniturePanel extends ConsumerWidget {
                   onRemove: () {
                     ref
                         .read(placementProvider.notifier)
-                        .unplaceFurniture(item.id);
+                        .removeFurniture(item.id);
                   },
                 );
               },
@@ -113,7 +109,7 @@ class _FurnitureCard extends StatelessWidget {
   final AppTheme theme;
   final bool isSelected;
   final VoidCallback onTap;
-  final VoidCallback onPlace;
+  final VoidCallback onEdit;
   final VoidCallback onRotate;
   final VoidCallback onRemove;
 
@@ -122,7 +118,7 @@ class _FurnitureCard extends StatelessWidget {
     required this.theme,
     required this.isSelected,
     required this.onTap,
-    required this.onPlace,
+    required this.onEdit,
     required this.onRotate,
     required this.onRemove,
   });
@@ -151,6 +147,7 @@ class _FurnitureCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Color swatch
             Container(
               width: 36,
               height: 36,
@@ -170,6 +167,7 @@ class _FurnitureCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
+            // Name + size
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,31 +193,30 @@ class _FurnitureCard extends StatelessWidget {
             ),
             if (item.hasCollision)
               Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Icon(
-                  Icons.warning_rounded,
-                  color: Colors.red.shade400,
-                  size: 18,
-                ),
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(Icons.warning_rounded,
+                    color: Colors.red.shade400, size: 16),
               ),
-            if (item.isPlaced) ...[
-              _IconBtn(
-                icon: Icons.rotate_right,
-                onTap: onRotate,
-                color: theme.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              _IconBtn(
-                icon: Icons.close,
-                onTap: onRemove,
-                color: Colors.red.shade400,
-              ),
-            ] else
-              _IconBtn(
-                icon: Icons.add,
-                onTap: onPlace,
-                color: theme.accentSecondary,
-              ),
+            // Edit size
+            _IconBtn(
+              icon: Icons.straighten,
+              onTap: onEdit,
+              color: theme.accent,
+            ),
+            const SizedBox(width: 4),
+            // Rotate
+            _IconBtn(
+              icon: Icons.rotate_right,
+              onTap: onRotate,
+              color: theme.textSecondary,
+            ),
+            const SizedBox(width: 4),
+            // Remove
+            _IconBtn(
+              icon: Icons.close,
+              onTap: onRemove,
+              color: Colors.red.shade400,
+            ),
           ],
         ),
       ),
@@ -249,7 +246,7 @@ class _IconBtn extends StatelessWidget {
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(icon, size: 16, color: color),
+        child: Icon(icon, size: 15, color: color),
       ),
     );
   }
