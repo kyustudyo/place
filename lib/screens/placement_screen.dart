@@ -383,6 +383,28 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                 ),
               ),
             ),
+            // Add item button at bottom
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showDimensionDialog();
+                  },
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: const Text('사물 추가'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

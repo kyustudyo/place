@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/furniture.dart';
+import '../models/app_theme.dart';
 import '../providers/placement_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/isometric_math.dart';
 import 'grid_painter.dart';
 import 'furniture_renderer.dart';
 
-/// Vertical offset so the item floats above the finger while dragging
-const _dragYOffset = -80.0;
-
-/// Magnifier size
 const _loupeSize = 120.0;
 
 class IsometricRoom extends ConsumerStatefulWidget {
@@ -22,7 +19,9 @@ class IsometricRoom extends ConsumerStatefulWidget {
 
 class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   String? _draggingId;
-  Offset? _dragScreenPos; // raw finger position on screen
+  Offset? _dragScreenPos;
+  // World offset between finger and item origin at drag start
+  Offset? _dragWorldOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +49,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         );
 
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTapUp: (details) => _handleTap(details.localPosition, state),
           onPanStart: (details) =>
               _handleDragStart(details.localPosition, state),
@@ -72,7 +72,6 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   draggingId: _draggingId,
                 ),
               ),
-              // Magnifier loupe while dragging
               if (_draggingId != null && _dragScreenPos != null)
                 _buildLoupe(state, theme, constraints),
             ],
@@ -83,23 +82,20 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 
   Widget _buildLoupe(
-      PlacementState state, dynamic theme, BoxConstraints constraints) {
+      PlacementState state, AppTheme theme, BoxConstraints constraints) {
     final item = state.furniture.cast<Furniture?>().firstWhere(
           (f) => f?.id == _draggingId,
           orElse: () => null,
         );
     if (item == null || !item.isPlaced) return const SizedBox.shrink();
 
-    // Position loupe above and to the left of finger
     final fingerPos = _dragScreenPos!;
     var loupeX = fingerPos.dx - _loupeSize / 2;
     var loupeY = fingerPos.dy - _loupeSize - 60;
 
-    // Keep within bounds
     loupeX = loupeX.clamp(8, constraints.maxWidth - _loupeSize - 8);
     loupeY = loupeY.clamp(8, constraints.maxHeight - _loupeSize - 8);
 
-    // Item's isometric center for the loupe content
     final itemCenter = IsometricMath.worldToScreen(
       item.position.x + item.effectiveWidth / 2,
       item.position.y + item.size.y / 2,
@@ -132,7 +128,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
               painter: _LoupePainter(
                 room: state.room,
                 items: state.furniture,
-                theme: ref.read(currentThemeProvider),
+                theme: theme,
                 focusCenter: itemCenter,
                 zoomScale: 2.5,
                 draggingId: _draggingId,
@@ -161,6 +157,12 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   void _handleDragStart(Offset pos, PlacementState state) {
     final hit = _hitTest(pos, state);
     if (hit != null) {
+      // Calculate world offset between touch point and item origin
+      final touchWorld = IsometricMath.screenToWorld(pos);
+      _dragWorldOffset = Offset(
+        touchWorld.dx - hit.position.x,
+        touchWorld.dy - hit.position.z,
+      );
       setState(() {
         _draggingId = hit.id;
         _dragScreenPos = pos;
@@ -170,13 +172,14 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 
   void _handleDragUpdate(Offset pos, PlacementState state) {
-    if (_draggingId == null) return;
-    // Offset upward so item is above the finger
-    final offsetPos = Offset(pos.dx, pos.dy + _dragYOffset);
-    final worldPos = IsometricMath.screenToWorld(offsetPos);
+    if (_draggingId == null || _dragWorldOffset == null) return;
+    final worldPos = IsometricMath.screenToWorld(pos);
+    // Subtract the initial offset so the item doesn't jump
+    final itemX = worldPos.dx - _dragWorldOffset!.dx;
+    final itemZ = worldPos.dy - _dragWorldOffset!.dy;
     ref
         .read(placementProvider.notifier)
-        .placeFurniture(_draggingId!, worldPos.dx, worldPos.dy);
+        .placeFurniture(_draggingId!, itemX, itemZ);
     setState(() => _dragScreenPos = pos);
   }
 
@@ -184,6 +187,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     setState(() {
       _draggingId = null;
       _dragScreenPos = null;
+      _dragWorldOffset = null;
     });
   }
 
@@ -196,25 +200,48 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
       });
 
     for (final item in placed) {
+      // Expand hit area slightly for easier touch targeting
+      final pad = 8.0;
+
       final topFace = IsometricMath.getTopFace(
         item.position.x, item.position.y, item.position.z,
         item.effectiveWidth, item.size.y, item.effectiveDepth,
       );
-      if (_pointInPolygon(screenPos, topFace)) return item;
+      if (_pointInExpandedPolygon(screenPos, topFace, pad)) return item;
 
       final leftFace = IsometricMath.getLeftFace(
         item.position.x, item.position.y, item.position.z,
         item.effectiveWidth, item.size.y, item.effectiveDepth,
       );
-      if (_pointInPolygon(screenPos, leftFace)) return item;
+      if (_pointInExpandedPolygon(screenPos, leftFace, pad)) return item;
 
       final rightFace = IsometricMath.getRightFace(
         item.position.x, item.position.y, item.position.z,
         item.effectiveWidth, item.size.y, item.effectiveDepth,
       );
-      if (_pointInPolygon(screenPos, rightFace)) return item;
+      if (_pointInExpandedPolygon(screenPos, rightFace, pad)) return item;
     }
     return null;
+  }
+
+  bool _pointInExpandedPolygon(
+      Offset point, List<Offset> polygon, double pad) {
+    // Quick bounding box check with padding
+    double minX = polygon[0].dx, maxX = polygon[0].dx;
+    double minY = polygon[0].dy, maxY = polygon[0].dy;
+    for (final p in polygon) {
+      if (p.dx < minX) minX = p.dx;
+      if (p.dx > maxX) maxX = p.dx;
+      if (p.dy < minY) minY = p.dy;
+      if (p.dy > maxY) maxY = p.dy;
+    }
+    if (point.dx < minX - pad ||
+        point.dx > maxX + pad ||
+        point.dy < minY - pad ||
+        point.dy > maxY + pad) {
+      return false;
+    }
+    return _pointInPolygon(point, polygon);
   }
 
   bool _pointInPolygon(Offset point, List<Offset> polygon) {
@@ -235,11 +262,10 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 }
 
-/// Paints a zoomed-in view of the isometric room centered on a point
 class _LoupePainter extends CustomPainter {
   final dynamic room;
   final List<Furniture> items;
-  final dynamic theme;
+  final AppTheme theme;
   final Offset focusCenter;
   final double zoomScale;
   final String? draggingId;
@@ -255,33 +281,24 @@ class _LoupePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Save current isometric state
     final savedScale = IsometricMath.scale;
     final savedOrigin = IsometricMath.origin;
 
-    // Apply zoom: scale up and shift origin so focusCenter is at loupe center
     final loupeCenter = Offset(size.width / 2, size.height / 2);
     IsometricMath.scale = savedScale * zoomScale;
-
-    // Recalculate origin so that the focus point maps to loupe center
-    // focusCenter was calculated with savedScale/savedOrigin
-    // We need: newOrigin + (focusCenter - savedOrigin) * zoomScale = loupeCenter
     IsometricMath.origin = Offset(
       loupeCenter.dx - (focusCenter.dx - savedOrigin.dx) * zoomScale,
       loupeCenter.dy - (focusCenter.dy - savedOrigin.dy) * zoomScale,
     );
 
-    // Background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = theme.scaffoldBg,
     );
 
-    // Draw grid
     final gridPainter = GridPainter(room: room, theme: theme);
     gridPainter.paint(canvas, size);
 
-    // Draw furniture
     final furniturePainter = FurnitureRenderer(
       items: items,
       theme: theme,
@@ -289,7 +306,6 @@ class _LoupePainter extends CustomPainter {
     );
     furniturePainter.paint(canvas, size);
 
-    // Crosshair at center
     final crossPaint = Paint()
       ..color = theme.accent.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
@@ -305,7 +321,6 @@ class _LoupePainter extends CustomPainter {
       crossPaint,
     );
 
-    // Restore
     IsometricMath.scale = savedScale;
     IsometricMath.origin = savedOrigin;
   }
