@@ -196,13 +196,18 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
   void placeFurniture(String id, double x, double z) {
     final tileSize = state.room.tileSize;
+    final margin = tileSize * 5; // 5타일 여유
     final snappedX = (x / tileSize).round() * tileSize;
     final snappedZ = (z / tileSize).round() * tileSize;
+
+    // Clamp: 맵 범위 ± 5타일
+    final clampedX = snappedX.clamp(-margin, state.room.width + margin);
+    final clampedZ = snappedZ.clamp(-margin, state.room.depth + margin);
 
     final updated = state.furniture.map((f) {
       if (f.id == id) {
         return f.copyWith(
-          position: Vec3(x: snappedX, y: f.position.y, z: snappedZ),
+          position: Vec3(x: clampedX, y: f.position.y, z: clampedZ),
           isPlaced: true,
         );
       }
