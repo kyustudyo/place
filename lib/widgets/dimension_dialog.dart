@@ -247,7 +247,7 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
   }
 }
 
-// ─── Step ② 가구 추가 ───
+// ─── Step ② 사물 추가 ───
 class DimensionDialog extends StatefulWidget {
   final AppTheme theme;
   final String? initialName;
@@ -307,7 +307,7 @@ class _DimensionDialogState extends State<DimensionDialog> {
     if (x <= 0 || y <= 0 || z <= 0) return;
 
     final name =
-        _nameCtrl.text.trim().isEmpty ? '가구' : _nameCtrl.text.trim();
+        _nameCtrl.text.trim().isEmpty ? '사물' : _nameCtrl.text.trim();
 
     Navigator.pop(
         context, DimensionResult(name: name, x: x, y: y, z: z));
@@ -316,7 +316,7 @@ class _DimensionDialogState extends State<DimensionDialog> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
-    final title = widget.isEdit ? '크기 수정' : '가구 추가';
+    final title = widget.isEdit ? '크기 수정' : '사물 추가';
     final buttonText = widget.isEdit
         ? '수정'
         : widget.showStepNumber
@@ -370,10 +370,10 @@ class _DimensionDialogState extends State<DimensionDialog> {
           const SizedBox(height: 8),
           Text(
             widget.showStepNumber
-                ? '첫 번째 가구의 크기를 입력하세요.\n입력하면 방 안에 바로 배치됩니다.'
+                ? '첫 번째 사물의 크기를 입력하세요.\n입력하면 방 안에 바로 배치됩니다.'
                 : widget.isEdit
-                    ? '가구의 새 크기를 입력하세요.'
-                    : '추가할 가구의 크기를 입력하세요.',
+                    ? '새 크기를 입력하세요.'
+                    : '추가할 사물의 크기를 입력하세요.',
             style: TextStyle(
               color: t.textSecondary,
               fontSize: 13,

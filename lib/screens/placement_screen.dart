@@ -29,7 +29,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     }
   }
 
-  /// ① 공간 크기 → ② 가구 추가 순서
+  /// ① 공간 크기 → ② 사물 추가 순서
   Future<void> _runInitialFlow() async {
     // Step ① 공간 크기 설정
     final roomResult = await _showRoomSizeDialog();
@@ -44,7 +44,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
     if (!mounted) return;
 
-    // Step ② 첫 가구 추가
+    // Step ② 첫 사물 추가
     await _showDimensionDialog(showStepNumber: true);
   }
 

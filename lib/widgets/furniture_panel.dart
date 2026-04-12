@@ -49,7 +49,7 @@ class FurniturePanel extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '가구 목록',
+                  '사물 목록',
                   style: TextStyle(
                     color: theme.textPrimary,
                     fontSize: 14,

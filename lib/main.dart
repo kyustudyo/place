@@ -12,7 +12,7 @@ class PlaceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Place — 가구 배치 도구',
+      title: 'Place — 사물 배치 도구',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
