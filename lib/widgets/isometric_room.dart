@@ -51,6 +51,9 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                 foregroundPainter: FurnitureRenderer(
                   items: state.furniture,
                   theme: theme,
+                  roomWidth: room.width,
+                  roomDepth: room.depth,
+                  roomHeight: room.height,
                   selectedId: state.selectedId,
                   draggingId: _isDragging ? state.selectedId : null,
                   snapTileSize:
@@ -455,6 +458,9 @@ class _LoupePainter extends CustomPainter {
     FurnitureRenderer(
       items: items,
       theme: theme,
+      roomWidth: room.width,
+      roomDepth: room.depth,
+      roomHeight: room.height,
       selectedId: selectedId,
     ).paint(canvas, size);
 
