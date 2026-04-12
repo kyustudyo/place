@@ -51,7 +51,11 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
           onPanEnd: (_) => _handleDragEnd(),
           child: CustomPaint(
             size: Size(constraints.maxWidth, constraints.maxHeight),
-            painter: GridPainter(room: room, theme: theme),
+            painter: GridPainter(
+              room: room,
+              theme: theme,
+              selectedHeight: state.selectedFurniture?.size.y,
+            ),
             foregroundPainter: FurnitureRenderer(
               items: state.furniture,
               theme: theme,
