@@ -6,10 +6,10 @@ import '../utils/json_parser.dart';
 import '../models/room.dart';
 
 const _defaultRoom = Room(
-  width: 7.5,
+  width: 15.0,
   height: 4.0,
-  depth: 7.5,
-  tileSize: 0.5,
+  depth: 15.0,
+  tileSize: 1.0,
   gridSize: 15,
 );
 

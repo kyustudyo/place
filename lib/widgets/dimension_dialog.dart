@@ -63,13 +63,13 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
   void initState() {
     super.initState();
     _wCtrl =
-        TextEditingController(text: (widget.initialWidth ?? 7.5).toString());
+        TextEditingController(text: (widget.initialWidth ?? 15.0).toString());
     _dCtrl =
-        TextEditingController(text: (widget.initialDepth ?? 7.5).toString());
+        TextEditingController(text: (widget.initialDepth ?? 15.0).toString());
     _hCtrl =
         TextEditingController(text: (widget.initialHeight ?? 4.0).toString());
     _tCtrl = TextEditingController(
-        text: (widget.initialTileSize ?? 0.5).toString());
+        text: (widget.initialTileSize ?? 1.0).toString());
   }
 
   @override
@@ -137,7 +137,7 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
           ),
           const SizedBox(height: 8),
           Text(
-            '배치할 공간의 크기를 입력하세요.\n기본값은 7.5m × 7.5m 방입니다.',
+            '배치할 공간의 크기를 입력하세요.\n기본값은 15 × 15 (타일 1) 입니다.',
             style: TextStyle(
               color: t.textSecondary,
               fontSize: 13,
