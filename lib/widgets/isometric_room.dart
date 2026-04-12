@@ -20,7 +20,6 @@ class IsometricRoom extends ConsumerStatefulWidget {
 class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   bool _isDragging = false;
   Offset? _dragScreenPos;
-  Offset? _dragWorldOffset;
   bool _zoomed = false;
   Offset _zoomFocus = Offset.zero; // world center for zoom
 
@@ -224,46 +223,52 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     }
   }
 
+  Offset? _lastDragScreen; // previous frame screen position
+
   void _handleDragStart(Offset pos, PlacementState state) {
-    // First check if tapping a different item
     final hit = _hitTest(pos, state);
     final notifier = ref.read(placementProvider.notifier);
 
     String? dragTarget;
     if (hit != null) {
-      // Directly touched an item — drag it
       dragTarget = hit.id;
       notifier.selectFurniture(hit.id);
     } else if (state.selectedId != null) {
-      // No direct hit but an item is selected — drag the selected item
       dragTarget = state.selectedId;
     }
 
     if (dragTarget != null) {
-      final item = state.furniture.firstWhere((f) => f.id == dragTarget);
-      final touchWorld = IsometricMath.screenToWorld(pos);
-      _dragWorldOffset = Offset(
-        touchWorld.dx - item.position.x,
-        touchWorld.dy - item.position.z,
-      );
       setState(() {
         _isDragging = true;
         _dragScreenPos = pos;
+        _lastDragScreen = pos;
       });
     }
   }
 
   void _handleDragUpdate(Offset pos, PlacementState state) {
-    if (!_isDragging || state.selectedId == null || _dragWorldOffset == null) {
+    if (!_isDragging || state.selectedId == null || _lastDragScreen == null) {
       return;
     }
-    final worldPos = IsometricMath.screenToWorld(pos);
-    final itemX = worldPos.dx - _dragWorldOffset!.dx;
-    final itemZ = worldPos.dy - _dragWorldOffset!.dy;
-    ref
-        .read(placementProvider.notifier)
-        .placeFurniture(state.selectedId!, itemX, itemZ);
-    setState(() => _dragScreenPos = pos);
+
+    // Convert screen delta to world delta
+    final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
+    final currWorld = IsometricMath.screenToWorld(pos);
+    final deltaX = currWorld.dx - prevWorld.dx;
+    final deltaZ = currWorld.dy - prevWorld.dy;
+
+    // Move item by delta
+    final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
+    ref.read(placementProvider.notifier).placeFurniture(
+          state.selectedId!,
+          item.position.x + deltaX,
+          item.position.z + deltaZ,
+        );
+
+    setState(() {
+      _dragScreenPos = pos;
+      _lastDragScreen = pos;
+    });
 
     // Update zoom focus while dragging
     if (_zoomed) {
@@ -281,7 +286,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     setState(() {
       _isDragging = false;
       _dragScreenPos = null;
-      _dragWorldOffset = null;
+      _lastDragScreen = null;
     });
   }
 
