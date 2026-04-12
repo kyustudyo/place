@@ -158,13 +158,22 @@ class FurnitureRenderer extends CustomPainter {
   }
 
   void _drawSnapGhost(Canvas canvas, Furniture f, double tileSize) {
-    // Calculate snapped position
     final sx = (f.position.x / tileSize).round() * tileSize;
     final sz = (f.position.z / tileSize).round() * tileSize;
     final w = f.effectiveWidth;
+    final h = f.size.y;
     final d = f.effectiveDepth;
 
-    // Floor shadow — snapped position
+    final ghostFill = Paint()
+      ..color = f.color.withValues(alpha: 0.12)
+      ..style = PaintingStyle.fill;
+
+    final ghostBorder = Paint()
+      ..color = f.color.withValues(alpha: 0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    // ── Floor footprint ──
     final floorPoints = [
       IsometricMath.worldToScreen(sx, 0, sz),
       IsometricMath.worldToScreen(sx + w, 0, sz),
@@ -172,23 +181,50 @@ class FurnitureRenderer extends CustomPainter {
       IsometricMath.worldToScreen(sx, 0, sz + d),
     ];
 
-    final ghostFill = Paint()
-      ..color = f.color.withValues(alpha: 0.15)
-      ..style = PaintingStyle.fill;
-
-    final ghostBorder = Paint()
-      ..color = f.color.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final path = Path()..moveTo(floorPoints[0].dx, floorPoints[0].dy);
+    final floorPath = Path()..moveTo(floorPoints[0].dx, floorPoints[0].dy);
     for (int i = 1; i < floorPoints.length; i++) {
-      path.lineTo(floorPoints[i].dx, floorPoints[i].dy);
+      floorPath.lineTo(floorPoints[i].dx, floorPoints[i].dy);
     }
-    path.close();
-
-    canvas.drawPath(path, ghostFill);
+    floorPath.close();
+    canvas.drawPath(floorPath, ghostFill);
     _drawDashedPath(canvas, floorPoints, ghostBorder);
+
+    // ── Height wireframe (top face + vertical edges) ──
+    final topPoints = [
+      IsometricMath.worldToScreen(sx, h, sz),
+      IsometricMath.worldToScreen(sx + w, h, sz),
+      IsometricMath.worldToScreen(sx + w, h, sz + d),
+      IsometricMath.worldToScreen(sx, h, sz + d),
+    ];
+
+    // Top face dashed outline
+    _drawDashedPath(canvas, topPoints, ghostBorder);
+
+    // Vertical edges (4 corners)
+    for (int i = 0; i < 4; i++) {
+      _drawDashedLine(canvas, floorPoints[i], topPoints[i], ghostBorder);
+    }
+  }
+
+  void _drawDashedLine(Canvas canvas, Offset from, Offset to, Paint paint) {
+    const dash = 5.0;
+    const gap = 3.0;
+    final dx = to.dx - from.dx;
+    final dy = to.dy - from.dy;
+    final dist = Offset(dx, dy).distance;
+    if (dist == 0) return;
+    final ux = dx / dist;
+    final uy = dy / dist;
+    var drawn = 0.0;
+    while (drawn < dist) {
+      final s = Offset(from.dx + ux * drawn, from.dy + uy * drawn);
+      final e = Offset(
+        from.dx + ux * (drawn + dash).clamp(0, dist),
+        from.dy + uy * (drawn + dash).clamp(0, dist),
+      );
+      canvas.drawLine(s, e, paint);
+      drawn += dash + gap;
+    }
   }
 
   void _drawDashedPath(Canvas canvas, List<Offset> points, Paint paint) {
