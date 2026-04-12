@@ -8,16 +8,29 @@ class FurnitureRenderer extends CustomPainter {
   final String? selectedId;
   final String? draggingId;
   final AppTheme theme;
+  final double? snapTileSize; // non-null when dragging → show snap ghost
 
   FurnitureRenderer({
     required this.items,
     required this.theme,
     this.selectedId,
     this.draggingId,
+    this.snapTileSize,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Draw snap ghost first (below everything)
+    if (draggingId != null && snapTileSize != null) {
+      final dragging = items.cast<Furniture?>().firstWhere(
+            (f) => f?.id == draggingId,
+            orElse: () => null,
+          );
+      if (dragging != null && dragging.isPlaced) {
+        _drawSnapGhost(canvas, dragging, snapTileSize!);
+      }
+    }
+
     // Sort by depth (z + x) for correct overlap
     final sorted = items.where((f) => f.isPlaced).toList()
       ..sort((a, b) {
@@ -142,6 +155,65 @@ class FurnitureRenderer extends CustomPainter {
       canvas,
       center - Offset(textPainter.width / 2, textPainter.height / 2),
     );
+  }
+
+  void _drawSnapGhost(Canvas canvas, Furniture f, double tileSize) {
+    // Calculate snapped position
+    final sx = (f.position.x / tileSize).round() * tileSize;
+    final sz = (f.position.z / tileSize).round() * tileSize;
+    final w = f.effectiveWidth;
+    final d = f.effectiveDepth;
+
+    // Floor shadow — snapped position
+    final floorPoints = [
+      IsometricMath.worldToScreen(sx, 0, sz),
+      IsometricMath.worldToScreen(sx + w, 0, sz),
+      IsometricMath.worldToScreen(sx + w, 0, sz + d),
+      IsometricMath.worldToScreen(sx, 0, sz + d),
+    ];
+
+    final ghostFill = Paint()
+      ..color = f.color.withValues(alpha: 0.15)
+      ..style = PaintingStyle.fill;
+
+    final ghostBorder = Paint()
+      ..color = f.color.withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final path = Path()..moveTo(floorPoints[0].dx, floorPoints[0].dy);
+    for (int i = 1; i < floorPoints.length; i++) {
+      path.lineTo(floorPoints[i].dx, floorPoints[i].dy);
+    }
+    path.close();
+
+    canvas.drawPath(path, ghostFill);
+    _drawDashedPath(canvas, floorPoints, ghostBorder);
+  }
+
+  void _drawDashedPath(Canvas canvas, List<Offset> points, Paint paint) {
+    const dash = 5.0;
+    const gap = 3.0;
+    for (int i = 0; i < points.length; i++) {
+      final from = points[i];
+      final to = points[(i + 1) % points.length];
+      final dx = to.dx - from.dx;
+      final dy = to.dy - from.dy;
+      final dist = Offset(dx, dy).distance;
+      if (dist == 0) continue;
+      final ux = dx / dist;
+      final uy = dy / dist;
+      var drawn = 0.0;
+      while (drawn < dist) {
+        final s = Offset(from.dx + ux * drawn, from.dy + uy * drawn);
+        final e = Offset(
+          from.dx + ux * (drawn + dash).clamp(0, dist),
+          from.dy + uy * (drawn + dash).clamp(0, dist),
+        );
+        canvas.drawLine(s, e, paint);
+        drawn += dash + gap;
+      }
+    }
   }
 
   @override

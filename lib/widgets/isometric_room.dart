@@ -53,6 +53,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   theme: theme,
                   selectedId: state.selectedId,
                   draggingId: _isDragging ? state.selectedId : null,
+                  snapTileSize:
+                      _isDragging ? state.room.tileSize : null,
                 ),
               ),
               // Loupe while dragging
