@@ -62,23 +62,23 @@ class FurnitureRenderer extends CustomPainter {
     final isSelected = f.id == selectedId;
     final baseColor = f.color;
 
-    // Top face (lightest) — more transparent when dragging
+    // Top face — very transparent when dragging so ghost is visible
     final topColor = isDragging
-        ? baseColor.withValues(alpha: 0.3)
+        ? baseColor.withValues(alpha: 0.12)
         : Color.lerp(baseColor, Colors.white, 0.3)!;
     final topFace = IsometricMath.getTopFace(x, y, z, w, h, d);
     _drawFace(canvas, topFace, topColor);
 
-    // Left face (medium)
+    // Left face
     final leftColor = isDragging
-        ? baseColor.withValues(alpha: 0.25)
+        ? baseColor.withValues(alpha: 0.10)
         : Color.lerp(baseColor, Colors.black, 0.1)!;
     final leftFace = IsometricMath.getLeftFace(x, y, z, w, h, d);
     _drawFace(canvas, leftFace, leftColor);
 
-    // Right face (darkest)
+    // Right face
     final rightColor = isDragging
-        ? baseColor.withValues(alpha: 0.2)
+        ? baseColor.withValues(alpha: 0.08)
         : Color.lerp(baseColor, Colors.black, 0.25)!;
     final rightFace = IsometricMath.getRightFace(x, y, z, w, h, d);
     _drawFace(canvas, rightFace, rightColor);
@@ -170,16 +170,24 @@ class FurnitureRenderer extends CustomPainter {
     final h = f.size.y;
     final d = f.effectiveDepth;
 
+    // Check if out of bounds
+    final outOfBounds = sx < 0 ||
+        sz < 0 ||
+        sx + w > roomWidth ||
+        sz + d > roomDepth;
+
+    final color = outOfBounds ? Colors.red : f.color;
+
     final ghostFill = Paint()
-      ..color = f.color.withValues(alpha: 0.25)
+      ..color = color.withValues(alpha: 0.25)
       ..style = PaintingStyle.fill;
 
     final ghostBorder = Paint()
-      ..color = f.color.withValues(alpha: 0.7)
+      ..color = color.withValues(alpha: 0.7)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
-    // ── Floor footprint (solid fill + dashed border) ──
+    // ── Floor footprint ──
     final floorPoints = [
       IsometricMath.worldToScreen(sx, 0, sz),
       IsometricMath.worldToScreen(sx + w, 0, sz),
@@ -203,9 +211,8 @@ class FurnitureRenderer extends CustomPainter {
       IsometricMath.worldToScreen(sx, h, sz + d),
     ];
 
-    // Top face
     final topFill = Paint()
-      ..color = f.color.withValues(alpha: 0.1)
+      ..color = color.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
     final topPath = Path()..moveTo(topPoints[0].dx, topPoints[0].dy);
     for (int i = 1; i < topPoints.length; i++) {
@@ -220,21 +227,73 @@ class FurnitureRenderer extends CustomPainter {
       _drawDashedLine(canvas, floorPoints[i], topPoints[i], ghostBorder);
     }
 
-    // ── Wall height guide lines ──
+    // ── Wall height guide lines (always visible) ──
     final wallGuide = Paint()
-      ..color = f.color.withValues(alpha: 0.4)
+      ..color = color.withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    // Left wall (x=0): horizontal dashed line at height h
-    final leftFrom = IsometricMath.worldToScreen(0, h, 0);
-    final leftTo = IsometricMath.worldToScreen(0, h, roomDepth);
-    _drawDashedLine(canvas, leftFrom, leftTo, wallGuide);
+    // Left wall (x=0)
+    _drawDashedLine(
+      canvas,
+      IsometricMath.worldToScreen(0, h, 0),
+      IsometricMath.worldToScreen(0, h, roomDepth),
+      wallGuide,
+    );
 
-    // Back wall (z=0): horizontal dashed line at height h
-    final backFrom = IsometricMath.worldToScreen(0, h, 0);
-    final backTo = IsometricMath.worldToScreen(roomWidth, h, 0);
-    _drawDashedLine(canvas, backFrom, backTo, wallGuide);
+    // Back wall (z=0)
+    _drawDashedLine(
+      canvas,
+      IsometricMath.worldToScreen(0, h, 0),
+      IsometricMath.worldToScreen(roomWidth, h, 0),
+      wallGuide,
+    );
+
+    // Height exceeds room → ghost walls
+    if (h > roomHeight) {
+      final overFill = Paint()
+        ..color = Colors.red.withValues(alpha: 0.06)
+        ..style = PaintingStyle.fill;
+      final overBorder = Paint()
+        ..color = Colors.red.withValues(alpha: 0.25)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+
+      // Left ghost wall extension
+      final leftGhost = Path()
+        ..moveTo(IsometricMath.worldToScreen(0, roomHeight, 0).dx,
+            IsometricMath.worldToScreen(0, roomHeight, 0).dy)
+        ..lineTo(IsometricMath.worldToScreen(0, roomHeight, roomDepth).dx,
+            IsometricMath.worldToScreen(0, roomHeight, roomDepth).dy)
+        ..lineTo(IsometricMath.worldToScreen(0, h, roomDepth).dx,
+            IsometricMath.worldToScreen(0, h, roomDepth).dy)
+        ..lineTo(IsometricMath.worldToScreen(0, h, 0).dx,
+            IsometricMath.worldToScreen(0, h, 0).dy)
+        ..close();
+      canvas.drawPath(leftGhost, overFill);
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(0, roomHeight, 0),
+          IsometricMath.worldToScreen(0, h, 0), overBorder);
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(0, roomHeight, roomDepth),
+          IsometricMath.worldToScreen(0, h, roomDepth), overBorder);
+
+      // Back ghost wall extension
+      final backGhost = Path()
+        ..moveTo(IsometricMath.worldToScreen(0, roomHeight, 0).dx,
+            IsometricMath.worldToScreen(0, roomHeight, 0).dy)
+        ..lineTo(IsometricMath.worldToScreen(roomWidth, roomHeight, 0).dx,
+            IsometricMath.worldToScreen(roomWidth, roomHeight, 0).dy)
+        ..lineTo(IsometricMath.worldToScreen(roomWidth, h, 0).dx,
+            IsometricMath.worldToScreen(roomWidth, h, 0).dy)
+        ..lineTo(IsometricMath.worldToScreen(0, h, 0).dx,
+            IsometricMath.worldToScreen(0, h, 0).dy)
+        ..close();
+      canvas.drawPath(backGhost, overFill);
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(roomWidth, roomHeight, 0),
+          IsometricMath.worldToScreen(roomWidth, h, 0), overBorder);
+    }
   }
 
   void _drawDashedLine(Canvas canvas, Offset from, Offset to, Paint paint) {
