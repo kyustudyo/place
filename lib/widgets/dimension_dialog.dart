@@ -420,14 +420,15 @@ class _DimensionDialogState extends State<DimensionDialog> {
             onPressed: () => Navigator.pop(context),
             child: Text('취소', style: TextStyle(color: t.textSecondary)),
           ),
-        Expanded(
+        SizedBox(
+          width: (widget.isEdit || !widget.showStepNumber) ? null : double.infinity,
           child: ElevatedButton(
             onPressed: _submit,
             style: ElevatedButton.styleFrom(
               backgroundColor: t.accent,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
             ),
             child: Text(
               buttonText,
