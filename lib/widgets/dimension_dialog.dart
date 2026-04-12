@@ -306,8 +306,7 @@ class _DimensionDialogState extends State<DimensionDialog> {
     if (x == null || y == null || z == null) return;
     if (x <= 0 || y <= 0 || z <= 0) return;
 
-    final name =
-        _nameCtrl.text.trim().isEmpty ? '사물' : _nameCtrl.text.trim();
+    final name = _nameCtrl.text.trim();
 
     Navigator.pop(
         context, DimensionResult(name: name, x: x, y: y, z: z));

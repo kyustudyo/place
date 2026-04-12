@@ -93,6 +93,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(room: room, furniture: checked);
   }
 
+  int _nextNumber = 1;
+
   /// Add a new furniture piece with given dimensions
   Furniture addFurniture({
     required String name,
@@ -101,8 +103,11 @@ class PlacementNotifier extends Notifier<PlacementState> {
     required double z,
   }) {
     final index = state.furniture.length;
-    final id = 'item_${index + 1}';
+    final id = 'item_${DateTime.now().millisecondsSinceEpoch}';
     final color = _furnitureColors[index % _furnitureColors.length];
+
+    // Auto-name: 사물1, 사물2, ...
+    final displayName = name.isEmpty ? '사물${_nextNumber++}' : name;
 
     // Place at center of room
     final posX = (state.room.width / 2 - x / 2);
@@ -114,7 +119,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
     final item = Furniture(
       id: id,
-      name: name,
+      name: displayName,
       size: Vec3(x: x, y: y, z: z),
       position: Vec3(x: snappedX, y: 0.0, z: snappedZ),
       rotation: 0,
