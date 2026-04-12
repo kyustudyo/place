@@ -411,36 +411,83 @@ class _DimensionDialogState extends State<DimensionDialog> {
               '단위: 미터 (m)',
               style: TextStyle(color: t.textSecondary, fontSize: 11),
             ),
+            const SizedBox(height: 18),
+            // Buttons inside content to avoid OverflowBar issues
+            if (widget.showStepNumber && !widget.isEdit)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                            color: t.textSecondary.withValues(alpha: 0.3)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text(
+                        '나중에',
+                        style: TextStyle(
+                          color: t.textSecondary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: t.accent,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text(
+                        buttonText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
-      actions: [
-        if (widget.isEdit || !widget.showStepNumber)
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('취소', style: TextStyle(color: t.textSecondary)),
-          ),
-        SizedBox(
-          width: (widget.isEdit || !widget.showStepNumber) ? null : double.infinity,
-          child: ElevatedButton(
-            onPressed: _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: t.accent,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
-            ),
-            child: Text(
-              buttonText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+      actions: (widget.showStepNumber && !widget.isEdit)
+          ? null
+          : [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child:
+                    Text('취소', style: TextStyle(color: t.textSecondary)),
               ),
-            ),
-          ),
-        ),
-      ],
+              ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: t.accent,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 14, horizontal: 32),
+                ),
+                child: Text(
+                  buttonText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
     );
   }
 
