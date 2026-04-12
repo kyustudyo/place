@@ -294,6 +294,15 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             highlight: state.furniture.isEmpty,
           ),
           const SizedBox(width: 6),
+          // Item list (opens bottom sheet)
+          if (state.furniture.isNotEmpty) ...[
+            _TopBarBtn(
+              icon: Icons.list_rounded,
+              onTap: () => _showFurnitureSheet(),
+              theme: theme,
+            ),
+            const SizedBox(width: 6),
+          ],
           // JSON import
           _TopBarBtn(
             icon: Icons.file_download_outlined,
@@ -332,21 +341,51 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   Widget _buildNarrowLayout(PlacementState state) {
-    return Column(
-      children: [
-        const Expanded(flex: 3, child: IsometricRoom()),
-        if (state.furniture.isNotEmpty)
-          SizedBox(
-            height: 220,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: FurniturePanel(
-                onEditDimension: (id) =>
-                    _showDimensionDialog(editId: id),
+    // Mobile: full screen map, item list via top bar button
+    return const IsometricRoom();
+  }
+
+  void _showFurnitureSheet() {
+    final theme = ref.read(currentThemeProvider);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.55,
+        ),
+        decoration: BoxDecoration(
+          color: theme.panelBg,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-      ],
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: FurniturePanel(
+                  onEditDimension: (id) {
+                    Navigator.pop(ctx);
+                    _showDimensionDialog(editId: id);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
