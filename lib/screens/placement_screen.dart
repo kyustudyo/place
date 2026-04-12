@@ -287,11 +287,11 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             theme: theme,
           ),
           const SizedBox(width: 6),
-          // Add furniture
-          _TopBarBtn(
-            icon: Icons.add_rounded,
-            onTap: _showDimensionDialog,
+          // Add item — blink when empty
+          _AddItemBtn(
+            onTap: () => _showDimensionDialog(),
             theme: theme,
+            highlight: state.furniture.isEmpty,
           ),
           const SizedBox(width: 6),
           // JSON import
@@ -383,6 +383,105 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
               style: TextStyle(color: theme.textSecondary, fontSize: 12),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _AddItemBtn extends StatefulWidget {
+  final VoidCallback onTap;
+  final AppTheme theme;
+  final bool highlight;
+
+  const _AddItemBtn({
+    required this.onTap,
+    required this.theme,
+    required this.highlight,
+  });
+
+  @override
+  State<_AddItemBtn> createState() => _AddItemBtnState();
+}
+
+class _AddItemBtnState extends State<_AddItemBtn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    if (widget.highlight) _anim.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AddItemBtn old) {
+    super.didUpdateWidget(old);
+    if (widget.highlight && !_anim.isAnimating) {
+      _anim.repeat(reverse: true);
+    } else if (!widget.highlight && _anim.isAnimating) {
+      _anim.stop();
+      _anim.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.theme;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _anim,
+        builder: (context, child) {
+          final glow = widget.highlight ? _anim.value : 0.0;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Color.lerp(
+                    t.accent.withValues(alpha: 0.12),
+                    t.accent.withValues(alpha: 0.4),
+                    glow,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Color.lerp(
+                      t.accent.withValues(alpha: 0.25),
+                      t.accent,
+                      glow,
+                    )!,
+                    width: 1 + glow,
+                  ),
+                ),
+                child: Icon(Icons.add_rounded, size: 20, color: t.accent),
+              ),
+              if (widget.highlight) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '사물 추가',
+                  style: TextStyle(
+                    color: t.accent,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
