@@ -147,12 +147,9 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     final item = state.selectedFurniture;
     if (item == null || !item.isPlaced) return const SizedBox.shrink();
 
-    final fingerPos = _dragScreenPos!;
-    var loupeX = fingerPos.dx - _loupeSize / 2;
-    var loupeY = fingerPos.dy - _loupeSize - 50;
-
-    loupeX = loupeX.clamp(8, constraints.maxWidth - _loupeSize - 8);
-    loupeY = loupeY.clamp(8, constraints.maxHeight - _loupeSize - 8);
+    // Fixed at bottom-left corner
+    const loupeX = 12.0;
+    final loupeY = constraints.maxHeight - _loupeSize - 12;
 
     final itemCenter = IsometricMath.worldToScreen(
       item.position.x + item.effectiveWidth / 2,
@@ -283,6 +280,11 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 
   void _handleDragEnd() {
+    // Snap to grid on release
+    final selectedId = ref.read(placementProvider).selectedId;
+    if (selectedId != null && _isDragging) {
+      ref.read(placementProvider.notifier).snapFurniture(selectedId);
+    }
     setState(() {
       _isDragging = false;
       _dragScreenPos = null;

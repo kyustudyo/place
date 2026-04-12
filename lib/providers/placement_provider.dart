@@ -194,15 +194,13 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(selectedId: id, clearSelected: id == null);
   }
 
+  /// Move furniture — raw position (no snap), clamped to ±5 tiles
   void placeFurniture(String id, double x, double z) {
     final tileSize = state.room.tileSize;
-    final margin = tileSize * 5; // 5타일 여유
-    final snappedX = (x / tileSize).round() * tileSize;
-    final snappedZ = (z / tileSize).round() * tileSize;
+    final margin = tileSize * 5;
 
-    // Clamp: 맵 범위 ± 5타일
-    final clampedX = snappedX.clamp(-margin, state.room.width + margin);
-    final clampedZ = snappedZ.clamp(-margin, state.room.depth + margin);
+    final clampedX = x.clamp(-margin, state.room.width + margin);
+    final clampedZ = z.clamp(-margin, state.room.depth + margin);
 
     final updated = state.furniture.map((f) {
       if (f.id == id) {
@@ -210,6 +208,22 @@ class PlacementNotifier extends Notifier<PlacementState> {
           position: Vec3(x: clampedX, y: f.position.y, z: clampedZ),
           isPlaced: true,
         );
+      }
+      return f;
+    }).toList();
+
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
+    state = state.copyWith(furniture: checked);
+  }
+
+  /// Snap furniture to grid (call on drag end)
+  void snapFurniture(String id) {
+    final tileSize = state.room.tileSize;
+    final updated = state.furniture.map((f) {
+      if (f.id == id && f.isPlaced) {
+        final sx = (f.position.x / tileSize).round() * tileSize;
+        final sz = (f.position.z / tileSize).round() * tileSize;
+        return f.copyWith(position: Vec3(x: sx, y: f.position.y, z: sz));
       }
       return f;
     }).toList();
