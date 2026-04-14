@@ -235,12 +235,20 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(furniture: checked);
   }
 
-  /// Snap to half-tile grid (tileSize / 2)
-  /// Gives fine-grained placement: 0, 0.5, 1, 1.5, 2 ...
+  /// Smart snap: 1타일 그리드 + 벽 끝맞춤
   double _smartSnap(
       double pos, double itemSize, double roomSize, double tileSize) {
-    final snapUnit = tileSize / 10; // 0.1 단위 스냅
-    return (pos / snapUnit).round() * snapUnit;
+    final wallThreshold = tileSize * 0.6;
+
+    // 벽 끝맞춤: position = roomSize - itemSize
+    final endWall = roomSize - itemSize;
+    if ((pos - endWall).abs() <= wallThreshold && endWall >= 0) return endWall;
+
+    // 벽 시작맞춤: position = 0
+    if (pos.abs() <= wallThreshold) return 0.0;
+
+    // 일반: 1타일 스냅
+    return (pos / tileSize).round() * tileSize;
   }
 
   void rotateFurniture(String id) {
