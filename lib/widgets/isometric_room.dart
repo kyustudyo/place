@@ -50,6 +50,10 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   theme: theme,
                   selectedHeight: state.selectedFurniture?.size.y,
                   axisSwapped: axisSwapped,
+                  selX: state.selectedFurniture?.position.x,
+                  selZ: state.selectedFurniture?.position.z,
+                  selW: state.selectedFurniture?.effectiveWidth,
+                  selD: state.selectedFurniture?.effectiveDepth,
                 ),
                 foregroundPainter: FurnitureRenderer(
                   items: state.furniture,
@@ -451,7 +455,7 @@ class _FineTunePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: theme.headerBg.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(14),
@@ -466,7 +470,17 @@ class _FineTunePanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Coordinates display
+          // Title
+          Text(
+            '상세 조정',
+            style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Coordinates
           Text(
             'X:${item.position.x.toStringAsFixed(1)}  '
             'Y:${item.position.y.toStringAsFixed(1)}  '
@@ -477,138 +491,56 @@ class _FineTunePanel extends StatelessWidget {
               fontFamily: 'monospace',
             ),
           ),
+          const SizedBox(height: 8),
+          // All controls in one column
+          // X row
+          _buildAxisRow('X', theme.accent,
+              () => onNudge(-0.1, 0, 0), () => onNudge(0.1, 0, 0),
+              item.position.x),
           const SizedBox(height: 6),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Isometric D-pad for X/Z
-              _buildIsoDpad(),
-              const SizedBox(width: 10),
-              // Y height controls (vertical)
-              _buildYControls(),
-            ],
-          ),
+          // Z row
+          _buildAxisRow('Z', theme.accentSecondary,
+              () => onNudge(0, 0, -0.1), () => onNudge(0, 0, 0.1),
+              item.position.z),
+          const SizedBox(height: 6),
+          // Y row
+          _buildAxisRow('Y', theme.textSecondary,
+              () => onNudge(0, -0.1, 0), () => onNudge(0, 0.1, 0),
+              item.position.y),
         ],
       ),
     );
   }
 
-  /// Isometric diamond-shaped D-pad matching X/Z axes
-  Widget _buildIsoDpad() {
-    // Isometric: X goes right-down, Z goes left-down
-    // So: X+ = ↘, X- = ↖, Z+ = ↙, Z- = ↗
-    return SizedBox(
-      width: 110,
-      height: 110,
-      child: Stack(
-        children: [
-          // X- (top-left, ↖)
-          Positioned(
-            top: 4,
-            left: 4,
-            child: _NudgeBtn(
-              label: 'X−',
-              theme: theme,
-              onTap: () => onNudge(-0.1, 0, 0),
-              color: theme.accent,
-            ),
-          ),
-          // Z- (top-right, ↗)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: _NudgeBtn(
-              label: 'Z−',
-              theme: theme,
-              onTap: () => onNudge(0, 0, -0.1),
-              color: theme.accentSecondary,
-            ),
-          ),
-          // Z+ (bottom-left, ↙)
-          Positioned(
-            bottom: 4,
-            left: 4,
-            child: _NudgeBtn(
-              label: 'Z+',
-              theme: theme,
-              onTap: () => onNudge(0, 0, 0.1),
-              color: theme.accentSecondary,
-            ),
-          ),
-          // X+ (bottom-right, ↘)
-          Positioned(
-            bottom: 4,
-            right: 4,
-            child: _NudgeBtn(
-              label: 'X+',
-              theme: theme,
-              onTap: () => onNudge(0.1, 0, 0),
-              color: theme.accent,
-            ),
-          ),
-          // Center step size
-          Center(
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: theme.cardBg,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Center(
-                child: Text(
-                  '0.1',
-                  style: TextStyle(
-                    color: theme.textSecondary,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Y-axis (height) up/down buttons
-  Widget _buildYControls() {
-    return Column(
+  Widget _buildAxisRow(String label, Color color,
+      VoidCallback onMinus, VoidCallback onPlus, double value) {
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Y', style: TextStyle(
-          color: theme.textSecondary,
-          fontSize: 9,
-          fontWeight: FontWeight.w600,
-        )),
-        const SizedBox(height: 4),
-        _NudgeBtn(
-          label: '▲',
-          theme: theme,
-          onTap: () => onNudge(0, 0.1, 0),
-          color: theme.textSecondary,
-          small: true,
+        SizedBox(
+          width: 14,
+          child: Text(label, style: TextStyle(
+            color: color, fontSize: 10, fontWeight: FontWeight.w700,
+          )),
         ),
-        const SizedBox(height: 4),
-        Text(
-          item.position.y.toStringAsFixed(1),
-          style: TextStyle(
-            color: theme.textPrimary,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'monospace',
+        const SizedBox(width: 4),
+        _NudgeBtn(label: '−', theme: theme, onTap: onMinus,
+            color: color, small: true),
+        Container(
+          width: 40,
+          alignment: Alignment.center,
+          child: Text(
+            value.toStringAsFixed(1),
+            style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'monospace',
+            ),
           ),
         ),
-        const SizedBox(height: 4),
-        _NudgeBtn(
-          label: '▼',
-          theme: theme,
-          onTap: () => onNudge(0, -0.1, 0),
-          color: theme.textSecondary,
-          small: true,
-        ),
+        _NudgeBtn(label: '+', theme: theme, onTap: onPlus,
+            color: color, small: true),
       ],
     );
   }

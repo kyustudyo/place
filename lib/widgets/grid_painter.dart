@@ -10,12 +10,21 @@ class GridPainter extends CustomPainter {
   final AppTheme theme;
   final double? selectedHeight;
   final bool axisSwapped;
+  // Selected item position/size for wall projection
+  final double? selX;
+  final double? selZ;
+  final double? selW;
+  final double? selD;
 
   GridPainter({
     required this.room,
     required this.theme,
     this.selectedHeight,
     this.axisSwapped = false,
+    this.selX,
+    this.selZ,
+    this.selW,
+    this.selD,
   });
 
   @override
@@ -23,6 +32,7 @@ class GridPainter extends CustomPainter {
     _drawFloor(canvas);
     _drawGrid(canvas);
     _drawWalls(canvas);
+    if (selX != null) _drawPositionGuides(canvas);
     _drawAxisLabels(canvas);
     if (selectedHeight != null && selectedHeight! > 0) {
       _drawHeightGuide(canvas, selectedHeight!);
@@ -124,6 +134,73 @@ class GridPainter extends CustomPainter {
 
     canvas.drawPath(backWall, backWallPaint);
     canvas.drawPath(backWall, wallBorderPaint);
+  }
+
+  /// Draw projection lines from selected item to both walls
+  void _drawPositionGuides(Canvas canvas) {
+    final x = selX!;
+    final z = selZ!;
+    final w = selW ?? 0;
+    final d = selD ?? 0;
+    final h = selectedHeight ?? 0;
+
+    final guidePaint = Paint()
+      ..color = theme.accent.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+
+    // Left wall (x=0): vertical stripe showing z range at height h
+    // Bottom edge on floor
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(0, 0, z),
+        IsometricMath.worldToScreen(0, 0, z + d), guidePaint);
+    // Top edge at item height
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(0, h, z),
+        IsometricMath.worldToScreen(0, h, z + d), guidePaint);
+    // Vertical edges
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(0, 0, z),
+        IsometricMath.worldToScreen(0, h, z), guidePaint);
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(0, 0, z + d),
+        IsometricMath.worldToScreen(0, h, z + d), guidePaint);
+
+    // Back wall (z=0): vertical stripe showing x range at height h
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x, 0, 0),
+        IsometricMath.worldToScreen(x + w, 0, 0), guidePaint);
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x, h, 0),
+        IsometricMath.worldToScreen(x + w, h, 0), guidePaint);
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x, 0, 0),
+        IsometricMath.worldToScreen(x, h, 0), guidePaint);
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x + w, 0, 0),
+        IsometricMath.worldToScreen(x + w, h, 0), guidePaint);
+
+    // Floor projection lines to walls
+    final floorGuide = Paint()
+      ..color = theme.accent.withValues(alpha: 0.15)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.6;
+
+    // Item → left wall
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x, 0, z),
+        IsometricMath.worldToScreen(0, 0, z), floorGuide);
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x, 0, z + d),
+        IsometricMath.worldToScreen(0, 0, z + d), floorGuide);
+
+    // Item → back wall
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x, 0, z),
+        IsometricMath.worldToScreen(x, 0, 0), floorGuide);
+    _drawDashedLine(canvas,
+        IsometricMath.worldToScreen(x + w, 0, z),
+        IsometricMath.worldToScreen(x + w, 0, 0), floorGuide);
   }
 
   void _drawHeightGuide(Canvas canvas, double h) {
@@ -364,8 +441,5 @@ class GridPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant GridPainter oldDelegate) =>
-      oldDelegate.theme.id != theme.id ||
-      oldDelegate.selectedHeight != selectedHeight ||
-      oldDelegate.axisSwapped != axisSwapped;
+  bool shouldRepaint(covariant GridPainter oldDelegate) => true;
 }
