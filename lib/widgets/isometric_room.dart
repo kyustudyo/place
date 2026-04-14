@@ -234,7 +234,9 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     }
   }
 
-  Offset? _lastDragScreen; // previous frame screen position
+  Offset? _lastDragScreen;
+  Offset? _dragStartScreen; // initial touch point to detect tap vs drag
+  bool _didMove = false;
 
   void _handleDragStart(Offset pos, PlacementState state) {
     final hit = _hitTest(pos, state);
@@ -251,7 +253,9 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     if (dragTarget != null) {
       setState(() {
         _isDragging = true;
+        _didMove = false;
         _dragScreenPos = pos;
+        _dragStartScreen = pos;
         _lastDragScreen = pos;
       });
     }
@@ -276,6 +280,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
           item.position.z + deltaZ,
         );
 
+    _didMove = true;
     setState(() {
       _dragScreenPos = pos;
       _lastDragScreen = pos;
@@ -294,14 +299,33 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 
   void _handleDragEnd() {
-    // Snap to grid on release
-    final selectedId = ref.read(placementProvider).selectedId;
-    if (selectedId != null && _isDragging) {
-      ref.read(placementProvider.notifier).snapFurniture(selectedId);
+    final state = ref.read(placementProvider);
+    final notifier = ref.read(placementProvider.notifier);
+    final selectedId = state.selectedId;
+
+    if (!_didMove && _dragStartScreen != null && selectedId != null) {
+      // Didn't move → treat as tap-to-move
+      final hit = _hitTest(_dragStartScreen!, state);
+      if (hit == null) {
+        // Tapped empty space → move selected item there
+        final worldPos = IsometricMath.screenToWorld(_dragStartScreen!);
+        final item = state.furniture.firstWhere((f) => f.id == selectedId);
+        final targetX = worldPos.dx - item.effectiveWidth / 2;
+        final targetZ = worldPos.dy - item.effectiveDepth / 2;
+        notifier.placeFurniture(selectedId, targetX, targetZ);
+      }
     }
+
+    // Snap to grid on release
+    if (selectedId != null && _isDragging) {
+      notifier.snapFurniture(selectedId);
+    }
+
     setState(() {
       _isDragging = false;
+      _didMove = false;
       _dragScreenPos = null;
+      _dragStartScreen = null;
       _lastDragScreen = null;
     });
   }
