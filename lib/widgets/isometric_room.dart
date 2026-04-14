@@ -220,6 +220,15 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
           );
         });
       }
+    } else if (state.selectedId != null) {
+      // Tap empty space with item selected → move item there
+      final worldPos = IsometricMath.screenToWorld(pos);
+      final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
+      // Center the item on tap position
+      final targetX = worldPos.dx - item.effectiveWidth / 2;
+      final targetZ = worldPos.dy - item.effectiveDepth / 2;
+      notifier.placeFurniture(state.selectedId!, targetX, targetZ);
+      notifier.snapFurniture(state.selectedId!);
     } else {
       notifier.selectFurniture(null);
     }
