@@ -87,6 +87,24 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   },
                 ),
               ),
+              // Fine-tune controls when item selected
+              if (state.selectedId != null && !_isDragging)
+                Positioned(
+                  left: 12,
+                  bottom: 12,
+                  child: _FineTunePanel(
+                    item: state.selectedFurniture!,
+                    theme: theme,
+                    onNudge: (dx, dz) {
+                      final f = state.selectedFurniture!;
+                      ref.read(placementProvider.notifier).placeFurniture(
+                            state.selectedId!,
+                            f.position.x + dx,
+                            f.position.z + dz,
+                          );
+                    },
+                  ),
+                ),
               // Guide text when item selected
               if (state.selectedId != null && !_isDragging)
                 Positioned(
@@ -408,6 +426,151 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
       j = i;
     }
     return inside;
+  }
+}
+
+// ─── Fine-tune panel ───
+class _FineTunePanel extends StatelessWidget {
+  final Furniture item;
+  final AppTheme theme;
+  final void Function(double dx, double dz) onNudge;
+
+  const _FineTunePanel({
+    required this.item,
+    required this.theme,
+    required this.onNudge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.headerBg.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.accent.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Coordinates display
+          Text(
+            'X:${item.position.x.toStringAsFixed(1)}  Z:${item.position.z.toStringAsFixed(1)}',
+            style: TextStyle(
+              color: theme.textSecondary,
+              fontSize: 10,
+              fontFamily: 'monospace',
+            ),
+          ),
+          const SizedBox(height: 6),
+          // D-pad style controls
+          SizedBox(
+            width: 110,
+            height: 110,
+            child: Stack(
+              children: [
+                // Up (Z-)
+                Positioned(
+                  top: 0,
+                  left: 35,
+                  child: _NudgeBtn(
+                    icon: Icons.keyboard_arrow_up,
+                    theme: theme,
+                    onTap: () => onNudge(0, -0.1),
+                  ),
+                ),
+                // Down (Z+)
+                Positioned(
+                  bottom: 0,
+                  left: 35,
+                  child: _NudgeBtn(
+                    icon: Icons.keyboard_arrow_down,
+                    theme: theme,
+                    onTap: () => onNudge(0, 0.1),
+                  ),
+                ),
+                // Left (X-)
+                Positioned(
+                  top: 35,
+                  left: 0,
+                  child: _NudgeBtn(
+                    icon: Icons.keyboard_arrow_left,
+                    theme: theme,
+                    onTap: () => onNudge(-0.1, 0),
+                  ),
+                ),
+                // Right (X+)
+                Positioned(
+                  top: 35,
+                  right: 0,
+                  child: _NudgeBtn(
+                    icon: Icons.keyboard_arrow_right,
+                    theme: theme,
+                    onTap: () => onNudge(0.1, 0),
+                  ),
+                ),
+                // Center label
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: theme.accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '0.1',
+                        style: TextStyle(
+                          color: theme.accent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NudgeBtn extends StatelessWidget {
+  final IconData icon;
+  final AppTheme theme;
+  final VoidCallback onTap;
+
+  const _NudgeBtn({
+    required this.icon,
+    required this.theme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: theme.accent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.accent.withValues(alpha: 0.25)),
+        ),
+        child: Icon(icon, size: 22, color: theme.accent),
+      ),
+    );
   }
 }
 
