@@ -298,20 +298,23 @@ class GridPainter extends CustomPainter {
     final xLabel = axisSwapped ? 'Z' : 'X';
     final zLabel = axisSwapped ? 'X' : 'Z';
 
-    // X axis: runs along the right-downward edge of the floor
-    // Isometric angle: atan(sinA / cosA) = atan(0.5 / 0.866) ≈ 30° downward
-    final xMid = IsometricMath.worldToScreen(room.width * 0.5, 0, 0);
-    final xAngle = atan2(IsometricMath.sinA, IsometricMath.cosA); // ~30°
-    _drawRotatedLabel(canvas, xLabel, xMid + const Offset(0, 14), xAngle, theme.accent);
+    // X axis: outer edge (z=depth side, bottom-right of floor)
+    final xMid = IsometricMath.worldToScreen(
+        room.width * 0.5, 0, room.depth);
+    final xAngle = atan2(IsometricMath.sinA, IsometricMath.cosA);
+    _drawRotatedLabel(
+        canvas, xLabel, xMid + const Offset(0, 14), xAngle, theme.accent);
 
-    // Z axis: runs along the left-downward edge
-    final zMid = IsometricMath.worldToScreen(0, 0, room.depth * 0.5);
-    final zAngle = atan2(IsometricMath.sinA, -IsometricMath.cosA); // ~150°
-    _drawRotatedLabel(canvas, zLabel, zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
+    // Z axis: outer edge (x=width side, bottom-left of floor)
+    final zMid = IsometricMath.worldToScreen(
+        room.width, 0, room.depth * 0.5);
+    final zAngle = atan2(IsometricMath.sinA, -IsometricMath.cosA);
+    _drawRotatedLabel(
+        canvas, zLabel, zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
 
-    // Y axis: vertical, at top of left wall
+    // Y axis: upright text at top of left wall corner
     final yTop = IsometricMath.worldToScreen(0, room.height, 0);
-    _drawRotatedLabel(canvas, 'Y', yTop + const Offset(-16, 0), -pi / 2, theme.textSecondary);
+    _drawFlatLabel(canvas, 'Y', yTop + const Offset(-16, -6), theme.textSecondary);
   }
 
   void _drawRotatedLabel(
@@ -338,6 +341,26 @@ class GridPainter extends CustomPainter {
     canvas.rotate(angle);
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
     canvas.restore();
+  }
+
+  void _drawFlatLabel(Canvas canvas, String text, Offset pos, Color color) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          shadows: [
+            Shadow(
+                color: theme.scaffoldBg.withValues(alpha: 0.9),
+                blurRadius: 4),
+          ],
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
   }
 
   @override
