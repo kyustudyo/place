@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../models/room.dart';
@@ -297,35 +298,46 @@ class GridPainter extends CustomPainter {
     final xLabel = axisSwapped ? 'Z' : 'X';
     final zLabel = axisSwapped ? 'X' : 'Z';
 
-    // X axis label — right-bottom edge (end of x-axis)
-    final xEnd = IsometricMath.worldToScreen(room.width, 0, 0);
-    _drawLabel(canvas, '$xLabel →', xEnd + const Offset(6, -4), theme.accent);
+    // X axis: runs along the right-downward edge of the floor
+    // Isometric angle: atan(sinA / cosA) = atan(0.5 / 0.866) ≈ 30° downward
+    final xMid = IsometricMath.worldToScreen(room.width * 0.5, 0, 0);
+    final xAngle = atan2(IsometricMath.sinA, IsometricMath.cosA); // ~30°
+    _drawRotatedLabel(canvas, xLabel, xMid + const Offset(0, 14), xAngle, theme.accent);
 
-    // Z axis label — left-bottom edge (end of z-axis)
-    final zEnd = IsometricMath.worldToScreen(0, 0, room.depth);
-    _drawLabel(canvas, '← $zLabel', zEnd + const Offset(-30, -4), theme.accentSecondary);
+    // Z axis: runs along the left-downward edge
+    final zMid = IsometricMath.worldToScreen(0, 0, room.depth * 0.5);
+    final zAngle = atan2(IsometricMath.sinA, -IsometricMath.cosA); // ~150°
+    _drawRotatedLabel(canvas, zLabel, zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
 
-    // Y axis label — top of left wall
+    // Y axis: vertical, at top of left wall
     final yTop = IsometricMath.worldToScreen(0, room.height, 0);
-    _drawLabel(canvas, 'Y ↑', yTop + const Offset(-24, -4), theme.textSecondary);
+    _drawRotatedLabel(canvas, 'Y', yTop + const Offset(-16, 0), -pi / 2, theme.textSecondary);
   }
 
-  void _drawLabel(Canvas canvas, String text, Offset pos, Color color) {
+  void _drawRotatedLabel(
+      Canvas canvas, String text, Offset pos, double angle, Color color) {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.w700,
           shadows: [
-            Shadow(color: theme.scaffoldBg.withValues(alpha: 0.8), blurRadius: 3),
+            Shadow(
+                color: theme.scaffoldBg.withValues(alpha: 0.9),
+                blurRadius: 4),
           ],
         ),
       ),
       textDirection: ui.TextDirection.ltr,
     )..layout();
-    tp.paint(canvas, pos);
+
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(angle);
+    tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+    canvas.restore();
   }
 
   @override
