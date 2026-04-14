@@ -235,30 +235,12 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(furniture: checked);
   }
 
-  /// Smart snap: grid snap + wall edge snap
-  /// Considers: tile grid, wall at 0, wall at (roomSize - itemSize)
+  /// Snap to half-tile grid (tileSize / 2)
+  /// Gives fine-grained placement: 0, 0.5, 1, 1.5, 2 ...
   double _smartSnap(
       double pos, double itemSize, double roomSize, double tileSize) {
-    final wallThreshold = tileSize * 0.6; // snap to wall within 60% of a tile
-
-    // Candidate: grid snap
-    final gridSnap = (pos / tileSize).round() * tileSize;
-
-    // Candidate: flush with start wall (position = 0)
-    final startWall = 0.0;
-
-    // Candidate: flush with end wall (position = roomSize - itemSize)
-    final endWall = roomSize - itemSize;
-
-    // Pick closest candidate, but prefer wall if within threshold
-    final distStart = (pos - startWall).abs();
-    final distEnd = (pos - endWall).abs();
-
-    // Wall snap takes priority when close
-    if (distStart <= wallThreshold) return startWall;
-    if (distEnd <= wallThreshold && endWall >= 0) return endWall;
-
-    return gridSnap;
+    final snapUnit = tileSize / 2; // half-tile snap
+    return (pos / snapUnit).round() * snapUnit;
   }
 
   void rotateFurniture(String id) {
