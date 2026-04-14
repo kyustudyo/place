@@ -7,12 +7,14 @@ import '../utils/isometric_math.dart';
 class GridPainter extends CustomPainter {
   final Room room;
   final AppTheme theme;
-  final double? selectedHeight; // height of selected furniture
+  final double? selectedHeight;
+  final bool axisSwapped;
 
   GridPainter({
     required this.room,
     required this.theme,
     this.selectedHeight,
+    this.axisSwapped = false,
   });
 
   @override
@@ -20,6 +22,7 @@ class GridPainter extends CustomPainter {
     _drawFloor(canvas);
     _drawGrid(canvas);
     _drawWalls(canvas);
+    _drawAxisLabels(canvas);
     if (selectedHeight != null && selectedHeight! > 0) {
       _drawHeightGuide(canvas, selectedHeight!);
     }
@@ -290,8 +293,44 @@ class GridPainter extends CustomPainter {
     }
   }
 
+  void _drawAxisLabels(Canvas canvas) {
+    final xLabel = axisSwapped ? 'Z' : 'X';
+    final zLabel = axisSwapped ? 'X' : 'Z';
+
+    // X axis label — right-bottom edge (end of x-axis)
+    final xEnd = IsometricMath.worldToScreen(room.width, 0, 0);
+    _drawLabel(canvas, '$xLabel →', xEnd + const Offset(6, -4), theme.accent);
+
+    // Z axis label — left-bottom edge (end of z-axis)
+    final zEnd = IsometricMath.worldToScreen(0, 0, room.depth);
+    _drawLabel(canvas, '← $zLabel', zEnd + const Offset(-30, -4), theme.accentSecondary);
+
+    // Y axis label — top of left wall
+    final yTop = IsometricMath.worldToScreen(0, room.height, 0);
+    _drawLabel(canvas, 'Y ↑', yTop + const Offset(-24, -4), theme.textSecondary);
+  }
+
+  void _drawLabel(Canvas canvas, String text, Offset pos, Color color) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          shadows: [
+            Shadow(color: theme.scaffoldBg.withValues(alpha: 0.8), blurRadius: 3),
+          ],
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, pos);
+  }
+
   @override
   bool shouldRepaint(covariant GridPainter oldDelegate) =>
       oldDelegate.theme.id != theme.id ||
-      oldDelegate.selectedHeight != selectedHeight;
+      oldDelegate.selectedHeight != selectedHeight ||
+      oldDelegate.axisSwapped != axisSwapped;
 }

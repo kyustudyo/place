@@ -200,18 +200,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     );
   }
 
-  void _showThemePicker() {
-    final currentIndex = ref.read(themeProvider);
+  void _showSettings() {
+    final theme = ref.read(currentThemeProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _ThemePickerSheet(
-        currentIndex: currentIndex,
-        onSelect: (index) {
-          ref.read(themeProvider.notifier).setTheme(index);
-          Navigator.pop(ctx);
-        },
-      ),
+      isScrollControlled: true,
+      builder: (ctx) => _SettingsSheet(ref: ref, theme: theme),
     );
   }
 
@@ -282,8 +277,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           const Spacer(),
           // Theme
           _TopBarBtn(
-            icon: Icons.palette_outlined,
-            onTap: _showThemePicker,
+            icon: Icons.settings_outlined,
+            onTap: _showSettings,
             theme: theme,
           ),
           const SizedBox(width: 6),
@@ -582,22 +577,23 @@ class _TopBarBtn extends StatelessWidget {
   }
 }
 
-class _ThemePickerSheet extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onSelect;
+class _SettingsSheet extends ConsumerWidget {
+  final WidgetRef ref;
+  final AppTheme theme;
 
-  const _ThemePickerSheet({
-    required this.currentIndex,
-    required this.onSelect,
-  });
+  const _SettingsSheet({required this.ref, required this.theme});
 
   @override
-  Widget build(BuildContext context) {
-    final cur = appThemes[currentIndex];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final axisSwapped = ref.watch(axisSwapProvider);
+    final currentThemeIndex = ref.watch(themeProvider);
+
     return Container(
-      constraints: const BoxConstraints(maxHeight: 420),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.65,
+      ),
       decoration: BoxDecoration(
-        color: cur.headerBg,
+        color: theme.panelBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -605,27 +601,83 @@ class _ThemePickerSheet extends StatelessWidget {
         children: [
           const SizedBox(height: 12),
           Container(
-            width: 40,
-            height: 4,
+            width: 40, height: 4,
             decoration: BoxDecoration(
-              color: cur.textSecondary,
+              color: theme.textSecondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              '테마 선택',
-              style: TextStyle(
-                color: cur.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+            child: Text('설정', style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            )),
+          ),
+          // Axis swap toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.cardBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.swap_horiz, color: theme.accent, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('X-Z 축 방향 스왑', style: TextStyle(
+                          color: theme.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        )),
+                        const SizedBox(height: 2),
+                        Text(
+                          axisSwapped
+                              ? 'X→왼쪽아래  Z→오른쪽아래'
+                              : 'X→오른쪽아래  Z→왼쪽아래',
+                          style: TextStyle(
+                            color: theme.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch.adaptive(
+                    value: axisSwapped,
+                    activeTrackColor: theme.accent,
+                    onChanged: (_) =>
+                        ref.read(axisSwapProvider.notifier).toggle(),
+                  ),
+                ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          // Theme picker
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('테마', style: TextStyle(
+                color: theme.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              )),
+            ),
+          ),
+          const SizedBox(height: 10),
           Flexible(
             child: GridView.builder(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              shrinkWrap: true,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 childAspectRatio: 2.8,
@@ -635,22 +687,20 @@ class _ThemePickerSheet extends StatelessWidget {
               itemCount: appThemes.length,
               itemBuilder: (ctx, i) {
                 final t = appThemes[i];
-                final selected = i == currentIndex;
+                final selected = i == currentThemeIndex;
                 return GestureDetector(
-                  onTap: () => onSelect(i),
+                  onTap: () =>
+                      ref.read(themeProvider.notifier).setTheme(i),
                   child: Container(
                     decoration: BoxDecoration(
                       color: t.scaffoldBg,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: selected
-                            ? t.accent
-                            : cur.textSecondary.withValues(alpha: 0.3),
+                        color: selected ? t.accent : theme.textSecondary.withValues(alpha: 0.3),
                         width: selected ? 2.5 : 1,
                       ),
                     ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       children: [
                         Column(
@@ -671,22 +721,18 @@ class _ThemePickerSheet extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(t.nameKo,
-                                  style: TextStyle(
-                                      color: t.textPrimary,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis),
-                              Text(t.name,
-                                  style: TextStyle(
-                                      color: t.textSecondary, fontSize: 10),
-                                  overflow: TextOverflow.ellipsis),
+                              Text(t.nameKo, style: TextStyle(
+                                color: t.textPrimary, fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ), overflow: TextOverflow.ellipsis),
+                              Text(t.name, style: TextStyle(
+                                color: t.textSecondary, fontSize: 10,
+                              ), overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
                         if (selected)
-                          Icon(Icons.check_circle,
-                              size: 16, color: t.accent),
+                          Icon(Icons.check_circle, size: 16, color: t.accent),
                       ],
                     ),
                   ),
@@ -700,10 +746,8 @@ class _ThemePickerSheet extends StatelessWidget {
   }
 
   Widget _dot(Color c, double s) => Container(
-        width: s,
-        height: s,
-        decoration: BoxDecoration(
-            color: c, borderRadius: BorderRadius.circular(2)),
+        width: s, height: s,
+        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)),
       );
 }
 

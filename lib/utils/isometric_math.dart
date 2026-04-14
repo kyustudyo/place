@@ -13,14 +13,20 @@ class IsometricMath {
   /// Origin offset (center of canvas)
   static Offset origin = Offset.zero;
 
+  /// Swap X and Z axes in view
+  static bool swapAxes = false;
+
   /// World (x, y, z) → Screen (px, py)
   static Offset worldToScreen(double x, double y, double z) {
-    final sx = (x - z) * cosA * scale;
-    final sy = (x + z) * sinA * scale - y * scale;
+    final wx = swapAxes ? z : x;
+    final wz = swapAxes ? x : z;
+    final sx = (wx - wz) * cosA * scale;
+    final sy = (wx + wz) * sinA * scale - y * scale;
     return Offset(origin.dx + sx, origin.dy + sy);
   }
 
   /// Screen → World (floor plane, y=0)
+  /// Returns (x, z) — already un-swapped
   static Offset screenToWorld(Offset screen) {
     final dx = screen.dx - origin.dx;
     final dy = screen.dy - origin.dy;
@@ -28,10 +34,11 @@ class IsometricMath {
     final sx = dx / (cosA * scale);
     final sy = dy / (sinA * scale);
 
-    final x = (sx + sy) / 2;
-    final z = (sy - sx) / 2;
+    final rawX = (sx + sy) / 2;
+    final rawZ = (sy - sx) / 2;
 
-    return Offset(x, z);
+    // Un-swap so returned values are always in world coords
+    return swapAxes ? Offset(rawZ, rawX) : Offset(rawX, rawZ);
   }
 
   /// Snap to grid

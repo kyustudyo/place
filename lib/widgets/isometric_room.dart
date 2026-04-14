@@ -27,6 +27,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   Widget build(BuildContext context) {
     final state = ref.watch(placementProvider);
     final theme = ref.watch(currentThemeProvider);
+    final axisSwapped = ref.watch(axisSwapProvider);
+    IsometricMath.swapAxes = axisSwapped;
     final room = state.room;
 
     return LayoutBuilder(
@@ -47,6 +49,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   room: room,
                   theme: theme,
                   selectedHeight: state.selectedFurniture?.size.y,
+                  axisSwapped: axisSwapped,
                 ),
                 foregroundPainter: FurnitureRenderer(
                   items: state.furniture,
