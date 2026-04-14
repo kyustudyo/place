@@ -216,13 +216,16 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(furniture: checked);
   }
 
-  /// Snap furniture to grid (call on drag end)
+  /// Snap furniture to grid + wall edges (call on drag end)
   void snapFurniture(String id) {
     final tileSize = state.room.tileSize;
+    final room = state.room;
     final updated = state.furniture.map((f) {
       if (f.id == id && f.isPlaced) {
-        final sx = (f.position.x / tileSize).round() * tileSize;
-        final sz = (f.position.z / tileSize).round() * tileSize;
+        final sx = _smartSnap(
+            f.position.x, f.effectiveWidth, room.width, tileSize);
+        final sz = _smartSnap(
+            f.position.z, f.effectiveDepth, room.depth, tileSize);
         return f.copyWith(position: Vec3(x: sx, y: f.position.y, z: sz));
       }
       return f;
@@ -230,6 +233,32 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
     final checked = CollisionDetector.updateCollisions(updated, state.room);
     state = state.copyWith(furniture: checked);
+  }
+
+  /// Smart snap: grid snap + wall edge snap
+  /// Considers: tile grid, wall at 0, wall at (roomSize - itemSize)
+  double _smartSnap(
+      double pos, double itemSize, double roomSize, double tileSize) {
+    final wallThreshold = tileSize * 0.6; // snap to wall within 60% of a tile
+
+    // Candidate: grid snap
+    final gridSnap = (pos / tileSize).round() * tileSize;
+
+    // Candidate: flush with start wall (position = 0)
+    final startWall = 0.0;
+
+    // Candidate: flush with end wall (position = roomSize - itemSize)
+    final endWall = roomSize - itemSize;
+
+    // Pick closest candidate, but prefer wall if within threshold
+    final distStart = (pos - startWall).abs();
+    final distEnd = (pos - endWall).abs();
+
+    // Wall snap takes priority when close
+    if (distStart <= wallThreshold) return startWall;
+    if (distEnd <= wallThreshold && endWall >= 0) return endWall;
+
+    return gridSnap;
   }
 
   void rotateFurniture(String id) {

@@ -163,12 +163,24 @@ class FurnitureRenderer extends CustomPainter {
     );
   }
 
+  double _smartSnap(
+      double pos, double itemSize, double roomSize, double tileSize) {
+    final wallThreshold = tileSize * 0.6;
+    final gridSnap = (pos / tileSize).round() * tileSize;
+    final endWall = roomSize - itemSize;
+    final distStart = pos.abs();
+    final distEnd = (pos - endWall).abs();
+    if (distStart <= wallThreshold) return 0.0;
+    if (distEnd <= wallThreshold && endWall >= 0) return endWall;
+    return gridSnap;
+  }
+
   void _drawSnapGhost(Canvas canvas, Furniture f, double tileSize) {
-    final sx = (f.position.x / tileSize).round() * tileSize;
-    final sz = (f.position.z / tileSize).round() * tileSize;
     final w = f.effectiveWidth;
     final h = f.size.y;
     final d = f.effectiveDepth;
+    final sx = _smartSnap(f.position.x, w, roomWidth, tileSize);
+    final sz = _smartSnap(f.position.z, d, roomDepth, tileSize);
 
     // Check if out of bounds
     final outOfBounds = sx < 0 ||
