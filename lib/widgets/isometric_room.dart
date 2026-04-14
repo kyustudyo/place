@@ -192,6 +192,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                 focusCenter: itemCenter,
                 zoomScale: 2.5,
                 selectedId: state.selectedId,
+                draggingId: _isDragging ? state.selectedId : null,
+                snapTileSize: _isDragging ? state.room.tileSize : null,
               ),
             ),
           ),
@@ -460,6 +462,8 @@ class _LoupePainter extends CustomPainter {
   final Offset focusCenter;
   final double zoomScale;
   final String? selectedId;
+  final String? draggingId;
+  final double? snapTileSize;
 
   _LoupePainter({
     required this.room,
@@ -468,6 +472,8 @@ class _LoupePainter extends CustomPainter {
     required this.focusCenter,
     required this.zoomScale,
     this.selectedId,
+    this.draggingId,
+    this.snapTileSize,
   });
 
   @override
@@ -495,6 +501,8 @@ class _LoupePainter extends CustomPainter {
       roomDepth: room.depth,
       roomHeight: room.height,
       selectedId: selectedId,
+      draggingId: draggingId,
+      snapTileSize: snapTileSize,
     ).paint(canvas, size);
 
     // Crosshair
