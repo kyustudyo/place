@@ -251,6 +251,21 @@ class PlacementNotifier extends Notifier<PlacementState> {
     return (pos / tileSize).round() * tileSize;
   }
 
+  /// Adjust Y (height) position
+  void nudgeHeight(String id, double dy) {
+    final updated = state.furniture.map((f) {
+      if (f.id == id) {
+        final newY = (f.position.y + dy).clamp(0.0, 100.0);
+        // Round to 0.1
+        final rounded = (newY * 10).round() / 10;
+        return f.copyWith(
+            position: Vec3(x: f.position.x, y: rounded, z: f.position.z));
+      }
+      return f;
+    }).toList();
+    state = state.copyWith(furniture: updated);
+  }
+
   void rotateFurniture(String id) {
     final updated = state.furniture.map((f) {
       if (f.id == id) {

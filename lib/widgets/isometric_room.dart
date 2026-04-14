@@ -95,13 +95,20 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   child: _FineTunePanel(
                     item: state.selectedFurniture!,
                     theme: theme,
-                    onNudge: (dx, dz) {
+                    onNudge: (dx, dy, dz) {
                       final f = state.selectedFurniture!;
-                      ref.read(placementProvider.notifier).placeFurniture(
-                            state.selectedId!,
-                            f.position.x + dx,
-                            f.position.z + dz,
-                          );
+                      final notifier =
+                          ref.read(placementProvider.notifier);
+                      if (dx != 0 || dz != 0) {
+                        notifier.placeFurniture(
+                          state.selectedId!,
+                          f.position.x + dx,
+                          f.position.z + dz,
+                        );
+                      }
+                      if (dy != 0) {
+                        notifier.nudgeHeight(state.selectedId!, dy);
+                      }
                     },
                   ),
                 ),
@@ -429,11 +436,11 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 }
 
-// ─── Fine-tune panel ───
+// ─── Fine-tune panel (isometric D-pad + Y height) ───
 class _FineTunePanel extends StatelessWidget {
   final Furniture item;
   final AppTheme theme;
-  final void Function(double dx, double dz) onNudge;
+  final void Function(double dx, double dy, double dz) onNudge;
 
   const _FineTunePanel({
     required this.item,
@@ -461,7 +468,9 @@ class _FineTunePanel extends StatelessWidget {
         children: [
           // Coordinates display
           Text(
-            'X:${item.position.x.toStringAsFixed(1)}  Z:${item.position.z.toStringAsFixed(1)}',
+            'X:${item.position.x.toStringAsFixed(1)}  '
+            'Y:${item.position.y.toStringAsFixed(1)}  '
+            'Z:${item.position.z.toStringAsFixed(1)}',
             style: TextStyle(
               color: theme.textSecondary,
               fontSize: 10,
@@ -469,106 +478,211 @@ class _FineTunePanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          // D-pad style controls
-          SizedBox(
-            width: 110,
-            height: 110,
-            child: Stack(
-              children: [
-                // Up (Z-)
-                Positioned(
-                  top: 0,
-                  left: 35,
-                  child: _NudgeBtn(
-                    icon: Icons.keyboard_arrow_up,
-                    theme: theme,
-                    onTap: () => onNudge(0, -0.1),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Isometric D-pad for X/Z
+              _buildIsoDpad(),
+              const SizedBox(width: 10),
+              // Y height controls (vertical)
+              _buildYControls(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Isometric diamond-shaped D-pad matching X/Z axes
+  Widget _buildIsoDpad() {
+    // Isometric: X goes right-down, Z goes left-down
+    // So: X+ = ↘, X- = ↖, Z+ = ↙, Z- = ↗
+    return SizedBox(
+      width: 110,
+      height: 110,
+      child: Stack(
+        children: [
+          // X- (top-left, ↖)
+          Positioned(
+            top: 4,
+            left: 4,
+            child: _NudgeBtn(
+              label: 'X−',
+              theme: theme,
+              onTap: () => onNudge(-0.1, 0, 0),
+              color: theme.accent,
+            ),
+          ),
+          // Z- (top-right, ↗)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: _NudgeBtn(
+              label: 'Z−',
+              theme: theme,
+              onTap: () => onNudge(0, 0, -0.1),
+              color: theme.accentSecondary,
+            ),
+          ),
+          // Z+ (bottom-left, ↙)
+          Positioned(
+            bottom: 4,
+            left: 4,
+            child: _NudgeBtn(
+              label: 'Z+',
+              theme: theme,
+              onTap: () => onNudge(0, 0, 0.1),
+              color: theme.accentSecondary,
+            ),
+          ),
+          // X+ (bottom-right, ↘)
+          Positioned(
+            bottom: 4,
+            right: 4,
+            child: _NudgeBtn(
+              label: 'X+',
+              theme: theme,
+              onTap: () => onNudge(0.1, 0, 0),
+              color: theme.accent,
+            ),
+          ),
+          // Center step size
+          Center(
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: theme.cardBg,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Text(
+                  '0.1',
+                  style: TextStyle(
+                    color: theme.textSecondary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                // Down (Z+)
-                Positioned(
-                  bottom: 0,
-                  left: 35,
-                  child: _NudgeBtn(
-                    icon: Icons.keyboard_arrow_down,
-                    theme: theme,
-                    onTap: () => onNudge(0, 0.1),
-                  ),
-                ),
-                // Left (X-)
-                Positioned(
-                  top: 35,
-                  left: 0,
-                  child: _NudgeBtn(
-                    icon: Icons.keyboard_arrow_left,
-                    theme: theme,
-                    onTap: () => onNudge(-0.1, 0),
-                  ),
-                ),
-                // Right (X+)
-                Positioned(
-                  top: 35,
-                  right: 0,
-                  child: _NudgeBtn(
-                    icon: Icons.keyboard_arrow_right,
-                    theme: theme,
-                    onTap: () => onNudge(0.1, 0),
-                  ),
-                ),
-                // Center label
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: theme.accent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '0.1',
-                        style: TextStyle(
-                          color: theme.accent,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  /// Y-axis (height) up/down buttons
+  Widget _buildYControls() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('Y', style: TextStyle(
+          color: theme.textSecondary,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+        )),
+        const SizedBox(height: 4),
+        _NudgeBtn(
+          label: '▲',
+          theme: theme,
+          onTap: () => onNudge(0, 0.1, 0),
+          color: theme.textSecondary,
+          small: true,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          item.position.y.toStringAsFixed(1),
+          style: TextStyle(
+            color: theme.textPrimary,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'monospace',
+          ),
+        ),
+        const SizedBox(height: 4),
+        _NudgeBtn(
+          label: '▼',
+          theme: theme,
+          onTap: () => onNudge(0, -0.1, 0),
+          color: theme.textSecondary,
+          small: true,
+        ),
+      ],
+    );
+  }
 }
 
-class _NudgeBtn extends StatelessWidget {
-  final IconData icon;
+/// Repeating button — tap or hold to repeat
+class _NudgeBtn extends StatefulWidget {
+  final String label;
   final AppTheme theme;
   final VoidCallback onTap;
+  final Color color;
+  final bool small;
 
   const _NudgeBtn({
-    required this.icon,
+    required this.label,
     required this.theme,
     required this.onTap,
+    required this.color,
+    this.small = false,
   });
 
   @override
+  State<_NudgeBtn> createState() => _NudgeBtnState();
+}
+
+class _NudgeBtnState extends State<_NudgeBtn> {
+  bool _holding = false;
+
+  void _startHold() {
+    _holding = true;
+    widget.onTap();
+    _repeatLoop();
+  }
+
+  Future<void> _repeatLoop() async {
+    // Initial delay before repeating
+    await Future.delayed(const Duration(milliseconds: 300));
+    // Repeat at ~15fps
+    while (_holding && mounted) {
+      widget.onTap();
+      await Future.delayed(const Duration(milliseconds: 66));
+    }
+  }
+
+  void _stopHold() {
+    _holding = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final sz = widget.small ? 36.0 : 44.0;
+    final fs = widget.small ? 12.0 : 11.0;
     return GestureDetector(
-      onTap: onTap,
+      onTapDown: (_) => _startHold(),
+      onTapUp: (_) => _stopHold(),
+      onTapCancel: _stopHold,
       child: Container(
-        width: 40,
-        height: 40,
+        width: sz,
+        height: sz,
         decoration: BoxDecoration(
-          color: theme.accent.withValues(alpha: 0.12),
+          color: widget.color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: theme.accent.withValues(alpha: 0.25)),
+          border: Border.all(color: widget.color.withValues(alpha: 0.3)),
         ),
-        child: Icon(icon, size: 22, color: theme.accent),
+        child: Center(
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: widget.color,
+              fontSize: fs,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }
