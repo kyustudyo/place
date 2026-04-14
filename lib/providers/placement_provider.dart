@@ -239,7 +239,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
   /// Gives fine-grained placement: 0, 0.5, 1, 1.5, 2 ...
   double _smartSnap(
       double pos, double itemSize, double roomSize, double tileSize) {
-    final snapUnit = tileSize / 2; // half-tile snap
+    final snapUnit = tileSize / 10; // 0.1 단위 스냅
     return (pos / snapUnit).round() * snapUnit;
   }
 

@@ -165,7 +165,7 @@ class FurnitureRenderer extends CustomPainter {
 
   double _smartSnap(
       double pos, double itemSize, double roomSize, double tileSize) {
-    final snapUnit = tileSize / 2;
+    final snapUnit = tileSize / 10;
     return (pos / snapUnit).round() * snapUnit;
   }
 
