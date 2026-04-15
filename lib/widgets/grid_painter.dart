@@ -159,7 +159,7 @@ class GridPainter extends CustomPainter {
 
     // Soft horizontal lines only (no vertical Y-axis lines)
     final softPaint = Paint()
-      ..color = guideColor.withValues(alpha: 0.35)
+      ..color = guideColor.withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
