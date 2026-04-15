@@ -7,6 +7,7 @@ import '../providers/theme_provider.dart';
 import '../widgets/isometric_room.dart';
 import '../widgets/furniture_panel.dart';
 import '../widgets/dimension_dialog.dart';
+import '../utils/session_storage.dart';
 
 class PlacementScreen extends ConsumerStatefulWidget {
   const PlacementScreen({super.key});
@@ -235,6 +236,42 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     );
   }
 
+  Future<void> _saveSession() async {
+    final state = ref.read(placementProvider);
+    await SessionStorage.save(state.room, state.furniture);
+    if (!mounted) return;
+    final theme = ref.read(currentThemeProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('저장 완료'),
+        backgroundColor: theme.accentSecondary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _loadSession() async {
+    final json = await SessionStorage.load();
+    if (json == null) {
+      if (!mounted) return;
+      final theme = ref.read(currentThemeProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('저장된 세션이 없습니다'),
+          backgroundColor: theme.textSecondary,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    ref.read(placementProvider.notifier).loadJson(json);
+  }
+
   Future<void> _copyJson() async {
     final theme = ref.read(currentThemeProvider);
     final json = ref.read(placementProvider.notifier).exportJson();
@@ -349,6 +386,20 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
             const SizedBox(width: 6),
           ],
+          // Save
+          _TopBarBtn(
+            icon: Icons.save_outlined,
+            onTap: state.furniture.isNotEmpty ? _saveSession : null,
+            theme: theme,
+          ),
+          const SizedBox(width: 6),
+          // Load
+          _TopBarBtn(
+            icon: Icons.folder_open_outlined,
+            onTap: _loadSession,
+            theme: theme,
+          ),
+          const SizedBox(width: 6),
           // JSON import
           _TopBarBtn(
             icon: Icons.file_download_outlined,

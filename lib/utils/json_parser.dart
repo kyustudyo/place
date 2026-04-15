@@ -48,4 +48,20 @@ class JsonParser {
     return const JsonEncoder.withIndent('  ')
         .convert({'placements': placements});
   }
+
+  /// Generate full JSON (room + furniture) for saving session
+  static String generateFullJson(Room room, List<Furniture> items) {
+    final furnitureList = items.map((f) => {
+          'id': f.id,
+          'name': f.name,
+          'size': f.size.toJson(),
+          'position': f.position.toJson(),
+          'rotation': f.rotation,
+        }).toList();
+
+    return const JsonEncoder.withIndent('  ').convert({
+      'room': room.toJson(),
+      'furniture': furnitureList,
+    });
+  }
 }

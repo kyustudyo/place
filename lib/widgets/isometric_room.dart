@@ -349,8 +349,10 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         final targetZ = worldPos.dy - item.effectiveDepth / 2;
         notifier.placeFurniture(state.selectedId!, targetX, targetZ);
         notifier.snapFurniture(state.selectedId!);
+      } else {
+        // Tap outside map → deselect
+        notifier.selectFurniture(null);
       }
-      // Tap outside map → do nothing (keep selection)
     } else {
       notifier.selectFurniture(null);
     }
@@ -440,6 +442,9 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
           final targetX = worldPos.dx - item.effectiveWidth / 2;
           final targetZ = worldPos.dy - item.effectiveDepth / 2;
           notifier.placeFurniture(selectedId, targetX, targetZ);
+        } else {
+          // Tap outside map → deselect
+          notifier.selectFurniture(null);
         }
       }
     }
