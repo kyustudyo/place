@@ -159,25 +159,27 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Example toggle
-              GestureDetector(
-                onTap: () {
+              // Example button
+              TextButton.icon(
+                onPressed: () {
                   controller.text = _jsonExample;
+                  controller.selection = TextSelection.collapsed(
+                      offset: controller.text.length);
                 },
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline,
-                        size: 14, color: theme.textSecondary),
-                    const SizedBox(width: 6),
-                    Text(
-                      '예시 보기',
-                      style: TextStyle(
-                        color: theme.accent,
-                        fontSize: 12,
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ],
+                icon: Icon(Icons.info_outline,
+                    size: 14, color: theme.accent),
+                label: Text(
+                  '예시 채우기',
+                  style: TextStyle(
+                    color: theme.accent,
+                    fontSize: 12,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
               const SizedBox(height: 8),
