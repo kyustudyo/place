@@ -166,58 +166,81 @@ class GridPainter extends CustomPainter {
     final wx1 = x.clamp(0.0, room.width);
     final wx2 = (x + w).clamp(0.0, room.width);
 
-    // Left wall (x=0): rectangle showing z range × height
+    // Lighter paint for the below-item portion (0 to baseY)
+    final subGuidePaint = Paint()
+      ..color = guideColor.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    // Left wall (x=0): full range 0→h, split at baseY
     if (wz2 > wz1) {
+      // Full rect fill (0 to h)
       final leftRect = Path()
-        ..moveTo(IsometricMath.worldToScreen(0, baseY, wz1).dx,
-            IsometricMath.worldToScreen(0, baseY, wz1).dy)
-        ..lineTo(IsometricMath.worldToScreen(0, baseY, wz2).dx,
-            IsometricMath.worldToScreen(0, baseY, wz2).dy)
+        ..moveTo(IsometricMath.worldToScreen(0, 0, wz1).dx,
+            IsometricMath.worldToScreen(0, 0, wz1).dy)
+        ..lineTo(IsometricMath.worldToScreen(0, 0, wz2).dx,
+            IsometricMath.worldToScreen(0, 0, wz2).dy)
         ..lineTo(IsometricMath.worldToScreen(0, h, wz2).dx,
             IsometricMath.worldToScreen(0, h, wz2).dy)
         ..lineTo(IsometricMath.worldToScreen(0, h, wz1).dx,
             IsometricMath.worldToScreen(0, h, wz1).dy)
         ..close();
       canvas.drawPath(leftRect, guideFill);
+
+      // Outer border (0 to h)
       _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(0, baseY, wz1),
-          IsometricMath.worldToScreen(0, baseY, wz2), guidePaint);
+          IsometricMath.worldToScreen(0, 0, wz1),
+          IsometricMath.worldToScreen(0, 0, wz2), subGuidePaint);
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(0, h, wz1),
           IsometricMath.worldToScreen(0, h, wz2), guidePaint);
       _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(0, baseY, wz1),
+          IsometricMath.worldToScreen(0, 0, wz1),
           IsometricMath.worldToScreen(0, h, wz1), guidePaint);
       _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(0, baseY, wz2),
+          IsometricMath.worldToScreen(0, 0, wz2),
           IsometricMath.worldToScreen(0, h, wz2), guidePaint);
+
+      // BaseY line (item bottom) — only if elevated
+      if (baseY > 0.01) {
+        _drawDashedLine(canvas,
+            IsometricMath.worldToScreen(0, baseY, wz1),
+            IsometricMath.worldToScreen(0, baseY, wz2), guidePaint);
+      }
     }
 
-    // Back wall (z=0): rectangle showing x range × height
+    // Back wall (z=0): full range 0→h, split at baseY
     if (wx2 > wx1) {
       final backRect = Path()
-        ..moveTo(IsometricMath.worldToScreen(wx1, baseY, 0).dx,
-            IsometricMath.worldToScreen(wx1, baseY, 0).dy)
-        ..lineTo(IsometricMath.worldToScreen(wx2, baseY, 0).dx,
-            IsometricMath.worldToScreen(wx2, baseY, 0).dy)
+        ..moveTo(IsometricMath.worldToScreen(wx1, 0, 0).dx,
+            IsometricMath.worldToScreen(wx1, 0, 0).dy)
+        ..lineTo(IsometricMath.worldToScreen(wx2, 0, 0).dx,
+            IsometricMath.worldToScreen(wx2, 0, 0).dy)
         ..lineTo(IsometricMath.worldToScreen(wx2, h, 0).dx,
             IsometricMath.worldToScreen(wx2, h, 0).dy)
         ..lineTo(IsometricMath.worldToScreen(wx1, h, 0).dx,
             IsometricMath.worldToScreen(wx1, h, 0).dy)
         ..close();
       canvas.drawPath(backRect, guideFill);
+
       _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(wx1, baseY, 0),
-          IsometricMath.worldToScreen(wx2, baseY, 0), guidePaint);
+          IsometricMath.worldToScreen(wx1, 0, 0),
+          IsometricMath.worldToScreen(wx2, 0, 0), subGuidePaint);
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(wx1, h, 0),
           IsometricMath.worldToScreen(wx2, h, 0), guidePaint);
       _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(wx1, baseY, 0),
+          IsometricMath.worldToScreen(wx1, 0, 0),
           IsometricMath.worldToScreen(wx1, h, 0), guidePaint);
       _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(wx2, baseY, 0),
+          IsometricMath.worldToScreen(wx2, 0, 0),
           IsometricMath.worldToScreen(wx2, h, 0), guidePaint);
+
+      if (baseY > 0.01) {
+        _drawDashedLine(canvas,
+            IsometricMath.worldToScreen(wx1, baseY, 0),
+            IsometricMath.worldToScreen(wx2, baseY, 0), guidePaint);
+      }
     }
 
     // Floor projection lines to walls
