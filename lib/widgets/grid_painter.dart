@@ -144,21 +144,35 @@ class GridPainter extends CustomPainter {
     final d = selD ?? 0;
     final h = selectedHeight ?? 0;
 
+    // Wall projection — visible on wall surface
     final guidePaint = Paint()
-      ..color = theme.accent.withValues(alpha: 0.3)
+      ..color = theme.accent.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
+      ..strokeWidth = 1.2;
 
-    // Left wall (x=0): vertical stripe showing z range at height h
-    // Bottom edge on floor
+    // Semi-transparent fill on wall
+    final guideFill = Paint()
+      ..color = theme.accent.withValues(alpha: 0.08)
+      ..style = PaintingStyle.fill;
+
+    // Left wall (x=0): rectangle showing z range × height
+    final leftRect = Path()
+      ..moveTo(IsometricMath.worldToScreen(0, 0, z).dx,
+          IsometricMath.worldToScreen(0, 0, z).dy)
+      ..lineTo(IsometricMath.worldToScreen(0, 0, z + d).dx,
+          IsometricMath.worldToScreen(0, 0, z + d).dy)
+      ..lineTo(IsometricMath.worldToScreen(0, h, z + d).dx,
+          IsometricMath.worldToScreen(0, h, z + d).dy)
+      ..lineTo(IsometricMath.worldToScreen(0, h, z).dx,
+          IsometricMath.worldToScreen(0, h, z).dy)
+      ..close();
+    canvas.drawPath(leftRect, guideFill);
     _drawDashedLine(canvas,
         IsometricMath.worldToScreen(0, 0, z),
         IsometricMath.worldToScreen(0, 0, z + d), guidePaint);
-    // Top edge at item height
     _drawDashedLine(canvas,
         IsometricMath.worldToScreen(0, h, z),
         IsometricMath.worldToScreen(0, h, z + d), guidePaint);
-    // Vertical edges
     _drawDashedLine(canvas,
         IsometricMath.worldToScreen(0, 0, z),
         IsometricMath.worldToScreen(0, h, z), guidePaint);
@@ -166,7 +180,18 @@ class GridPainter extends CustomPainter {
         IsometricMath.worldToScreen(0, 0, z + d),
         IsometricMath.worldToScreen(0, h, z + d), guidePaint);
 
-    // Back wall (z=0): vertical stripe showing x range at height h
+    // Back wall (z=0): rectangle showing x range × height
+    final backRect = Path()
+      ..moveTo(IsometricMath.worldToScreen(x, 0, 0).dx,
+          IsometricMath.worldToScreen(x, 0, 0).dy)
+      ..lineTo(IsometricMath.worldToScreen(x + w, 0, 0).dx,
+          IsometricMath.worldToScreen(x + w, 0, 0).dy)
+      ..lineTo(IsometricMath.worldToScreen(x + w, h, 0).dx,
+          IsometricMath.worldToScreen(x + w, h, 0).dy)
+      ..lineTo(IsometricMath.worldToScreen(x, h, 0).dx,
+          IsometricMath.worldToScreen(x, h, 0).dy)
+      ..close();
+    canvas.drawPath(backRect, guideFill);
     _drawDashedLine(canvas,
         IsometricMath.worldToScreen(x, 0, 0),
         IsometricMath.worldToScreen(x + w, 0, 0), guidePaint);
@@ -182,9 +207,9 @@ class GridPainter extends CustomPainter {
 
     // Floor projection lines to walls
     final floorGuide = Paint()
-      ..color = theme.accent.withValues(alpha: 0.15)
+      ..color = theme.accent.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.6;
+      ..strokeWidth = 0.8;
 
     // Item → left wall
     _drawDashedLine(canvas,
