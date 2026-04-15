@@ -49,13 +49,17 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                 painter: GridPainter(
                   room: room,
                   theme: theme,
-                  selectedHeight: state.selectedFurniture?.size.y,
+                  selectedHeight: state.selectedFurniture != null
+                      ? state.selectedFurniture!.position.y +
+                          state.selectedFurniture!.size.y
+                      : null,
                   axisSwapped: axisSwapped,
                   guideColor: guideColor,
                   selX: state.selectedFurniture?.position.x,
                   selZ: state.selectedFurniture?.position.z,
                   selW: state.selectedFurniture?.effectiveWidth,
                   selD: state.selectedFurniture?.effectiveDepth,
+                  selY: state.selectedFurniture?.position.y,
                 ),
                 foregroundPainter: FurnitureRenderer(
                   items: state.furniture,

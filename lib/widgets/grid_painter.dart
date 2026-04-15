@@ -16,6 +16,7 @@ class GridPainter extends CustomPainter {
   final double? selZ;
   final double? selW;
   final double? selD;
+  final double? selY; // position.y (base height)
 
   GridPainter({
     required this.room,
@@ -27,6 +28,7 @@ class GridPainter extends CustomPainter {
     this.selZ,
     this.selW,
     this.selD,
+    this.selY,
   });
 
   @override
@@ -144,7 +146,8 @@ class GridPainter extends CustomPainter {
     final z = selZ!;
     final w = selW ?? 0;
     final d = selD ?? 0;
-    final h = selectedHeight ?? 0;
+    final baseY = selY ?? 0; // position.y (bottom of item)
+    final h = selectedHeight ?? 0; // position.y + size.y (top of item)
 
     // Wall projection — visible on wall surface
     final guidePaint = Paint()
@@ -159,10 +162,10 @@ class GridPainter extends CustomPainter {
 
     // Left wall (x=0): rectangle showing z range × height
     final leftRect = Path()
-      ..moveTo(IsometricMath.worldToScreen(0, 0, z).dx,
-          IsometricMath.worldToScreen(0, 0, z).dy)
-      ..lineTo(IsometricMath.worldToScreen(0, 0, z + d).dx,
-          IsometricMath.worldToScreen(0, 0, z + d).dy)
+      ..moveTo(IsometricMath.worldToScreen(0, baseY, z).dx,
+          IsometricMath.worldToScreen(0, baseY, z).dy)
+      ..lineTo(IsometricMath.worldToScreen(0, baseY, z + d).dx,
+          IsometricMath.worldToScreen(0, baseY, z + d).dy)
       ..lineTo(IsometricMath.worldToScreen(0, h, z + d).dx,
           IsometricMath.worldToScreen(0, h, z + d).dy)
       ..lineTo(IsometricMath.worldToScreen(0, h, z).dx,
@@ -170,24 +173,24 @@ class GridPainter extends CustomPainter {
       ..close();
     canvas.drawPath(leftRect, guideFill);
     _drawDashedLine(canvas,
-        IsometricMath.worldToScreen(0, 0, z),
-        IsometricMath.worldToScreen(0, 0, z + d), guidePaint);
+        IsometricMath.worldToScreen(0, baseY, z),
+        IsometricMath.worldToScreen(0, baseY, z + d), guidePaint);
     _drawDashedLine(canvas,
         IsometricMath.worldToScreen(0, h, z),
         IsometricMath.worldToScreen(0, h, z + d), guidePaint);
     _drawDashedLine(canvas,
-        IsometricMath.worldToScreen(0, 0, z),
+        IsometricMath.worldToScreen(0, baseY, z),
         IsometricMath.worldToScreen(0, h, z), guidePaint);
     _drawDashedLine(canvas,
-        IsometricMath.worldToScreen(0, 0, z + d),
+        IsometricMath.worldToScreen(0, baseY, z + d),
         IsometricMath.worldToScreen(0, h, z + d), guidePaint);
 
     // Back wall (z=0): rectangle showing x range × height
     final backRect = Path()
-      ..moveTo(IsometricMath.worldToScreen(x, 0, 0).dx,
-          IsometricMath.worldToScreen(x, 0, 0).dy)
-      ..lineTo(IsometricMath.worldToScreen(x + w, 0, 0).dx,
-          IsometricMath.worldToScreen(x + w, 0, 0).dy)
+      ..moveTo(IsometricMath.worldToScreen(x, baseY, 0).dx,
+          IsometricMath.worldToScreen(x, baseY, 0).dy)
+      ..lineTo(IsometricMath.worldToScreen(x + w, baseY, 0).dx,
+          IsometricMath.worldToScreen(x + w, baseY, 0).dy)
       ..lineTo(IsometricMath.worldToScreen(x + w, h, 0).dx,
           IsometricMath.worldToScreen(x + w, h, 0).dy)
       ..lineTo(IsometricMath.worldToScreen(x, h, 0).dx,
@@ -195,16 +198,16 @@ class GridPainter extends CustomPainter {
       ..close();
     canvas.drawPath(backRect, guideFill);
     _drawDashedLine(canvas,
-        IsometricMath.worldToScreen(x, 0, 0),
-        IsometricMath.worldToScreen(x + w, 0, 0), guidePaint);
+        IsometricMath.worldToScreen(x, baseY, 0),
+        IsometricMath.worldToScreen(x + w, baseY, 0), guidePaint);
     _drawDashedLine(canvas,
         IsometricMath.worldToScreen(x, h, 0),
         IsometricMath.worldToScreen(x + w, h, 0), guidePaint);
     _drawDashedLine(canvas,
-        IsometricMath.worldToScreen(x, 0, 0),
+        IsometricMath.worldToScreen(x, baseY, 0),
         IsometricMath.worldToScreen(x, h, 0), guidePaint);
     _drawDashedLine(canvas,
-        IsometricMath.worldToScreen(x + w, 0, 0),
+        IsometricMath.worldToScreen(x + w, baseY, 0),
         IsometricMath.worldToScreen(x + w, h, 0), guidePaint);
 
     // Floor projection lines to walls
