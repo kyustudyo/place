@@ -122,6 +122,37 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     },
                   ),
                 ),
+              // Delete button when item selected
+              if (state.selectedId != null && !_isDragging)
+                Positioned(
+                  right: 12,
+                  bottom: 62,
+                  child: GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(placementProvider.notifier)
+                          .removeFurniture(state.selectedId!);
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: Colors.red.withValues(alpha: 0.4)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Icon(Icons.delete_outline,
+                          size: 22, color: Colors.red.shade400),
+                    ),
+                  ),
+                ),
               // Guide text when item selected
               if (state.selectedId != null && !_isDragging)
                 Positioned(
