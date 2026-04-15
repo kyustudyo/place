@@ -146,15 +146,9 @@ class GridPainter extends CustomPainter {
     final baseY = selY ?? 0; // position.y (bottom of item)
     final h = selectedHeight ?? 0; // position.y + size.y (top of item)
 
-    // Wall projection — visible on wall surface
-    final guidePaint = Paint()
-      ..color = guideColor.withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
     // Semi-transparent fill on wall
     final guideFill = Paint()
-      ..color = guideColor.withValues(alpha: 0.12)
+      ..color = guideColor.withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;
 
     // Clamp projection to wall range
@@ -163,15 +157,15 @@ class GridPainter extends CustomPainter {
     final wx1 = x.clamp(0.0, room.width);
     final wx2 = (x + w).clamp(0.0, room.width);
 
-    // Lighter paint for the below-item portion (0 to baseY)
-    final subGuidePaint = Paint()
-      ..color = guideColor.withValues(alpha: 0.3)
+    // Soft horizontal lines only (no vertical Y-axis lines)
+    final softPaint = Paint()
+      ..color = guideColor.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    // Left wall (x=0): full range 0→h, split at baseY
+    // Left wall (x=0): horizontal lines at floor, baseY, top
     if (wz2 > wz1) {
-      // Full rect fill (0 to h)
+      // Fill
       final leftRect = Path()
         ..moveTo(IsometricMath.worldToScreen(0, 0, wz1).dx,
             IsometricMath.worldToScreen(0, 0, wz1).dy)
@@ -184,29 +178,23 @@ class GridPainter extends CustomPainter {
         ..close();
       canvas.drawPath(leftRect, guideFill);
 
-      // Outer border (0 to h)
+      // Bottom (floor)
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(0, 0, wz1),
-          IsometricMath.worldToScreen(0, 0, wz2), subGuidePaint);
+          IsometricMath.worldToScreen(0, 0, wz2), softPaint);
+      // Top
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(0, h, wz1),
-          IsometricMath.worldToScreen(0, h, wz2), guidePaint);
-      _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(0, 0, wz1),
-          IsometricMath.worldToScreen(0, h, wz1), guidePaint);
-      _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(0, 0, wz2),
-          IsometricMath.worldToScreen(0, h, wz2), guidePaint);
-
-      // BaseY line (item bottom) — only if elevated
+          IsometricMath.worldToScreen(0, h, wz2), softPaint);
+      // BaseY (item bottom) if elevated
       if (baseY > 0.01) {
         _drawDashedLine(canvas,
             IsometricMath.worldToScreen(0, baseY, wz1),
-            IsometricMath.worldToScreen(0, baseY, wz2), guidePaint);
+            IsometricMath.worldToScreen(0, baseY, wz2), softPaint);
       }
     }
 
-    // Back wall (z=0): full range 0→h, split at baseY
+    // Back wall (z=0): horizontal lines at floor, baseY, top
     if (wx2 > wx1) {
       final backRect = Path()
         ..moveTo(IsometricMath.worldToScreen(wx1, 0, 0).dx,
@@ -222,21 +210,14 @@ class GridPainter extends CustomPainter {
 
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(wx1, 0, 0),
-          IsometricMath.worldToScreen(wx2, 0, 0), subGuidePaint);
+          IsometricMath.worldToScreen(wx2, 0, 0), softPaint);
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(wx1, h, 0),
-          IsometricMath.worldToScreen(wx2, h, 0), guidePaint);
-      _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(wx1, 0, 0),
-          IsometricMath.worldToScreen(wx1, h, 0), guidePaint);
-      _drawDashedLine(canvas,
-          IsometricMath.worldToScreen(wx2, 0, 0),
-          IsometricMath.worldToScreen(wx2, h, 0), guidePaint);
-
+          IsometricMath.worldToScreen(wx2, h, 0), softPaint);
       if (baseY > 0.01) {
         _drawDashedLine(canvas,
             IsometricMath.worldToScreen(wx1, baseY, 0),
-            IsometricMath.worldToScreen(wx2, baseY, 0), guidePaint);
+            IsometricMath.worldToScreen(wx2, baseY, 0), softPaint);
       }
     }
 
