@@ -22,13 +22,14 @@ const _jsonExample = '''{
     "gridSize": 15
   },
   "furniture": [
-    {
-      "id": "desk",
-      "name": "책상",
-      "size": {"x": 1.5, "y": 0.8, "z": 1.0},
-      "position": {"x": 0, "y": 0, "z": 0},
-      "rotation": 0
-    }
+    {"id": "sofa", "name": "소파", "size": {"x": 3.0, "y": 0.8, "z": 1.5}, "position": {"x": 1, "y": 0, "z": 6}, "rotation": 0},
+    {"id": "table", "name": "테이블", "size": {"x": 2.0, "y": 0.7, "z": 1.0}, "position": {"x": 2, "y": 0, "z": 4}, "rotation": 0},
+    {"id": "desk", "name": "책상", "size": {"x": 1.5, "y": 0.8, "z": 0.8}, "position": {"x": 10, "y": 0, "z": 1}, "rotation": 0},
+    {"id": "chair", "name": "의자", "size": {"x": 0.5, "y": 1.0, "z": 0.5}, "position": {"x": 11, "y": 0, "z": 2}, "rotation": 0},
+    {"id": "bookshelf", "name": "책장", "size": {"x": 1.0, "y": 2.5, "z": 0.4}, "position": {"x": 0, "y": 0, "z": 0}, "rotation": 0},
+    {"id": "bed", "name": "침대", "size": {"x": 2.0, "y": 0.5, "z": 3.0}, "position": {"x": 8, "y": 0, "z": 10}, "rotation": 0},
+    {"id": "wardrobe", "name": "옷장", "size": {"x": 1.8, "y": 2.2, "z": 0.6}, "position": {"x": 13, "y": 0, "z": 0}, "rotation": 0},
+    {"id": "lamp", "name": "스탠드", "size": {"x": 0.3, "y": 1.5, "z": 0.3}, "position": {"x": 14, "y": 0, "z": 10}, "rotation": 0}
   ]
 }''';
 
