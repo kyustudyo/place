@@ -200,7 +200,6 @@ class PlacementNotifier extends Notifier<PlacementState> {
   }
 
   void updateFurnitureColor(String id, Color color) {
-    _saveUndo();
     final updated = state.furniture.map((f) {
       if (f.id == id) {
         return Furniture(
