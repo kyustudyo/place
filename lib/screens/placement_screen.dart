@@ -36,12 +36,16 @@ const _jsonExample = '''{
 
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
+  bool _hasSession = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialFlowStarted) {
       _initialFlowStarted = true;
+      SessionStorage.hasSession().then((v) {
+        if (mounted) setState(() => _hasSession = v);
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _runInitialFlow();
       });
@@ -240,6 +244,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     final state = ref.read(placementProvider);
     await SessionStorage.save(state.room, state.furniture);
     if (!mounted) return;
+    setState(() => _hasSession = true);
     final theme = ref.read(currentThemeProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -386,20 +391,24 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
             const SizedBox(width: 6),
           ],
-          // Save
-          _TopBarBtn(
-            icon: Icons.save_outlined,
-            onTap: state.furniture.isNotEmpty ? _saveSession : null,
-            theme: theme,
-          ),
-          const SizedBox(width: 6),
-          // Load
-          _TopBarBtn(
-            icon: Icons.folder_open_outlined,
-            onTap: _loadSession,
-            theme: theme,
-          ),
-          const SizedBox(width: 6),
+          // Save — only when furniture exists
+          if (state.furniture.isNotEmpty) ...[
+            _TopBarBtn(
+              icon: Icons.save_outlined,
+              onTap: _saveSession,
+              theme: theme,
+            ),
+            const SizedBox(width: 6),
+          ],
+          // Load — only when session exists
+          if (_hasSession) ...[
+            _TopBarBtn(
+              icon: Icons.folder_open_outlined,
+              onTap: _loadSession,
+              theme: theme,
+            ),
+            const SizedBox(width: 6),
+          ],
           // JSON import
           _TopBarBtn(
             icon: Icons.file_download_outlined,
