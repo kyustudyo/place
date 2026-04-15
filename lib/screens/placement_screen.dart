@@ -15,6 +15,23 @@ class PlacementScreen extends ConsumerStatefulWidget {
   ConsumerState<PlacementScreen> createState() => _PlacementScreenState();
 }
 
+const _jsonExample = '''{
+  "room": {
+    "width": 15, "height": 4,
+    "depth": 15, "tileSize": 1,
+    "gridSize": 15
+  },
+  "furniture": [
+    {
+      "id": "desk",
+      "name": "책상",
+      "size": {"x": 1.5, "y": 0.8, "z": 1.0},
+      "position": {"x": 0, "y": 0, "z": 0},
+      "rotation": 0
+    }
+  ]
+}''';
+
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
 
@@ -137,26 +154,59 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             style: TextStyle(color: theme.textPrimary, fontSize: 16)),
         content: SizedBox(
           width: 400,
-          height: 300,
-          child: TextField(
-            controller: controller,
-            maxLines: null,
-            expands: true,
-            style: TextStyle(
-              color: theme.textPrimary.withValues(alpha: 0.8),
-              fontSize: 12,
-              fontFamily: 'monospace',
-            ),
-            decoration: InputDecoration(
-              hintText: 'furniture_sizes.json...',
-              hintStyle: TextStyle(color: theme.textSecondary),
-              filled: true,
-              fillColor: theme.cardBg,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Example toggle
+              GestureDetector(
+                onTap: () {
+                  if (controller.text.isEmpty) {
+                    controller.text = _jsonExample;
+                  }
+                },
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 14, color: theme.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      '예시 보기',
+                      style: TextStyle(
+                        color: theme.accent,
+                        fontSize: 12,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 260,
+                child: TextField(
+                  controller: controller,
+                  maxLines: null,
+                  expands: true,
+                  style: TextStyle(
+                    color: theme.textPrimary.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'furniture_sizes.json 붙여넣기...',
+                    hintStyle:
+                        TextStyle(color: theme.textSecondary),
+                    filled: true,
+                    fillColor: theme.cardBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
