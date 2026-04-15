@@ -684,30 +684,35 @@ class _SettingsSheet extends ConsumerWidget {
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.65,
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
       ),
       decoration: BoxDecoration(
         color: theme.panelBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
         children: [
           const SizedBox(height: 12),
-          Container(
-            width: 40, height: 4,
-            decoration: BoxDecoration(
-              color: theme.textSecondary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: theme.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('설정', style: TextStyle(
-              color: theme.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            )),
+            child: Center(
+              child: Text('설정', style: TextStyle(
+                color: theme.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              )),
+            ),
           ),
           // Axis swap toggle
           Padding(
@@ -910,10 +915,10 @@ class _SettingsSheet extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Flexible(
-            child: GridView.builder(
+          GridView.builder(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 childAspectRatio: 2.8,
@@ -975,7 +980,6 @@ class _SettingsSheet extends ConsumerWidget {
                 );
               },
             ),
-          ),
         ],
       ),
     );
