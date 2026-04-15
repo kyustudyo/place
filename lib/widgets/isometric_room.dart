@@ -261,14 +261,21 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         });
       }
     } else if (state.selectedId != null) {
-      // Tap empty space with item selected → move item there
+      // Tap empty space with item selected → move item there (only if inside map)
       final worldPos = IsometricMath.screenToWorld(pos);
-      final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
-      // Center the item on tap position
-      final targetX = worldPos.dx - item.effectiveWidth / 2;
-      final targetZ = worldPos.dy - item.effectiveDepth / 2;
-      notifier.placeFurniture(state.selectedId!, targetX, targetZ);
-      notifier.snapFurniture(state.selectedId!);
+      final room = state.room;
+      if (worldPos.dx >= 0 &&
+          worldPos.dx <= room.width &&
+          worldPos.dy >= 0 &&
+          worldPos.dy <= room.depth) {
+        final item =
+            state.furniture.firstWhere((f) => f.id == state.selectedId);
+        final targetX = worldPos.dx - item.effectiveWidth / 2;
+        final targetZ = worldPos.dy - item.effectiveDepth / 2;
+        notifier.placeFurniture(state.selectedId!, targetX, targetZ);
+        notifier.snapFurniture(state.selectedId!);
+      }
+      // Tap outside map → do nothing (keep selection)
     } else {
       notifier.selectFurniture(null);
     }
@@ -344,15 +351,21 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     final selectedId = state.selectedId;
 
     if (!_didMove && _dragStartScreen != null && selectedId != null) {
-      // Didn't move → treat as tap-to-move
+      // Didn't move → treat as tap-to-move (only inside map)
       final hit = _hitTest(_dragStartScreen!, state);
       if (hit == null) {
-        // Tapped empty space → move selected item there
         final worldPos = IsometricMath.screenToWorld(_dragStartScreen!);
-        final item = state.furniture.firstWhere((f) => f.id == selectedId);
-        final targetX = worldPos.dx - item.effectiveWidth / 2;
-        final targetZ = worldPos.dy - item.effectiveDepth / 2;
-        notifier.placeFurniture(selectedId, targetX, targetZ);
+        final room = state.room;
+        if (worldPos.dx >= 0 &&
+            worldPos.dx <= room.width &&
+            worldPos.dy >= 0 &&
+            worldPos.dy <= room.depth) {
+          final item =
+              state.furniture.firstWhere((f) => f.id == selectedId);
+          final targetX = worldPos.dx - item.effectiveWidth / 2;
+          final targetZ = worldPos.dy - item.effectiveDepth / 2;
+          notifier.placeFurniture(selectedId, targetX, targetZ);
+        }
       }
     }
 
