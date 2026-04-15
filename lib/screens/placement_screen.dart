@@ -162,9 +162,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
               // Example toggle
               GestureDetector(
                 onTap: () {
-                  if (controller.text.isEmpty) {
-                    controller.text = _jsonExample;
-                  }
+                  controller.text = _jsonExample;
                 },
                 child: Row(
                   children: [
