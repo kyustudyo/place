@@ -196,7 +196,7 @@ class FurnitureRenderer extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
-    // ── Floor footprint ──
+    // ── Floor footprint (always at y=0) ──
     final floorPoints = [
       IsometricMath.worldToScreen(sx, 0, sz),
       IsometricMath.worldToScreen(sx + w, 0, sz),
@@ -212,28 +212,31 @@ class FurnitureRenderer extends CustomPainter {
     canvas.drawPath(floorPath, ghostFill);
     _drawDashedPath(canvas, floorPoints, ghostBorder);
 
-    // ── Height wireframe ──
-    final topPoints = [
-      IsometricMath.worldToScreen(sx, h, sz),
-      IsometricMath.worldToScreen(sx + w, h, sz),
-      IsometricMath.worldToScreen(sx + w, h, sz + d),
-      IsometricMath.worldToScreen(sx, h, sz + d),
-    ];
+    // ── Height wireframe — only when on floor (y≈0) ──
+    final isOnFloor = f.position.y < 0.05;
+    if (isOnFloor) {
+      final topPoints = [
+        IsometricMath.worldToScreen(sx, h, sz),
+        IsometricMath.worldToScreen(sx + w, h, sz),
+        IsometricMath.worldToScreen(sx + w, h, sz + d),
+        IsometricMath.worldToScreen(sx, h, sz + d),
+      ];
 
-    final topFill = Paint()
-      ..color = color.withValues(alpha: 0.1)
-      ..style = PaintingStyle.fill;
-    final topPath = Path()..moveTo(topPoints[0].dx, topPoints[0].dy);
-    for (int i = 1; i < topPoints.length; i++) {
-      topPath.lineTo(topPoints[i].dx, topPoints[i].dy);
-    }
-    topPath.close();
-    canvas.drawPath(topPath, topFill);
-    _drawDashedPath(canvas, topPoints, ghostBorder);
+      final topFill = Paint()
+        ..color = color.withValues(alpha: 0.1)
+        ..style = PaintingStyle.fill;
+      final topPath = Path()..moveTo(topPoints[0].dx, topPoints[0].dy);
+      for (int i = 1; i < topPoints.length; i++) {
+        topPath.lineTo(topPoints[i].dx, topPoints[i].dy);
+      }
+      topPath.close();
+      canvas.drawPath(topPath, topFill);
+      _drawDashedPath(canvas, topPoints, ghostBorder);
 
-    // Vertical edges
-    for (int i = 0; i < 4; i++) {
-      _drawDashedLine(canvas, floorPoints[i], topPoints[i], ghostBorder);
+      // Vertical edges
+      for (int i = 0; i < 4; i++) {
+        _drawDashedLine(canvas, floorPoints[i], topPoints[i], ghostBorder);
+      }
     }
 
     // ── Wall height guide lines (always visible) ──
