@@ -153,6 +153,36 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     ),
                   ),
                 ),
+              // Undo/Redo buttons — right side column above zoom
+              if (!_isDragging &&
+                  (ref.read(placementProvider.notifier).canUndo ||
+                      ref.read(placementProvider.notifier).canRedo))
+                Positioned(
+                  right: 12,
+                  bottom: state.selectedId != null ? 114 : 62,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (ref.read(placementProvider.notifier).canUndo)
+                        _UndoRedoBtn(
+                          icon: Icons.undo,
+                          theme: theme,
+                          onTap: () =>
+                              ref.read(placementProvider.notifier).undo(),
+                        ),
+                      if (ref.read(placementProvider.notifier).canUndo &&
+                          ref.read(placementProvider.notifier).canRedo)
+                        const SizedBox(width: 8),
+                      if (ref.read(placementProvider.notifier).canRedo)
+                        _UndoRedoBtn(
+                          icon: Icons.redo,
+                          theme: theme,
+                          onTap: () =>
+                              ref.read(placementProvider.notifier).redo(),
+                        ),
+                    ],
+                  ),
+                ),
               // Guide text when item selected
               if (state.selectedId != null && !_isDragging)
                 Positioned(
@@ -665,6 +695,43 @@ class _NudgeBtnState extends State<_NudgeBtn> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Undo/Redo button ───
+class _UndoRedoBtn extends StatelessWidget {
+  final IconData icon;
+  final AppTheme theme;
+  final VoidCallback onTap;
+
+  const _UndoRedoBtn({
+    required this.icon,
+    required this.theme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: theme.headerBg.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+              color: theme.textSecondary.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 6,
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 20, color: theme.textSecondary),
       ),
     );
   }

@@ -67,9 +67,34 @@ class PlacementState {
 }
 
 class PlacementNotifier extends Notifier<PlacementState> {
+  final List<PlacementState> _undoStack = [];
+  final List<PlacementState> _redoStack = [];
+
+  bool get canUndo => _undoStack.isNotEmpty;
+  bool get canRedo => _redoStack.isNotEmpty;
+
+  /// Save current state to undo stack before making changes
+  void _saveUndo() {
+    _undoStack.add(state);
+    _redoStack.clear();
+    // Limit stack size
+    if (_undoStack.length > 50) _undoStack.removeAt(0);
+  }
+
+  void undo() {
+    if (!canUndo) return;
+    _redoStack.add(state);
+    state = _undoStack.removeLast();
+  }
+
+  void redo() {
+    if (!canRedo) return;
+    _undoStack.add(state);
+    state = _redoStack.removeLast();
+  }
+
   @override
   PlacementState build() {
-    // Start with default room, no furniture yet (guided flow adds them)
     return const PlacementState(room: _defaultRoom);
   }
 
@@ -102,6 +127,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
     required double y,
     required double z,
   }) {
+    _saveUndo();
     final index = state.furniture.length;
     final id = 'item_${DateTime.now().millisecondsSinceEpoch}';
     final color = _furnitureColors[index % _furnitureColors.length];
@@ -174,6 +200,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
   }
 
   void loadJson(String jsonStr) {
+    _saveUndo();
     try {
       final parsed = JsonParser.parseInput(jsonStr);
       final items = parsed.furniture.map((f) {
@@ -218,6 +245,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
   /// Snap furniture to grid + wall edges (call on drag end)
   void snapFurniture(String id) {
+    _saveUndo();
     final tileSize = state.room.tileSize;
     final room = state.room;
     final updated = state.furniture.map((f) {
@@ -267,6 +295,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
   }
 
   void rotateFurniture(String id) {
+    _saveUndo();
     final updated = state.furniture.map((f) {
       if (f.id == id) {
         return f.copyWith(rotation: (f.rotation + 90) % 360);
@@ -279,6 +308,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
   }
 
   void removeFurniture(String id) {
+    _saveUndo();
     final updated = state.furniture.where((f) => f.id != id).toList();
     final checked = CollisionDetector.updateCollisions(updated, state.room);
     state = state.copyWith(furniture: checked, clearSelected: true);
