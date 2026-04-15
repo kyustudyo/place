@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_theme.dart';
 
@@ -33,3 +34,28 @@ class AxisSwapNotifier extends Notifier<bool> {
 final axisSwapProvider = NotifierProvider<AxisSwapNotifier, bool>(
   AxisSwapNotifier.new,
 );
+
+/// Guide line color
+class GuideColorNotifier extends Notifier<Color> {
+  @override
+  Color build() => const Color(0xFFE74C3C); // red default — visible on most walls
+
+  void set(Color c) => state = c;
+}
+
+final guideColorProvider = NotifierProvider<GuideColorNotifier, Color>(
+  GuideColorNotifier.new,
+);
+
+final guideColorOptions = <Color>[
+  const Color(0xFFE74C3C), // red
+  const Color(0xFFE91E63), // pink
+  const Color(0xFFFF9800), // orange
+  const Color(0xFFFFEB3B), // yellow
+  const Color(0xFF4CAF50), // green
+  const Color(0xFF00BCD4), // cyan
+  const Color(0xFF2196F3), // blue
+  const Color(0xFF9C27B0), // purple
+  const Color(0xFFFFFFFF), // white
+  const Color(0xFF212121), // black
+];

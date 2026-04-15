@@ -10,6 +10,7 @@ class GridPainter extends CustomPainter {
   final AppTheme theme;
   final double? selectedHeight;
   final bool axisSwapped;
+  final Color guideColor;
   // Selected item position/size for wall projection
   final double? selX;
   final double? selZ;
@@ -21,6 +22,7 @@ class GridPainter extends CustomPainter {
     required this.theme,
     this.selectedHeight,
     this.axisSwapped = false,
+    this.guideColor = const Color(0xFFE74C3C),
     this.selX,
     this.selZ,
     this.selW,
@@ -146,13 +148,13 @@ class GridPainter extends CustomPainter {
 
     // Wall projection — visible on wall surface
     final guidePaint = Paint()
-      ..color = theme.accent.withValues(alpha: 0.6)
+      ..color = guideColor.withValues(alpha: 0.7)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+      ..strokeWidth = 1.5;
 
     // Semi-transparent fill on wall
     final guideFill = Paint()
-      ..color = theme.accent.withValues(alpha: 0.08)
+      ..color = guideColor.withValues(alpha: 0.12)
       ..style = PaintingStyle.fill;
 
     // Left wall (x=0): rectangle showing z range × height
@@ -207,7 +209,7 @@ class GridPainter extends CustomPainter {
 
     // Floor projection lines to walls
     final floorGuide = Paint()
-      ..color = theme.accent.withValues(alpha: 0.25)
+      ..color = guideColor.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
 
@@ -230,12 +232,12 @@ class GridPainter extends CustomPainter {
 
   void _drawHeightGuide(Canvas canvas, double h) {
     final overflows = h > room.height;
-    final guideColor = overflows
+    final heightColor = overflows
         ? Colors.red.withValues(alpha: 0.7)
-        : theme.accent.withValues(alpha: 0.6);
+        : guideColor.withValues(alpha: 0.6);
 
     final dashPaint = Paint()
-      ..color = guideColor
+      ..color = heightColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
@@ -283,7 +285,7 @@ class GridPainter extends CustomPainter {
       text: TextSpan(
         text: '$heightText  $pctText',
         style: TextStyle(
-          color: guideColor,
+          color: heightColor,
           fontSize: 10,
           fontWeight: FontWeight.w600,
           shadows: [

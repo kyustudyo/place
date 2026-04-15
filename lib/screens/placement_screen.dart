@@ -661,6 +661,60 @@ class _SettingsSheet extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // Guide line color
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.cardBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.palette, color: theme.accent, size: 18),
+                      const SizedBox(width: 10),
+                      Text('가이드 점선 색상', style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final c in guideColorOptions)
+                        GestureDetector(
+                          onTap: () =>
+                              ref.read(guideColorProvider.notifier).set(c),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: c,
+                              shape: BoxShape.circle,
+                              border: ref.watch(guideColorProvider) == c
+                                  ? Border.all(
+                                      color: theme.textPrimary, width: 3)
+                                  : Border.all(
+                                      color: c.withValues(alpha: 0.3),
+                                      width: 1),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           // Theme picker
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
