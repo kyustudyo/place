@@ -295,11 +295,21 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
   void _showSettings() {
     final theme = ref.read(currentThemeProvider);
+    final state = ref.read(placementProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => _SettingsSheet(ref: ref, theme: theme),
+      builder: (ctx) => _SettingsSheet(
+        ref: ref,
+        theme: theme,
+        onSave: _saveSession,
+        onLoad: _loadSession,
+        onImport: _pasteJson,
+        onExport: _copyJson,
+        hasFurniture: state.furniture.isNotEmpty,
+        hasSession: _hasSession,
+      ),
     );
   }
 
@@ -391,37 +401,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
             const SizedBox(width: 6),
           ],
-          // Save — only when furniture exists
-          if (state.furniture.isNotEmpty) ...[
-            _TopBarBtn(
-              icon: Icons.save_outlined,
-              onTap: _saveSession,
-              theme: theme,
-            ),
-            const SizedBox(width: 6),
-          ],
-          // Load — only when session exists
-          if (_hasSession) ...[
-            _TopBarBtn(
-              icon: Icons.folder_open_outlined,
-              onTap: _loadSession,
-              theme: theme,
-            ),
-            const SizedBox(width: 6),
-          ],
-          // JSON import
-          _TopBarBtn(
-            icon: Icons.file_download_outlined,
-            onTap: _pasteJson,
-            theme: theme,
-          ),
-          const SizedBox(width: 6),
-          // JSON export
-          _TopBarBtn(
-            icon: Icons.file_upload_outlined,
-            onTap: state.furniture.any((f) => f.isPlaced) ? _copyJson : null,
-            theme: theme,
-          ),
         ],
       ),
     );
@@ -680,8 +659,23 @@ class _TopBarBtn extends StatelessWidget {
 class _SettingsSheet extends ConsumerWidget {
   final WidgetRef ref;
   final AppTheme theme;
+  final VoidCallback onSave;
+  final VoidCallback onLoad;
+  final VoidCallback onImport;
+  final VoidCallback onExport;
+  final bool hasFurniture;
+  final bool hasSession;
 
-  const _SettingsSheet({required this.ref, required this.theme});
+  const _SettingsSheet({
+    required this.ref,
+    required this.theme,
+    required this.onSave,
+    required this.onLoad,
+    required this.onImport,
+    required this.onExport,
+    required this.hasFurniture,
+    required this.hasSession,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -755,6 +749,94 @@ class _SettingsSheet extends ConsumerWidget {
                     activeTrackColor: theme.accent,
                     onChanged: (_) =>
                         ref.read(axisSwapProvider.notifier).toggle(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Data management
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.cardBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.storage, color: theme.accent, size: 18),
+                      const SizedBox(width: 10),
+                      Text('데이터', style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (hasFurniture)
+                        Expanded(
+                          child: _SettingsActionBtn(
+                            icon: Icons.save_outlined,
+                            label: '저장',
+                            theme: theme,
+                            onTap: () {
+                              onSave();
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                      if (hasFurniture && hasSession)
+                        const SizedBox(width: 8),
+                      if (hasSession)
+                        Expanded(
+                          child: _SettingsActionBtn(
+                            icon: Icons.folder_open_outlined,
+                            label: '불러오기',
+                            theme: theme,
+                            onTap: () {
+                              onLoad();
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SettingsActionBtn(
+                          icon: Icons.file_download_outlined,
+                          label: 'JSON 가져오기',
+                          theme: theme,
+                          onTap: () {
+                            Navigator.pop(context);
+                            onImport();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (hasFurniture)
+                        Expanded(
+                          child: _SettingsActionBtn(
+                            icon: Icons.file_upload_outlined,
+                            label: 'JSON 내보내기',
+                            theme: theme,
+                            onTap: () {
+                              Navigator.pop(context);
+                              onExport();
+                            },
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -903,6 +985,47 @@ class _SettingsSheet extends ConsumerWidget {
         width: s, height: s,
         decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)),
       );
+}
+
+class _SettingsActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final AppTheme theme;
+  final VoidCallback onTap;
+
+  const _SettingsActionBtn({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: theme.accent.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.accent.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: theme.accent),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(
+              color: theme.accent,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            )),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _StatusChip extends StatelessWidget {
