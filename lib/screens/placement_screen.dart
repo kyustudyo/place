@@ -575,17 +575,6 @@ class _AddItemBtnState extends State<_AddItemBtn>
                 ),
                 child: Icon(Icons.add_rounded, size: 20, color: t.accent),
               ),
-              if (widget.highlight) ...[
-                const SizedBox(height: 4),
-                Text(
-                  '사물 추가',
-                  style: TextStyle(
-                    color: t.accent,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
             ],
           );
         },
