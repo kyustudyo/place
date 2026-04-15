@@ -199,6 +199,25 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(furniture: updated);
   }
 
+  void updateFurnitureColor(String id, Color color) {
+    _saveUndo();
+    final updated = state.furniture.map((f) {
+      if (f.id == id) {
+        return Furniture(
+          id: f.id,
+          name: f.name,
+          size: f.size,
+          position: f.position,
+          rotation: f.rotation,
+          color: color,
+          isPlaced: f.isPlaced,
+        );
+      }
+      return f;
+    }).toList();
+    state = state.copyWith(furniture: updated);
+  }
+
   void loadJson(String jsonStr) {
     _saveUndo();
     try {

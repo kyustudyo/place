@@ -97,6 +97,22 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   },
                 ),
               ),
+              // Name + color edit (top-left)
+              if (state.selectedId != null && !_isDragging)
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: _ItemInfoPanel(
+                    item: state.selectedFurniture!,
+                    theme: theme,
+                    onNameChanged: (name) => ref
+                        .read(placementProvider.notifier)
+                        .updateFurnitureName(state.selectedId!, name),
+                    onColorChanged: (color) => ref
+                        .read(placementProvider.notifier)
+                        .updateFurnitureColor(state.selectedId!, color),
+                  ),
+                ),
               // Fine-tune controls when item selected
               if (state.selectedId != null && !_isDragging)
                 Positioned(
@@ -515,6 +531,174 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
       j = i;
     }
     return inside;
+  }
+}
+
+// ─── Item info panel (name + color) ───
+const _itemColors = <Color>[
+  Color(0xFF5B8DEF),
+  Color(0xFF5BCA8A),
+  Color(0xFFE8A838),
+  Color(0xFFEF5B7B),
+  Color(0xFF9B59B6),
+  Color(0xFF1ABC9C),
+  Color(0xFFE67E22),
+  Color(0xFF3498DB),
+  Color(0xFFE74C3C),
+  Color(0xFF2ECC71),
+  Color(0xFF607D8B),
+  Color(0xFF795548),
+];
+
+class _ItemInfoPanel extends StatefulWidget {
+  final Furniture item;
+  final AppTheme theme;
+  final ValueChanged<String> onNameChanged;
+  final ValueChanged<Color> onColorChanged;
+
+  const _ItemInfoPanel({
+    required this.item,
+    required this.theme,
+    required this.onNameChanged,
+    required this.onColorChanged,
+  });
+
+  @override
+  State<_ItemInfoPanel> createState() => _ItemInfoPanelState();
+}
+
+class _ItemInfoPanelState extends State<_ItemInfoPanel> {
+  late TextEditingController _ctrl;
+  bool _showColors = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.item.name);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ItemInfoPanel old) {
+    super.didUpdateWidget(old);
+    if (old.item.id != widget.item.id) {
+      _ctrl.text = widget.item.name;
+      _showColors = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.theme;
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: t.headerBg.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: t.accent.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Name field
+          Row(
+            children: [
+              // Color dot — tap to toggle palette
+              GestureDetector(
+                onTap: () => setState(() => _showColors = !_showColors),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: widget.item.color,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.palette,
+                    size: 14,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _ctrl,
+                  maxLength: 10,
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    counterText: '',
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 6),
+                    filled: true,
+                    fillColor: t.cardBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: '이름 (10자)',
+                    hintStyle: TextStyle(
+                      color: t.textSecondary.withValues(alpha: 0.5),
+                      fontSize: 13,
+                    ),
+                  ),
+                  onChanged: widget.onNameChanged,
+                ),
+              ),
+            ],
+          ),
+          // Color palette
+          if (_showColors) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final c in _itemColors)
+                  GestureDetector(
+                    onTap: () {
+                      widget.onColorChanged(c);
+                      setState(() => _showColors = false);
+                    },
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                        border: widget.item.color == c
+                            ? Border.all(color: t.textPrimary, width: 2.5)
+                            : null,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
