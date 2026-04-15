@@ -786,32 +786,35 @@ class _SettingsSheet extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (hasFurniture)
-                        Expanded(
-                          child: _SettingsActionBtn(
-                            icon: Icons.save_outlined,
-                            label: '저장',
-                            theme: theme,
-                            onTap: () {
-                              onSave();
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                      if (hasFurniture && hasSession)
-                        const SizedBox(width: 8),
-                      if (hasSession)
-                        Expanded(
-                          child: _SettingsActionBtn(
-                            icon: Icons.folder_open_outlined,
-                            label: '불러오기',
-                            theme: theme,
-                            onTap: () {
-                              onLoad();
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
+                      Expanded(
+                        child: hasFurniture
+                            ? _SettingsActionBtn(
+                                icon: Icons.save_outlined,
+                                label: '저장',
+                                theme: theme,
+                                onTap: () {
+                                  onSave();
+                                  Navigator.pop(context);
+                                },
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: hasSession
+                            ? _SettingsActionBtn(
+                                icon: Icons.folder_open_outlined,
+                                label: '불러오기',
+                                theme: theme,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Future.delayed(
+                                      const Duration(milliseconds: 300),
+                                      onLoad);
+                                },
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -824,23 +827,28 @@ class _SettingsSheet extends ConsumerWidget {
                           theme: theme,
                           onTap: () {
                             Navigator.pop(context);
-                            onImport();
+                            Future.delayed(
+                                const Duration(milliseconds: 300),
+                                onImport);
                           },
                         ),
                       ),
                       const SizedBox(width: 8),
-                      if (hasFurniture)
-                        Expanded(
-                          child: _SettingsActionBtn(
-                            icon: Icons.file_upload_outlined,
-                            label: 'JSON 내보내기',
-                            theme: theme,
-                            onTap: () {
-                              Navigator.pop(context);
-                              onExport();
-                            },
-                          ),
-                        ),
+                      Expanded(
+                        child: hasFurniture
+                            ? _SettingsActionBtn(
+                                icon: Icons.file_upload_outlined,
+                                label: 'JSON 내보내기',
+                                theme: theme,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Future.delayed(
+                                      const Duration(milliseconds: 300),
+                                      onExport);
+                                },
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ],
