@@ -38,9 +38,6 @@ class GridPainter extends CustomPainter {
     _drawWalls(canvas);
     if (selX != null) _drawPositionGuides(canvas);
     _drawAxisLabels(canvas);
-    if (selectedHeight != null && selectedHeight! > 0) {
-      _drawHeightGuide(canvas, selectedHeight!);
-    }
   }
 
   void _drawFloor(Canvas canvas) {
@@ -268,147 +265,42 @@ class GridPainter extends CustomPainter {
           IsometricMath.worldToScreen(wx2, 0, z.clamp(0.0, room.depth)),
           IsometricMath.worldToScreen(wx2, 0, 0), floorGuide);
     }
-  }
 
-  void _drawHeightGuide(Canvas canvas, double h) {
-    final overflows = h > room.height;
-    final heightColor = overflows
-        ? Colors.red.withValues(alpha: 0.7)
-        : guideColor.withValues(alpha: 0.6);
-
-    final dashPaint = Paint()
-      ..color = heightColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-
-    // Draw ghost wall extension if overflows
-    if (overflows) {
-      _drawGhostWalls(canvas, h);
-    }
-
-    // Dashed line at actual height (or clamped to room if not overflowing)
-    final drawH = overflows ? h : h;
-
-    // Left wall dashed line
-    final leftFrom = IsometricMath.worldToScreen(0, drawH, 0);
-    final leftTo = IsometricMath.worldToScreen(0, drawH, room.depth);
-    _drawDashedLine(canvas, leftFrom, leftTo, dashPaint);
-
-    // Back wall dashed line
-    final backFrom = IsometricMath.worldToScreen(0, drawH, 0);
-    final backTo = IsometricMath.worldToScreen(room.width, drawH, 0);
-    _drawDashedLine(canvas, backFrom, backTo, dashPaint);
-
-    // Also draw the room ceiling line when overflowing
-    if (overflows) {
-      final ceilPaint = Paint()
-        ..color = theme.wallBorderColor.withValues(alpha: 0.4)
+    // Floor shadow when elevated (Y > 0) — shows where item is on the floor
+    if (baseY > 0.01) {
+      final shadowPaint = Paint()
+        ..color = guideColor.withValues(alpha: 0.3)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
-      final ceilLeftFrom = IsometricMath.worldToScreen(0, room.height, 0);
-      final ceilLeftTo =
-          IsometricMath.worldToScreen(0, room.height, room.depth);
-      _drawDashedLine(canvas, ceilLeftFrom, ceilLeftTo, ceilPaint);
-      final ceilBackTo =
-          IsometricMath.worldToScreen(room.width, room.height, 0);
-      _drawDashedLine(canvas, ceilLeftFrom, ceilBackTo, ceilPaint);
+      final shadowFill = Paint()
+        ..color = guideColor.withValues(alpha: 0.06)
+        ..style = PaintingStyle.fill;
+
+      final cx = x.clamp(-room.width, room.width * 2);
+      final cz = z.clamp(-room.depth, room.depth * 2);
+
+      final shadowPath = Path()
+        ..moveTo(IsometricMath.worldToScreen(cx, 0, cz).dx,
+            IsometricMath.worldToScreen(cx, 0, cz).dy)
+        ..lineTo(IsometricMath.worldToScreen(cx + w, 0, cz).dx,
+            IsometricMath.worldToScreen(cx + w, 0, cz).dy)
+        ..lineTo(IsometricMath.worldToScreen(cx + w, 0, cz + d).dx,
+            IsometricMath.worldToScreen(cx + w, 0, cz + d).dy)
+        ..lineTo(IsometricMath.worldToScreen(cx, 0, cz + d).dx,
+            IsometricMath.worldToScreen(cx, 0, cz + d).dy)
+        ..close();
+
+      canvas.drawPath(shadowPath, shadowFill);
+      final pts = [
+        IsometricMath.worldToScreen(cx, 0, cz),
+        IsometricMath.worldToScreen(cx + w, 0, cz),
+        IsometricMath.worldToScreen(cx + w, 0, cz + d),
+        IsometricMath.worldToScreen(cx, 0, cz + d),
+      ];
+      for (int i = 0; i < 4; i++) {
+        _drawDashedLine(canvas, pts[i], pts[(i + 1) % 4], shadowPaint);
+      }
     }
-
-    // Label
-    final labelPos = IsometricMath.worldToScreen(0, drawH, 0);
-    final pctText = '${(h / room.height * 100).round()}%';
-    final heightText = overflows
-        ? '${h.toStringAsFixed(1)} (넘침!)'
-        : h.toStringAsFixed(1);
-
-    final tp = TextPainter(
-      text: TextSpan(
-        text: '$heightText  $pctText',
-        style: TextStyle(
-          color: heightColor,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          shadows: [
-            Shadow(
-              color: theme.scaffoldBg.withValues(alpha: 0.8),
-              blurRadius: 3,
-            ),
-          ],
-        ),
-      ),
-      textDirection: ui.TextDirection.ltr,
-    )..layout();
-
-    tp.paint(canvas, labelPos + Offset(-tp.width - 8, -tp.height / 2));
-  }
-
-  void _drawGhostWalls(Canvas canvas, double h) {
-    final ghostFill = Paint()
-      ..color = Colors.red.withValues(alpha: 0.06)
-      ..style = PaintingStyle.fill;
-
-    final ghostBorder = Paint()
-      ..color = Colors.red.withValues(alpha: 0.25)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    // Left ghost wall extension (from room.height to h)
-    final leftGhost = Path()
-      ..moveTo(
-          IsometricMath.worldToScreen(0, room.height, 0).dx,
-          IsometricMath.worldToScreen(0, room.height, 0).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(0, room.height, room.depth).dx,
-          IsometricMath.worldToScreen(0, room.height, room.depth).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(0, h, room.depth).dx,
-          IsometricMath.worldToScreen(0, h, room.depth).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(0, h, 0).dx,
-          IsometricMath.worldToScreen(0, h, 0).dy)
-      ..close();
-
-    canvas.drawPath(leftGhost, ghostFill);
-
-    // Left ghost vertical dashed edges
-    _drawDashedLine(
-      canvas,
-      IsometricMath.worldToScreen(0, room.height, 0),
-      IsometricMath.worldToScreen(0, h, 0),
-      ghostBorder,
-    );
-    _drawDashedLine(
-      canvas,
-      IsometricMath.worldToScreen(0, room.height, room.depth),
-      IsometricMath.worldToScreen(0, h, room.depth),
-      ghostBorder,
-    );
-
-    // Back ghost wall extension (from room.height to h)
-    final backGhost = Path()
-      ..moveTo(
-          IsometricMath.worldToScreen(0, room.height, 0).dx,
-          IsometricMath.worldToScreen(0, room.height, 0).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(room.width, room.height, 0).dx,
-          IsometricMath.worldToScreen(room.width, room.height, 0).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(room.width, h, 0).dx,
-          IsometricMath.worldToScreen(room.width, h, 0).dy)
-      ..lineTo(
-          IsometricMath.worldToScreen(0, h, 0).dx,
-          IsometricMath.worldToScreen(0, h, 0).dy)
-      ..close();
-
-    canvas.drawPath(backGhost, ghostFill);
-
-    // Back ghost vertical dashed edges
-    _drawDashedLine(
-      canvas,
-      IsometricMath.worldToScreen(room.width, room.height, 0),
-      IsometricMath.worldToScreen(room.width, h, 0),
-      ghostBorder,
-    );
   }
 
   void _drawDashedLine(
