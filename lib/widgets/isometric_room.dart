@@ -153,33 +153,31 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     ),
                   ),
                 ),
-              // Undo/Redo buttons — right side column above zoom
+              // Undo/Redo — fixed position, always visible when history exists
               if (!_isDragging &&
                   (ref.read(placementProvider.notifier).canUndo ||
                       ref.read(placementProvider.notifier).canRedo))
                 Positioned(
-                  right: 12,
-                  bottom: state.selectedId != null ? 114 : 62,
+                  right: 62,
+                  bottom: 12,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (ref.read(placementProvider.notifier).canUndo)
-                        _UndoRedoBtn(
-                          icon: Icons.undo,
-                          theme: theme,
-                          onTap: () =>
-                              ref.read(placementProvider.notifier).undo(),
-                        ),
-                      if (ref.read(placementProvider.notifier).canUndo &&
-                          ref.read(placementProvider.notifier).canRedo)
-                        const SizedBox(width: 8),
-                      if (ref.read(placementProvider.notifier).canRedo)
-                        _UndoRedoBtn(
-                          icon: Icons.redo,
-                          theme: theme,
-                          onTap: () =>
-                              ref.read(placementProvider.notifier).redo(),
-                        ),
+                      _UndoRedoBtn(
+                        icon: Icons.undo,
+                        theme: theme,
+                        enabled: ref.read(placementProvider.notifier).canUndo,
+                        onTap: () =>
+                            ref.read(placementProvider.notifier).undo(),
+                      ),
+                      const SizedBox(width: 6),
+                      _UndoRedoBtn(
+                        icon: Icons.redo,
+                        theme: theme,
+                        enabled: ref.read(placementProvider.notifier).canRedo,
+                        onTap: () =>
+                            ref.read(placementProvider.notifier).redo(),
+                      ),
                     ],
                   ),
                 ),
@@ -705,33 +703,38 @@ class _UndoRedoBtn extends StatelessWidget {
   final IconData icon;
   final AppTheme theme;
   final VoidCallback onTap;
+  final bool enabled;
 
   const _UndoRedoBtn({
     required this.icon,
     required this.theme,
     required this.onTap,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: theme.headerBg.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: theme.textSecondary.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 6,
-            ),
-          ],
+      onTap: enabled ? onTap : null,
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.25,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: theme.headerBg.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: theme.textSecondary.withValues(alpha: 0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 6,
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 20, color: theme.textSecondary),
         ),
-        child: Icon(icon, size: 20, color: theme.textSecondary),
       ),
     );
   }
