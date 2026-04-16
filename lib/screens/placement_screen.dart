@@ -926,9 +926,9 @@ class _SettingsSheet extends ConsumerWidget {
                           ),
                           child: Slider(
                             value: ref.watch(guideOpacityProvider),
-                            min: 0.1,
+                            min: 0.0,
                             max: 1.0,
-                            divisions: 9,
+                            divisions: 10,
                             activeColor: ref.watch(guideColorProvider),
                             thumbColor: ref.watch(guideColorProvider),
                             onChanged: (v) =>

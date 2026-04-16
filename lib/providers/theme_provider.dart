@@ -50,9 +50,9 @@ final guideColorProvider = NotifierProvider<GuideColorNotifier, Color>(
 /// Guide line opacity (0.0 ~ 1.0)
 class GuideOpacityNotifier extends Notifier<double> {
   @override
-  double build() => 1.0; // full opacity by default
+  double build() => 0.5; // 50% default
 
-  void set(double v) => state = v.clamp(0.1, 1.0);
+  void set(double v) => state = v.clamp(0.0, 1.0);
 }
 
 final guideOpacityProvider = NotifierProvider<GuideOpacityNotifier, double>(
