@@ -908,26 +908,47 @@ class _SettingsSheet extends ConsumerWidget {
                   // Guide opacity slider
                   Row(
                     children: [
+                      Icon(Icons.opacity, color: theme.accent, size: 16),
+                      const SizedBox(width: 6),
                       Text('투명도', style: TextStyle(
-                        color: theme.textSecondary,
+                        color: theme.textPrimary,
                         fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       )),
+                      const SizedBox(width: 4),
                       Expanded(
-                        child: Slider(
-                          value: ref.watch(guideOpacityProvider),
-                          min: 0.1,
-                          max: 1.0,
-                          divisions: 9,
-                          activeColor: ref.watch(guideColorProvider),
-                          onChanged: (v) =>
-                              ref.read(guideOpacityProvider.notifier).set(v),
+                        child: SliderTheme(
+                          data: SliderThemeData(
+                            trackHeight: 4,
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                            inactiveTrackColor: theme.textSecondary.withValues(alpha: 0.3),
+                          ),
+                          child: Slider(
+                            value: ref.watch(guideOpacityProvider),
+                            min: 0.1,
+                            max: 1.0,
+                            divisions: 9,
+                            activeColor: ref.watch(guideColorProvider),
+                            thumbColor: ref.watch(guideColorProvider),
+                            onChanged: (v) =>
+                                ref.read(guideOpacityProvider.notifier).set(v),
+                          ),
                         ),
                       ),
-                      Text(
-                        '${(ref.watch(guideOpacityProvider) * 100).round()}%',
-                        style: TextStyle(
-                          color: theme.textSecondary,
-                          fontSize: 12,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: theme.accent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${(ref.watch(guideOpacityProvider) * 100).round()}%',
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
