@@ -904,6 +904,34 @@ class _SettingsSheet extends ConsumerWidget {
                         ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  // Guide opacity slider
+                  Row(
+                    children: [
+                      Text('투명도', style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 13,
+                      )),
+                      Expanded(
+                        child: Slider(
+                          value: ref.watch(guideOpacityProvider),
+                          min: 0.1,
+                          max: 1.0,
+                          divisions: 9,
+                          activeColor: ref.watch(guideColorProvider),
+                          onChanged: (v) =>
+                              ref.read(guideOpacityProvider.notifier).set(v),
+                        ),
+                      ),
+                      Text(
+                        '${(ref.watch(guideOpacityProvider) * 100).round()}%',
+                        style: TextStyle(
+                          color: theme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

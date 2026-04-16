@@ -35,6 +35,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     final theme = ref.watch(currentThemeProvider);
     final axisSwapped = ref.watch(axisSwapProvider);
     final guideColor = ref.watch(guideColorProvider);
+    final guideOpacity = ref.watch(guideOpacityProvider);
     IsometricMath.swapAxes = axisSwapped;
     final room = state.room;
 
@@ -61,6 +62,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                       : null,
                   axisSwapped: axisSwapped,
                   guideColor: guideColor,
+                  guideOpacity: guideOpacity,
                   selX: state.selectedFurniture?.position.x,
                   selZ: state.selectedFurniture?.position.z,
                   selW: state.selectedFurniture?.effectiveWidth,

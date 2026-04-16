@@ -17,6 +17,7 @@ class GridPainter extends CustomPainter {
   final double? selW;
   final double? selD;
   final double? selY; // position.y (base height)
+  final double guideOpacity;
 
   GridPainter({
     required this.room,
@@ -24,6 +25,7 @@ class GridPainter extends CustomPainter {
     this.selectedHeight,
     this.axisSwapped = false,
     this.guideColor = const Color(0xFFE74C3C),
+    this.guideOpacity = 1.0,
     this.selX,
     this.selZ,
     this.selW,
@@ -148,7 +150,7 @@ class GridPainter extends CustomPainter {
 
     // Semi-transparent fill on wall
     final guideFill = Paint()
-      ..color = guideColor.withValues(alpha: 0.08)
+      ..color = guideColor.withValues(alpha: 0.08 * guideOpacity)
       ..style = PaintingStyle.fill;
 
     // Clamp projection to wall range
@@ -159,7 +161,7 @@ class GridPainter extends CustomPainter {
 
     // Soft horizontal lines only (no vertical Y-axis lines)
     final softPaint = Paint()
-      ..color = guideColor.withValues(alpha: 0.5)
+      ..color = guideColor.withValues(alpha: 0.5 * guideOpacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -223,7 +225,7 @@ class GridPainter extends CustomPainter {
 
     // Floor projection lines to walls
     final floorGuide = Paint()
-      ..color = guideColor.withValues(alpha: 0.3)
+      ..color = guideColor.withValues(alpha: 0.3 * guideOpacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
 
@@ -250,11 +252,11 @@ class GridPainter extends CustomPainter {
     // Floor shadow when elevated (Y > 0) — shows where item is on the floor
     if (baseY > 0.01) {
       final shadowPaint = Paint()
-        ..color = guideColor.withValues(alpha: 0.3)
+        ..color = guideColor.withValues(alpha: 0.3 * guideOpacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
       final shadowFill = Paint()
-        ..color = guideColor.withValues(alpha: 0.06)
+        ..color = guideColor.withValues(alpha: 0.06 * guideOpacity)
         ..style = PaintingStyle.fill;
 
       final cx = x.clamp(-room.width, room.width * 2);

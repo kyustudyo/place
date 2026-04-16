@@ -47,6 +47,18 @@ final guideColorProvider = NotifierProvider<GuideColorNotifier, Color>(
   GuideColorNotifier.new,
 );
 
+/// Guide line opacity (0.0 ~ 1.0)
+class GuideOpacityNotifier extends Notifier<double> {
+  @override
+  double build() => 1.0; // full opacity by default
+
+  void set(double v) => state = v.clamp(0.1, 1.0);
+}
+
+final guideOpacityProvider = NotifierProvider<GuideOpacityNotifier, double>(
+  GuideOpacityNotifier.new,
+);
+
 final guideColorOptions = <Color>[
   const Color(0xFFE74C3C), // red
   const Color(0xFFE91E63), // pink
