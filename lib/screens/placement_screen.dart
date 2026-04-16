@@ -144,11 +144,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     final theme = ref.read(currentThemeProvider);
     final controller = TextEditingController();
 
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null && data!.text!.isNotEmpty) {
-      controller.text = data.text!;
-    }
-
     if (!mounted) return;
 
     showDialog(
@@ -192,6 +187,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                 height: 260,
                 child: TextField(
                   controller: controller,
+                  autofocus: true,
                   maxLines: null,
                   expands: true,
                   style: TextStyle(
@@ -681,6 +677,47 @@ class _SettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final axisSwapped = ref.watch(axisSwapProvider);
     final currentThemeIndex = ref.watch(themeProvider);
+    final dataActions = <Widget>[
+      if (hasFurniture)
+        _SettingsActionBtn(
+          icon: Icons.save_outlined,
+          label: '저장',
+          theme: theme,
+          onTap: () {
+            onSave();
+            Navigator.pop(context);
+          },
+        ),
+      if (hasSession)
+        _SettingsActionBtn(
+          icon: Icons.folder_open_outlined,
+          label: '불러오기',
+          theme: theme,
+          onTap: () {
+            Navigator.pop(context);
+            Future.delayed(const Duration(milliseconds: 300), onLoad);
+          },
+        ),
+      _SettingsActionBtn(
+        icon: Icons.file_download_outlined,
+        label: 'JSON 가져오기',
+        theme: theme,
+        onTap: () {
+          Navigator.pop(context);
+          Future.delayed(const Duration(milliseconds: 300), onImport);
+        },
+      ),
+      if (hasFurniture)
+        _SettingsActionBtn(
+          icon: Icons.file_upload_outlined,
+          label: 'JSON 내보내기',
+          theme: theme,
+          onTap: () {
+            Navigator.pop(context);
+            Future.delayed(const Duration(milliseconds: 300), onExport);
+          },
+        ),
+    ];
 
     return Container(
       constraints: BoxConstraints(
@@ -784,73 +821,35 @@ class _SettingsSheet extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: hasFurniture
-                            ? _SettingsActionBtn(
-                                icon: Icons.save_outlined,
-                                label: '저장',
-                                theme: theme,
-                                onTap: () {
-                                  onSave();
-                                  Navigator.pop(context);
-                                },
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: hasSession
-                            ? _SettingsActionBtn(
-                                icon: Icons.folder_open_outlined,
-                                label: '불러오기',
-                                theme: theme,
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  Future.delayed(
-                                      const Duration(milliseconds: 300),
-                                      onLoad);
-                                },
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _SettingsActionBtn(
-                          icon: Icons.file_download_outlined,
-                          label: 'JSON 가져오기',
-                          theme: theme,
-                          onTap: () {
-                            Navigator.pop(context);
-                            Future.delayed(
-                                const Duration(milliseconds: 300),
-                                onImport);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: hasFurniture
-                            ? _SettingsActionBtn(
-                                icon: Icons.file_upload_outlined,
-                                label: 'JSON 내보내기',
-                                theme: theme,
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  Future.delayed(
-                                      const Duration(milliseconds: 300),
-                                      onExport);
-                                },
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
+                  if (dataActions.length == 2)
+                    Column(
+                      children: [
+                        for (var i = 0; i < dataActions.length; i++) ...[
+                          SizedBox(width: double.infinity, child: dataActions[i]),
+                          if (i != dataActions.length - 1)
+                            const SizedBox(height: 8),
+                        ],
+                      ],
+                    )
+                  else
+                    Column(
+                      children: [
+                        for (var i = 0; i < dataActions.length; i += 2) ...[
+                          Row(
+                            children: [
+                              Expanded(child: dataActions[i]),
+                              if (i + 1 < dataActions.length) ...[
+                                const SizedBox(width: 8),
+                                Expanded(child: dataActions[i + 1]),
+                              ] else
+                                const Expanded(child: SizedBox.shrink()),
+                            ],
+                          ),
+                          if (i + 2 < dataActions.length)
+                            const SizedBox(height: 8),
+                        ],
+                      ],
+                    ),
                 ],
               ),
             ),

@@ -7,6 +7,7 @@ import '../providers/theme_provider.dart';
 import '../utils/isometric_math.dart';
 import 'grid_painter.dart';
 import 'furniture_renderer.dart';
+import 'dimension_dialog.dart';
 
 const _loupeSize = 130.0;
 
@@ -22,6 +23,11 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   Offset? _dragScreenPos;
   bool _zoomed = false;
   Offset _zoomFocus = Offset.zero; // world center for zoom
+
+  Offset _itemCenter(Furniture item) => Offset(
+        item.position.x + item.effectiveWidth / 2,
+        item.position.z + item.effectiveDepth / 2,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -87,11 +93,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     setState(() {
                       _zoomed = !_zoomed;
                       if (_zoomed && state.selectedFurniture != null) {
-                        final f = state.selectedFurniture!;
-                        _zoomFocus = Offset(
-                          f.position.x + f.effectiveWidth / 2,
-                          f.position.z + f.effectiveDepth / 2,
-                        );
+                        _zoomFocus = _itemCenter(state.selectedFurniture!);
                       }
                     });
                   },
@@ -111,6 +113,50 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     onColorChanged: (color) => ref
                         .read(placementProvider.notifier)
                         .updateFurnitureColor(state.selectedId!, color),
+                  ),
+                ),
+              // Size edit button (top-right)
+              if (state.selectedId != null && !_isDragging)
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: GestureDetector(
+                    onTap: () => _showSizeDialog(state.selectedFurniture!),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: theme.headerBg.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: theme.accent.withValues(alpha: 0.2)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.straighten,
+                              size: 16, color: theme.accent),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${state.selectedFurniture!.size.x}'
+                            '\u00d7${state.selectedFurniture!.size.z}'
+                            '\u00d7${state.selectedFurniture!.size.y}',
+                            style: TextStyle(
+                              color: theme.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               // Fine-tune controls when item selected
@@ -195,30 +241,6 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                             ref.read(placementProvider.notifier).redo(),
                       ),
                     ],
-                  ),
-                ),
-              // Guide text when item selected
-              if (state.selectedId != null && !_isDragging)
-                Positioned(
-                  bottom: 56,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: theme.headerBg.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '드래그하여 이동 · 탭하여 회전',
-                        style: TextStyle(
-                          color: theme.textSecondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
                   ),
                 ),
             ],
@@ -315,6 +337,28 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     );
   }
 
+  Future<void> _showSizeDialog(Furniture item) async {
+    final theme = ref.read(currentThemeProvider);
+    final result = await showDialog<DimensionResult>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => DimensionDialog(
+        theme: theme,
+        initialName: item.name,
+        initialX: item.size.x,
+        initialY: item.size.y,
+        initialZ: item.size.z,
+        isEdit: true,
+      ),
+    );
+    if (result == null) return;
+    final notifier = ref.read(placementProvider.notifier);
+    notifier.updateFurnitureSize(item.id, result.x, result.y, result.z);
+    if (result.name.isNotEmpty) {
+      notifier.updateFurnitureName(item.id, result.name);
+    }
+  }
+
   void _handleTap(Offset pos, PlacementState state) {
     final hit = _hitTest(pos, state);
     final notifier = ref.read(placementProvider.notifier);
@@ -329,10 +373,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
       // Update zoom focus
       if (_zoomed) {
         setState(() {
-          _zoomFocus = Offset(
-            hit.position.x + hit.effectiveWidth / 2,
-            hit.position.z + hit.effectiveDepth / 2,
-          );
+          _zoomFocus = _itemCenter(hit);
         });
       }
     } else if (state.selectedId != null) {
@@ -349,6 +390,14 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         final targetZ = worldPos.dy - item.effectiveDepth / 2;
         notifier.placeFurniture(state.selectedId!, targetX, targetZ);
         notifier.snapFurniture(state.selectedId!);
+        if (_zoomed) {
+          setState(() {
+            _zoomFocus = Offset(
+              worldPos.dx,
+              worldPos.dy,
+            );
+          });
+        }
       } else {
         // Tap outside map → deselect
         notifier.selectFurniture(null);
@@ -375,12 +424,16 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     }
 
     if (dragTarget != null) {
+      final dragItem = state.furniture.firstWhere((f) => f.id == dragTarget);
       setState(() {
         _isDragging = true;
         _didMove = false;
         _dragScreenPos = pos;
         _dragStartScreen = pos;
         _lastDragScreen = pos;
+        if (_zoomed) {
+          _zoomFocus = _itemCenter(dragItem);
+        }
       });
     }
   }
@@ -398,28 +451,25 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
 
     // Move item by delta
     final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
+    final nextX = item.position.x + deltaX;
+    final nextZ = item.position.z + deltaZ;
     ref.read(placementProvider.notifier).placeFurniture(
           state.selectedId!,
-          item.position.x + deltaX,
-          item.position.z + deltaZ,
+          nextX,
+          nextZ,
         );
 
     _didMove = true;
     setState(() {
       _dragScreenPos = pos;
       _lastDragScreen = pos;
-    });
-
-    // Update zoom focus while dragging
-    if (_zoomed) {
-      final f = state.selectedFurniture;
-      if (f != null) {
+      if (_zoomed) {
         _zoomFocus = Offset(
-          f.position.x + f.effectiveWidth / 2,
-          f.position.z + f.effectiveDepth / 2,
+          nextX + item.effectiveWidth / 2,
+          nextZ + item.effectiveDepth / 2,
         );
       }
-    }
+    });
   }
 
   void _handleDragEnd() {
@@ -454,12 +504,23 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
       notifier.snapFurniture(selectedId);
     }
 
+    final snappedItem = selectedId == null
+        ? null
+        : ref
+            .read(placementProvider)
+            .furniture
+            .cast<Furniture?>()
+            .firstWhere((f) => f?.id == selectedId, orElse: () => null);
+
     setState(() {
       _isDragging = false;
       _didMove = false;
       _dragScreenPos = null;
       _dragStartScreen = null;
       _lastDragScreen = null;
+      if (_zoomed && snappedItem != null) {
+        _zoomFocus = _itemCenter(snappedItem);
+      }
     });
   }
 
