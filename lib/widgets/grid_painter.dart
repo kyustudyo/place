@@ -150,7 +150,7 @@ class GridPainter extends CustomPainter {
 
     // Semi-transparent fill on wall
     final guideFill = Paint()
-      ..color = guideColor.withValues(alpha: 0.08 * guideOpacity)
+      ..color = guideColor.withValues(alpha: (0.25 * guideOpacity).clamp(0.0, 1.0))
       ..style = PaintingStyle.fill;
 
     // Clamp projection to wall range
@@ -161,9 +161,9 @@ class GridPainter extends CustomPainter {
 
     // Soft horizontal lines only (no vertical Y-axis lines)
     final softPaint = Paint()
-      ..color = guideColor.withValues(alpha: 0.5 * guideOpacity)
+      ..color = guideColor.withValues(alpha: (1.0 * guideOpacity).clamp(0.0, 1.0))
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.5;
 
     // Left wall (x=0): horizontal lines at floor, baseY, top
     if (wz2 > wz1) {
@@ -225,9 +225,9 @@ class GridPainter extends CustomPainter {
 
     // Floor projection lines to walls
     final floorGuide = Paint()
-      ..color = guideColor.withValues(alpha: 0.3 * guideOpacity)
+      ..color = guideColor.withValues(alpha: (0.8 * guideOpacity).clamp(0.0, 1.0))
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
+      ..strokeWidth = 1.0;
 
     // Item → left wall (clamped to map range)
     if (x > 0) {
@@ -252,11 +252,11 @@ class GridPainter extends CustomPainter {
     // Floor shadow when elevated (Y > 0) — shows where item is on the floor
     if (baseY > 0.01) {
       final shadowPaint = Paint()
-        ..color = guideColor.withValues(alpha: 0.3 * guideOpacity)
+        ..color = guideColor.withValues(alpha: (0.8 * guideOpacity).clamp(0.0, 1.0))
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
       final shadowFill = Paint()
-        ..color = guideColor.withValues(alpha: 0.06 * guideOpacity)
+        ..color = guideColor.withValues(alpha: (0.2 * guideOpacity).clamp(0.0, 1.0))
         ..style = PaintingStyle.fill;
 
       final cx = x.clamp(-room.width, room.width * 2);
