@@ -26,7 +26,8 @@
 - `TODO.md` — 새 작업 시작 시 🔴 항목 확인
 - `claude-rules/INCIDENT_REPORTS.md` — 새 기능/아키텍처 변경 시만
 - `claude-rules/guides/` — 빌드, 배포, 테스트, 디자인 가이드
-- `claude-rules/guides/design-workflow.md` — 디자인 작업 시 반드시 읽어라 (폴더 구조 + legacy 규칙)
+- **디자인 작업 시**: `claude-rules/guides/design-workflow.md` 처음부터 끝까지 읽어라
+- **배포/출시 요청 시**: `claude-rules/guides/ios-release.md` + `claude-rules/guides/aos-release.md` 읽어라. 물어보지 말고 가이드대로 전부 준비하라
 - `~/tools/figma-web-capture-pro/GUEST_GUIDE.md` — 디자인 작업 시 반드시 먼저 읽어라. 이 안에 DESIGN_MIX.md 등 전체 프로세스가 있다
 - 디자인 폴더: `design/` (프로젝트 루트) — 화면별 폴더에 HTML 버전 관리
 
