@@ -108,3 +108,35 @@
   - `lib/widgets/isometric_room.dart` — guideOpacity watch 및 GridPainter에 전달
   - `lib/screens/placement_screen.dart` — 설정에 Slider 위젯 추가
 - 배포 완료: https://place-cbp.pages.dev/
+
+### 가이드 점선 진하기 3배 강화 + 디폴트 50%
+- 기본 alpha 값 약 3배 증가 (슬라이더 30% ≈ 이전 100%)
+- 디폴트 50%, 슬라이더 범위 0~100% (중앙 정렬)
+
+### iOS 배포 (App Store Connect)
+- IPA 빌드 + xcrun altool CLI 업로드 성공
+- 앱 이름: 어디에둘까, Bundle ID: com.kyustudyo.place
+- 빌드 3 (아이콘 교체 후 재업로드)
+
+### Android 배포 준비
+- keystore 생성 (`~/upload-keystore.jks`)
+- `android/key.properties` + `build.gradle.kts` 서명 설정
+- AAB 빌드 성공 (42MB)
+- Google Play Console 앱 미등록 → 업로드 대기
+
+### 배포 에셋 전체 준비
+- 앱 이름: place → 어디에둘까 (iOS Info.plist + Android AndroidManifest.xml)
+- 커스텀 앱 아이콘: 1024x1024 원본 → iOS 전 크기 + Android mipmap 전 크기 + round
+- Feature Graphic 1024x500
+- 개인정보처리방침: `privacy-policy.html` → https://place-cbp.pages.dev/privacy-policy.html
+- 스토어 설명 문구 (한국어) 작성
+
+## 2026-04-19
+
+### 스토어 스크린샷 자동 캡처
+- inbox 지시 (`from_commander_screenshots.md`) 확인 → 조치 → 삭제
+- `SCREENSHOT_MODE` 분기 추가 (`lib/main.dart`, `lib/screens/placement_screen.dart`)
+- iPhone 14 Plus (1284x2778): 4장 (메인, 선택, 설정, 사물목록)
+- iPad Pro 12.9 6th (2048x2732): 2장 (메인, 선택)
+- Android (1080x1920): iOS 4장 리사이즈
+- 결과: `store-assets/screenshots/ios/`, `ipad/`, `android/`

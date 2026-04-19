@@ -58,9 +58,9 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     if (isScreenshotMode) {
       // 스크린샷 모드: 다이얼로그 스킵, 예시 데이터 자동 로드
       ref.read(placementProvider.notifier).loadJson(_jsonExample);
-      // 스크린샷 모드: 필요 시 자동 선택
+      // 스크린샷 모드: 필요 시 자동 UI 조작
       // Future.delayed(const Duration(seconds: 2), () {
-      //   if (mounted) ref.read(placementProvider.notifier).selectFurniture('sofa');
+      //   if (mounted) _showSettings();
       // });
       return;
     }
