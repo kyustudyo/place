@@ -21,4 +21,7 @@ ios/Pods/
 ios/.symlinks/
 android/.gradle/
 android/local.properties
+android/key.properties
+*.jks
+*.keystore
 **/Flutter/ephemeral/

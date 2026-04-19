@@ -33,3 +33,78 @@
 - Cloudflare Pages 배포: https://place-cbp.pages.dev/
 - `CLAUDE.md` 업데이트 (프로젝트 정보 반영)
 - `flutter analyze` 통과 (0 issues)
+
+### 테마 시스템 + 벽 수정
+- 벽 렌더링 버그 수정: 오른벽이 x=room.width(하단)에 잘못 그려짐 → x=0(상단좌)으로 이동
+  - 두 벽이 꼭대기(0,0,0)에서 V자로 만나는 정상 아이소메트릭 구조로 수정
+- 10개 테마 시스템 추가:
+  - `lib/models/app_theme.dart` — 10개 테마 정의 (색상, 밝기, 선 두께)
+  - `lib/providers/theme_provider.dart` — 테마 상태 관리
+  - v4 Warm Wood가 기본 테마
+  - 상단바에 팔레트 아이콘 설정 버튼 → 바텀시트로 테마 전환
+- 모든 위젯에 테마 색상 적용 (grid_painter, furniture_renderer, furniture_panel, placement_screen)
+- 배포 완료: https://place-cbp.pages.dev/
+- `flutter analyze` 통과 (0 issues)
+
+### UX 전면 개편
+- 기존: JSON 붙여넣기 해야 시작 → 빈 화면이 보임
+- 변경: 진입 즉시 방(7.5m) + 기본 직육면체 1개 표시
+- 크기 입력 팝업 자동 표시: 이름, X(가로), Y(높이), Z(세로)
+- 새 파일:
+  - `lib/widgets/dimension_dialog.dart` — 크기 입력 다이얼로그
+- 수정 파일:
+  - `lib/providers/placement_provider.dart` — 기본 방/가구 포함, addFurniture/updateFurnitureSize/removeFurniture 추가
+  - `lib/screens/placement_screen.dart` — 진입 시 팝업, 상단바 아이콘 정리
+  - `lib/widgets/furniture_panel.dart` — 크기 편집 버튼(자 아이콘), 삭제 기능
+  - `lib/widgets/isometric_room.dart` — room non-null 대응
+- 배포 완료: https://place-cbp.pages.dev/
+- `flutter analyze` 통과 (0 issues)
+
+### 진입 플로우 개선 (measure 참고)
+- measure 프로젝트 UX 분석: 단계별 가이드(①②③), 한 번에 하나만 물어봄, 명확한 안내 문구
+- 변경:
+  - 진입 시 ① 공간 크기 설정 팝업 (가로/세로/높이/타일크기, "다음" 버튼)
+  - 이어서 ② 가구 추가 팝업 (이름/X/Y/Z, "배치하기" 버튼)
+  - 단계 번호 표시, 안내 부연설명 추가
+- 수정 파일:
+  - `lib/widgets/dimension_dialog.dart` — RoomSizeDialog 추가, DimensionDialog에 showStepNumber 옵션
+  - `lib/providers/placement_provider.dart` — setRoom() 추가, 초기 가구 없이 빈 방 시작
+  - `lib/screens/placement_screen.dart` — _runInitialFlow() (공간→가구 순차 팝업)
+- 배포 완료: https://place-cbp.pages.dev/
+- `flutter analyze` 통과 (0 issues)
+
+## 2026-04-12
+
+### ② 가구 추가 팝업 회색 화면 버그 수정
+- 원인: `AlertDialog.actions`에서 `Expanded` 사용 → `OverflowBar` 내 레이아웃 크래시
+- 수정: `SizedBox(width: double.infinity)`로 대체
+- 파일: `lib/widgets/dimension_dialog.dart`
+- 배포 완료: https://place-cbp.pages.dev/
+
+### "가구" → "사물" 용어 변경
+### 기본 방 크기 15×15 타일1로 변경
+### 높이 점선 가이드 + 넘침 시 투명 가상벽
+### ② 사물 추가 팝업에 "나중에" 버튼 추가
+### + 버튼 깜박임 + "사물 추가" 툴팁 (사물 비어있을 때)
+
+### 모바일 UX 전면 개선
+- 사물목록: 하단 패널 제거 → 상단바 목록 버튼 → 바텀시트로 열기
+- 맵이 모바일 전체 화면 차지
+- 드래그 시 사물이 손가락 위쪽으로 오프셋 (가리지 않음)
+- 드래그 중 원형 확대 루페(2.5x) 표시 — 십자선 + 사물 색상 테두리
+- 수정 파일:
+  - `lib/screens/placement_screen.dart` — 모바일 레이아웃, _showFurnitureSheet()
+  - `lib/widgets/isometric_room.dart` — 드래그 오프셋, _LoupePainter
+- 배포 완료: https://place-cbp.pages.dev/
+
+## 2026-04-16
+
+### 가이드 점선 투명도 조절 기능 추가
+- 설정 바텀시트에 opacity 슬라이더 추가 (10%~100%, 10% 단위)
+- 가이드 색상 선택 아래에 "투명도" 라벨 + Slider + % 표시
+- 수정 파일:
+  - `lib/providers/theme_provider.dart` — GuideOpacityNotifier, guideOpacityProvider 추가
+  - `lib/widgets/grid_painter.dart` — guideOpacity 파라미터, 모든 alpha 값에 곱셈 적용
+  - `lib/widgets/isometric_room.dart` — guideOpacity watch 및 GridPainter에 전달
+  - `lib/screens/placement_screen.dart` — 설정에 Slider 위젯 추가
+- 배포 완료: https://place-cbp.pages.dev/

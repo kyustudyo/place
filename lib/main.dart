@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/placement_screen.dart';
 
+const isScreenshotMode = bool.fromEnvironment('SCREENSHOT_MODE');
+
 void main() {
   runApp(const ProviderScope(child: PlaceApp()));
 }

@@ -8,6 +8,7 @@ import '../widgets/isometric_room.dart';
 import '../widgets/furniture_panel.dart';
 import '../widgets/dimension_dialog.dart';
 import '../utils/session_storage.dart';
+import '../main.dart' show isScreenshotMode;
 
 class PlacementScreen extends ConsumerStatefulWidget {
   const PlacementScreen({super.key});
@@ -54,6 +55,16 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
   /// ① 공간 크기 → ② 사물 추가 순서
   Future<void> _runInitialFlow() async {
+    if (isScreenshotMode) {
+      // 스크린샷 모드: 다이얼로그 스킵, 예시 데이터 자동 로드
+      ref.read(placementProvider.notifier).loadJson(_jsonExample);
+      // 스크린샷 모드: 필요 시 자동 선택
+      // Future.delayed(const Duration(seconds: 2), () {
+      //   if (mounted) ref.read(placementProvider.notifier).selectFurniture('sofa');
+      // });
+      return;
+    }
+
     // Step ① 공간 크기 설정
     final roomResult = await _showRoomSizeDialog();
     if (roomResult != null) {
