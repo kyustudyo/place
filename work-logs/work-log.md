@@ -137,6 +137,21 @@
 - inbox 지시 (`from_commander_screenshots.md`) 확인 → 조치 → 삭제
 - `SCREENSHOT_MODE` 분기 추가 (`lib/main.dart`, `lib/screens/placement_screen.dart`)
 - iPhone 14 Plus (1284x2778): 4장 (메인, 선택, 설정, 사물목록)
-- iPad Pro 12.9 6th (2048x2732): 2장 (메인, 선택)
+- iPad Pro 12.9 6th (2048x2732): 4장 (메인, 선택, 설정, 사물목록)
 - Android (1080x1920): iOS 4장 리사이즈
 - 결과: `store-assets/screenshots/ios/`, `ipad/`, `android/`
+
+## 2026-04-20
+
+### Google Play 내부 테스트 AAB 업로드
+- fastlane supply로 내부 테스트 트랙에 AAB 업로드 성공 (draft)
+- 빌드번호 3, 버전 1.0.0, API 24+
+- 서비스 계정 권한 추가 필요했음 (주인님 직접 처리)
+- 프로덕션 출시를 위해 12명 테스터 × 14일 비공개 테스트 필요
+
+## 2026-04-22
+
+### 테마 설정 영속화
+- 선택한 화면 테마가 앱 재시작 후에도 유지되도록 SharedPreferences 저장 추가
+- 수정 파일: `lib/providers/theme_provider.dart`
+- `flutter analyze` 통과 (0 issues)

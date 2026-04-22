@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_theme.dart';
+
+const _kThemeKey = 'theme_index';
 
 class ThemeNotifier extends Notifier<int> {
   @override
-  int build() => defaultThemeIndex;
+  int build() {
+    _load();
+    return defaultThemeIndex;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt(_kThemeKey);
+    if (saved != null && saved >= 0 && saved < appThemes.length) {
+      state = saved;
+    }
+  }
 
   void setTheme(int index) {
     if (index >= 0 && index < appThemes.length) {
       state = index;
+      SharedPreferences.getInstance().then((p) => p.setInt(_kThemeKey, index));
     }
   }
 }
