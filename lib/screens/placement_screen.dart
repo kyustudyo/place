@@ -167,15 +167,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             Text('JSON 가져오기',
                 style: TextStyle(color: theme.textPrimary, fontSize: 16)),
             const Spacer(),
-            IconButton(
-              icon: Icon(Icons.content_paste_rounded, color: theme.accent, size: 20),
-              tooltip: '붙여넣기',
-              style: IconButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(32, 32),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: () async {
+            GestureDetector(
+              onTap: () async {
                 final data = await Clipboard.getData(Clipboard.kTextPlain);
                 if (data?.text != null) {
                   controller.text = data!.text!;
@@ -183,6 +176,15 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                       offset: controller.text.length);
                 }
               },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(Icons.content_paste_rounded, color: theme.accent, size: 18),
+              ),
             ),
           ],
         ),
