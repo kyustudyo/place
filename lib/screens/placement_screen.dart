@@ -385,6 +385,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
           ),
           const Spacer(),
+          // JSON paste
+          _TopBarBtn(
+            icon: Icons.content_paste_rounded,
+            onTap: _pasteJson,
+            theme: theme,
+          ),
+          const SizedBox(width: 6),
           // Theme
           _TopBarBtn(
             icon: Icons.settings_outlined,
