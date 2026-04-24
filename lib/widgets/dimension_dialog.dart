@@ -277,17 +277,51 @@ class _DimensionDialogState extends State<DimensionDialog> {
   late final TextEditingController _xCtrl;
   late final TextEditingController _yCtrl;
   late final TextEditingController _zCtrl;
+  bool _keepRatio = true;
+  bool _updatingRatio = false;
+
+  // Original values for ratio calculation
+  late final double _origX;
+  late final double _origY;
+  late final double _origZ;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.initialName ?? '');
-    _xCtrl =
-        TextEditingController(text: widget.initialX?.toString() ?? '1.5');
-    _yCtrl =
-        TextEditingController(text: widget.initialY?.toString() ?? '0.8');
-    _zCtrl =
-        TextEditingController(text: widget.initialZ?.toString() ?? '1.0');
+    _origX = widget.initialX ?? 1.5;
+    _origY = widget.initialY ?? 0.8;
+    _origZ = widget.initialZ ?? 1.0;
+    _xCtrl = TextEditingController(text: _origX.toString());
+    _yCtrl = TextEditingController(text: _origY.toString());
+    _zCtrl = TextEditingController(text: _origZ.toString());
+
+    if (widget.isEdit) {
+      _xCtrl.addListener(() => _onDimChanged(_xCtrl, _origX, _origY, _origZ, _yCtrl, _zCtrl));
+      _yCtrl.addListener(() => _onDimChanged(_yCtrl, _origY, _origX, _origZ, _xCtrl, _zCtrl));
+      _zCtrl.addListener(() => _onDimChanged(_zCtrl, _origZ, _origX, _origY, _xCtrl, _yCtrl));
+    }
+  }
+
+  void _onDimChanged(
+    TextEditingController source,
+    double sourceOrig,
+    double otherOrig1,
+    double otherOrig2,
+    TextEditingController other1,
+    TextEditingController other2,
+  ) {
+    if (!_keepRatio || _updatingRatio || sourceOrig == 0) return;
+    final v = double.tryParse(source.text);
+    if (v == null || v <= 0) return;
+
+    _updatingRatio = true;
+    final ratio = v / sourceOrig;
+    final n1 = (otherOrig1 * ratio * 1000).round() / 1000;
+    final n2 = (otherOrig2 * ratio * 1000).round() / 1000;
+    other1.text = n1.toString();
+    other2.text = n2.toString();
+    _updatingRatio = false;
   }
 
   @override
@@ -405,6 +439,37 @@ class _DimensionDialogState extends State<DimensionDialog> {
                         _buildField(t, 'Z (세로)', _zCtrl, '1.0')),
               ],
             ),
+            if (widget.isEdit) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => setState(() => _keepRatio = !_keepRatio),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: _keepRatio,
+                        onChanged: (v) =>
+                            setState(() => _keepRatio = v ?? true),
+                        activeColor: t.accent,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '비율 유지',
+                      style: TextStyle(
+                        color: t.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 6),
             Text(
               '단위: 미터 (m)',
