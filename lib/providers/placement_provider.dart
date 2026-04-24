@@ -221,6 +221,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
     _saveUndo();
     try {
       final parsed = JsonParser.parseInput(jsonStr);
+      final room = parsed.room ?? state.room;
       final items = parsed.furniture.map((f) {
         if (f.position.x != 0 || f.position.z != 0) {
           return f.copyWith(isPlaced: true);
@@ -228,8 +229,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
         return f;
       }).toList();
 
-      final checked = CollisionDetector.updateCollisions(items, parsed.room);
-      state = PlacementState(room: parsed.room, furniture: checked);
+      final checked = CollisionDetector.updateCollisions(items, room);
+      state = PlacementState(room: room, furniture: checked);
     } catch (e) {
       state = state.copyWith(error: '잘못된 JSON 형식입니다: $e', clearError: false);
     }

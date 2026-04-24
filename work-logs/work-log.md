@@ -155,3 +155,13 @@
 - 선택한 화면 테마가 앱 재시작 후에도 유지되도록 SharedPreferences 저장 추가
 - 수정 파일: `lib/providers/theme_provider.dart`
 - `flutter analyze` 통과 (0 issues)
+
+## 2026-04-24
+
+### inbox 처리: unity팀 JSON room 자동 설정 요청
+- 요청: JSON 가져오기 시 `room` 키도 읽어 맵 크기 자동 설정
+- 기존: `room` 키 필수 — 없으면 크래시
+- 수정: `room` 키 선택사항 — 있으면 맵 재구성, 없으면 기존 맵 유지
+- 수정 파일: `lib/utils/json_parser.dart`, `lib/providers/placement_provider.dart`
+- unity팀에 회신 완료 (`from_place_room_json_reply.md`)
+- `flutter analyze` 통과 (0 issues)

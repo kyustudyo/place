@@ -19,9 +19,11 @@ const _furnitureColors = [
 
 class JsonParser {
   /// Parse furniture_sizes.json
-  static ({Room room, List<Furniture> furniture}) parseInput(String jsonStr) {
+  /// `room` key is optional — if omitted, returns null and caller keeps current room.
+  static ({Room? room, List<Furniture> furniture}) parseInput(String jsonStr) {
     final data = json.decode(jsonStr) as Map<String, dynamic>;
-    final room = Room.fromJson(data['room'] as Map<String, dynamic>);
+    final roomJson = data['room'] as Map<String, dynamic>?;
+    final room = roomJson != null ? Room.fromJson(roomJson) : null;
     final furnitureList = (data['furniture'] as List)
         .asMap()
         .entries
