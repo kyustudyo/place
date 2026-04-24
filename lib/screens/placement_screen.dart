@@ -162,8 +162,25 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: theme.headerBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('JSON 가져오기',
-            style: TextStyle(color: theme.textPrimary, fontSize: 16)),
+        title: Row(
+          children: [
+            Text('JSON 가져오기',
+                style: TextStyle(color: theme.textPrimary, fontSize: 16)),
+            const Spacer(),
+            IconButton(
+              icon: Icon(Icons.content_paste_rounded, color: theme.accent, size: 20),
+              tooltip: '붙여넣기',
+              onPressed: () async {
+                final data = await Clipboard.getData(Clipboard.kTextPlain);
+                if (data?.text != null) {
+                  controller.text = data!.text!;
+                  controller.selection = TextSelection.collapsed(
+                      offset: controller.text.length);
+                }
+              },
+            ),
+          ],
+        ),
         content: SizedBox(
           width: 400,
           child: Column(
@@ -385,13 +402,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
           ),
           const Spacer(),
-          // JSON paste
-          _TopBarBtn(
-            icon: Icons.content_paste_rounded,
-            onTap: _pasteJson,
-            theme: theme,
-          ),
-          const SizedBox(width: 6),
           // Theme
           _TopBarBtn(
             icon: Icons.settings_outlined,
