@@ -170,6 +170,11 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             IconButton(
               icon: Icon(Icons.content_paste_rounded, color: theme.accent, size: 20),
               tooltip: '붙여넣기',
+              style: IconButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(32, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed: () async {
                 final data = await Clipboard.getData(Clipboard.kTextPlain);
                 if (data?.text != null) {
