@@ -349,6 +349,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onExport: _copyJson,
         onReferenceImagePicked: (bytes) {
           ref.read(referenceImageProvider.notifier).set(bytes);
+          precacheImage(MemoryImage(bytes), context);
         },
         hasFurniture: state.furniture.isNotEmpty,
         hasSession: _hasSession,
