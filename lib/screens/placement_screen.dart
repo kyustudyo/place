@@ -455,46 +455,14 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           ),
           if (hasRefImage) ...[
             const SizedBox(width: 8),
-            GestureDetector(
+            _RefImageBtn(
+              active: _showingReference,
+              theme: theme,
               onTap: () {
                 _pageController.animateToPage(1,
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut);
               },
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _showingReference
-                      ? theme.accent
-                      : theme.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: theme.accent.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.image_outlined,
-                        size: 16,
-                        color: _showingReference
-                            ? Colors.white
-                            : theme.accent),
-                    const SizedBox(width: 4),
-                    Text(
-                      '참조',
-                      style: TextStyle(
-                        color: _showingReference
-                            ? Colors.white
-                            : theme.accent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
           const Spacer(),
@@ -663,6 +631,114 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                   ),
               ],
             ),
+    );
+  }
+}
+
+class _RefImageBtn extends StatefulWidget {
+  final bool active;
+  final AppTheme theme;
+  final VoidCallback onTap;
+
+  const _RefImageBtn({
+    required this.active,
+    required this.theme,
+    required this.onTap,
+  });
+
+  @override
+  State<_RefImageBtn> createState() => _RefImageBtnState();
+}
+
+class _RefImageBtnState extends State<_RefImageBtn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim;
+  bool _wasActive = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _RefImageBtn old) {
+    super.didUpdateWidget(old);
+    // Blink when first appearing (active goes from not-mounted to mounted)
+    if (!_wasActive) {
+      _wasActive = true;
+      _blink();
+    }
+  }
+
+  Future<void> _blink() async {
+    await _anim.forward();
+    if (!mounted) return;
+    await _anim.reverse();
+    if (!mounted) return;
+    await _anim.forward();
+    if (!mounted) return;
+    await _anim.reverse();
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.theme;
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _anim,
+        builder: (context, _) {
+          final glow = _anim.value;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: widget.active
+                  ? t.accent
+                  : Color.lerp(
+                      t.accent.withValues(alpha: 0.12),
+                      t.accent.withValues(alpha: 0.5),
+                      glow,
+                    ),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Color.lerp(
+                  t.accent.withValues(alpha: 0.4),
+                  t.accent,
+                  glow,
+                )!,
+                width: 1 + glow,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.image_outlined,
+                    size: 16,
+                    color: widget.active ? Colors.white : t.accent),
+                const SizedBox(width: 4),
+                Text(
+                  '참조',
+                  style: TextStyle(
+                    color: widget.active ? Colors.white : t.accent,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
