@@ -165,3 +165,25 @@
 - 수정 파일: `lib/utils/json_parser.dart`, `lib/providers/placement_provider.dart`
 - unity팀에 회신 완료 (`from_place_room_json_reply.md`)
 - `flutter analyze` 통과 (0 issues)
+
+### JSON 다이얼로그 붙여넣기 버튼
+- JSON 가져오기 다이얼로그 오른쪽 위에 클립보드 붙여넣기 버튼 추가
+- 동그란 배경 뷰(accent 15%)로 감싼 아이콘
+- 수정 파일: `lib/screens/placement_screen.dart`
+
+### 사물 크기 수정 비율 유지
+- 크기 수정 다이얼로그에 "비율 유지" 체크박스 추가 (디폴트 체크)
+- X/Y/Z 중 하나 변경 시 원본 비율 기준으로 나머지 자동 조정
+- 수정 파일: `lib/widgets/dimension_dialog.dart`
+
+## 2026-04-26
+
+### 참조 이미지 기능 추가
+- 설정에 "참조 이미지" 추가/변경/삭제 버튼
+- 이미지 추가 시 상단바 Place 오른쪽에 "참조" 버튼 표시
+- 참조 버튼 탭 → 참조 이미지 전체화면 (InteractiveViewer, 핀치 줌)
+- Place 버튼 탭 → 작업화면 복귀
+- 패키지 추가: `image_picker`
+- 수정 파일: `lib/screens/placement_screen.dart`, `lib/providers/theme_provider.dart`
+- `flutter analyze` 통과 (0 issues)
+- 배포 완료: https://place-cbp.pages.dev/

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,6 +73,20 @@ class GuideOpacityNotifier extends Notifier<double> {
 
 final guideOpacityProvider = NotifierProvider<GuideOpacityNotifier, double>(
   GuideOpacityNotifier.new,
+);
+
+/// Reference image bytes
+class ReferenceImageNotifier extends Notifier<Uint8List?> {
+  @override
+  Uint8List? build() => null;
+
+  void set(Uint8List? bytes) => state = bytes;
+  void clear() => state = null;
+}
+
+final referenceImageProvider =
+    NotifierProvider<ReferenceImageNotifier, Uint8List?>(
+  ReferenceImageNotifier.new,
 );
 
 final guideColorOptions = <Color>[

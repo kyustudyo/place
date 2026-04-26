@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/app_theme.dart';
 import '../providers/placement_provider.dart';
 import '../providers/theme_provider.dart';
@@ -38,6 +39,7 @@ const _jsonExample = '''{
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
   bool _hasSession = false;
+  bool _showingReference = false;
 
   @override
   void didChangeDependencies() {
@@ -324,6 +326,15 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     );
   }
 
+  Future<void> _pickReferenceImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    ref.read(referenceImageProvider.notifier).set(bytes);
+  }
+
   void _showSettings() {
     final theme = ref.read(currentThemeProvider);
     final state = ref.read(placementProvider);
@@ -338,6 +349,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onLoad: _loadSession,
         onImport: _pasteJson,
         onExport: _copyJson,
+        onPickReference: _pickReferenceImage,
         hasFurniture: state.furniture.isNotEmpty,
         hasSession: _hasSession,
       ),
@@ -348,6 +360,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(placementProvider);
     final theme = ref.watch(currentThemeProvider);
+    final refImage = ref.watch(referenceImageProvider);
     final isWide = MediaQuery.of(context).size.width > 768;
 
     ref.listen<PlacementState>(placementProvider, (prev, next) {
@@ -370,20 +383,28 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopBar(state, theme),
+            _buildTopBar(state, theme, refImage != null),
             Expanded(
-              child: isWide
-                  ? _buildWideLayout(state)
-                  : _buildNarrowLayout(state),
+              child: _showingReference && refImage != null
+                  ? InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 5.0,
+                      child: Center(
+                        child: Image.memory(refImage, fit: BoxFit.contain),
+                      ),
+                    )
+                  : isWide
+                      ? _buildWideLayout(state)
+                      : _buildNarrowLayout(state),
             ),
-            _buildStatusBar(state, theme),
+            if (!_showingReference) _buildStatusBar(state, theme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(PlacementState state, AppTheme theme) {
+  Widget _buildTopBar(PlacementState state, AppTheme theme, bool hasRefImage) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
@@ -392,22 +413,69 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: theme.accent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'Place',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
+          GestureDetector(
+            onTap: _showingReference
+                ? () => setState(() => _showingReference = false)
+                : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: !_showingReference
+                    ? theme.accent
+                    : theme.accent.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Place',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
           ),
+          if (hasRefImage) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => setState(() => _showingReference = true),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _showingReference
+                      ? theme.accent
+                      : theme.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: theme.accent.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.image_outlined,
+                        size: 16,
+                        color: _showingReference
+                            ? Colors.white
+                            : theme.accent),
+                    const SizedBox(width: 4),
+                    Text(
+                      '참조',
+                      style: TextStyle(
+                        color: _showingReference
+                            ? Colors.white
+                            : theme.accent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const Spacer(),
           // Theme
           _TopBarBtn(
@@ -694,6 +762,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onLoad;
   final VoidCallback onImport;
   final VoidCallback onExport;
+  final VoidCallback onPickReference;
   final bool hasFurniture;
   final bool hasSession;
 
@@ -704,6 +773,7 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onLoad,
     required this.onImport,
     required this.onExport,
+    required this.onPickReference,
     required this.hasFurniture,
     required this.hasSession,
   });
@@ -712,6 +782,7 @@ class _SettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final axisSwapped = ref.watch(axisSwapProvider);
     final currentThemeIndex = ref.watch(themeProvider);
+    final hasRefImage = ref.watch(referenceImageProvider) != null;
     final dataActions = <Widget>[
       if (hasFurniture)
         _SettingsActionBtn(
@@ -885,6 +956,78 @@ class _SettingsSheet extends ConsumerWidget {
                         ],
                       ],
                     ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Reference image
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.cardBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.image_outlined, color: theme.accent, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('참조 이미지', style: TextStyle(
+                      color: theme.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    )),
+                  ),
+                  if (hasRefImage)
+                    GestureDetector(
+                      onTap: () {
+                        ref.read(referenceImageProvider.notifier).clear();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: Colors.red.withValues(alpha: 0.3)),
+                        ),
+                        child: Text('삭제', style: TextStyle(
+                          color: Colors.red.shade300,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        )),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Future.delayed(
+                          const Duration(milliseconds: 300), onPickReference);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.accent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: theme.accent.withValues(alpha: 0.25)),
+                      ),
+                      child: Text(
+                        hasRefImage ? '변경' : '추가',
+                        style: TextStyle(
+                          color: theme.accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
