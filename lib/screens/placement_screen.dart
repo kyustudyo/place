@@ -349,7 +349,11 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onLoad: _loadSession,
         onImport: _pasteJson,
         onExport: _copyJson,
-        onPickReference: _pickReferenceImage,
+        onPickReference: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _pickReferenceImage();
+          });
+        },
         hasFurniture: state.furniture.isNotEmpty,
         hasSession: _hasSession,
       ),
@@ -762,7 +766,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onLoad;
   final VoidCallback onImport;
   final VoidCallback onExport;
-  final Future<void> Function() onPickReference;
+  final VoidCallback onPickReference;
   final bool hasFurniture;
   final bool hasSession;
 
@@ -1004,9 +1008,9 @@ class _SettingsSheet extends ConsumerWidget {
                     ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () async {
-                      await onPickReference();
-                      if (context.mounted) Navigator.pop(context);
+                    onTap: () {
+                      Navigator.pop(context);
+                      onPickReference();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
