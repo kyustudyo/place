@@ -40,6 +40,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
   bool _hasSession = false;
   bool _showingReference = false;
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -378,13 +385,24 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           children: [
             _buildTopBar(state, theme, refImage != null),
             Expanded(
-              child: _showingReference && refImage != null
-                  ? InteractiveViewer(
-                      minScale: 0.5,
-                      maxScale: 5.0,
-                      child: Center(
-                        child: Image.memory(refImage, fit: BoxFit.contain),
-                      ),
+              child: refImage != null
+                  ? PageView(
+                      controller: _pageController,
+                      onPageChanged: (i) =>
+                          setState(() => _showingReference = i == 1),
+                      children: [
+                        isWide
+                            ? _buildWideLayout(state)
+                            : _buildNarrowLayout(state),
+                        InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 5.0,
+                          child: Center(
+                            child:
+                                Image.memory(refImage, fit: BoxFit.contain),
+                          ),
+                        ),
+                      ],
                     )
                   : isWide
                       ? _buildWideLayout(state)
@@ -408,7 +426,11 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         children: [
           GestureDetector(
             onTap: _showingReference
-                ? () => setState(() => _showingReference = false)
+                ? () {
+                    _pageController.animateToPage(0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut);
+                  }
                 : null,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -432,7 +454,11 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           if (hasRefImage) ...[
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: () => setState(() => _showingReference = true),
+              onTap: () {
+                _pageController.animateToPage(1,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut);
+              },
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
