@@ -410,7 +410,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                       ? _buildWideLayout(state)
                       : _buildNarrowLayout(state),
             ),
-            _buildStatusBar(state, theme),
+            _buildStatusBar(state, theme, _showingReference),
           ],
         ),
       ),
@@ -616,40 +616,42 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     );
   }
 
-  Widget _buildStatusBar(PlacementState state, AppTheme theme) {
+  Widget _buildStatusBar(PlacementState state, AppTheme theme, bool hideContent) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         color: theme.headerBg,
         border: Border(top: BorderSide(color: theme.headerBorder)),
       ),
-      child: Row(
-        children: [
-          _StatusChip(
-            icon: Icons.view_in_ar,
-            label: '${state.placedCount}/${state.furniture.length} 배치',
-            color: theme.accent,
-          ),
-          const SizedBox(width: 16),
-          _StatusChip(
-            icon: state.collisionCount > 0
-                ? Icons.warning_rounded
-                : Icons.check_circle,
-            label: state.collisionCount > 0
-                ? '충돌 ${state.collisionCount}건'
-                : '충돌 없음',
-            color: state.collisionCount > 0
-                ? Colors.red.shade400
-                : theme.accentSecondary,
-          ),
-          const Spacer(),
-          if (state.selectedFurniture != null)
-            Text(
-              '${state.selectedFurniture!.name} \u00b7 ${state.selectedFurniture!.rotation}\u00b0',
-              style: TextStyle(color: theme.textSecondary, fontSize: 12),
+      child: hideContent
+          ? const SizedBox(height: 14)
+          : Row(
+              children: [
+                _StatusChip(
+                  icon: Icons.view_in_ar,
+                  label: '${state.placedCount}/${state.furniture.length} 배치',
+                  color: theme.accent,
+                ),
+                const SizedBox(width: 16),
+                _StatusChip(
+                  icon: state.collisionCount > 0
+                      ? Icons.warning_rounded
+                      : Icons.check_circle,
+                  label: state.collisionCount > 0
+                      ? '충돌 ${state.collisionCount}건'
+                      : '충돌 없음',
+                  color: state.collisionCount > 0
+                      ? Colors.red.shade400
+                      : theme.accentSecondary,
+                ),
+                const Spacer(),
+                if (state.selectedFurniture != null)
+                  Text(
+                    '${state.selectedFurniture!.name} \u00b7 ${state.selectedFurniture!.rotation}\u00b0',
+                    style: TextStyle(color: theme.textSecondary, fontSize: 12),
+                  ),
+              ],
             ),
-        ],
-      ),
     );
   }
 }
