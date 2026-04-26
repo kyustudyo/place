@@ -624,7 +624,18 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         border: Border(top: BorderSide(color: theme.headerBorder)),
       ),
       child: hideContent
-          ? const SizedBox(height: 14, width: double.infinity)
+          ? Opacity(
+              opacity: 0,
+              child: Row(
+                children: [
+                  _StatusChip(
+                    icon: Icons.view_in_ar,
+                    label: '0/0',
+                    color: theme.accent,
+                  ),
+                ],
+              ),
+            )
           : Row(
               children: [
                 _StatusChip(
