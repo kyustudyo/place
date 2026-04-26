@@ -472,22 +472,24 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             onTap: _showSettings,
             theme: theme,
           ),
-          const SizedBox(width: 6),
-          // Add item — blink when empty
-          _AddItemBtn(
-            onTap: () => _showDimensionDialog(),
-            theme: theme,
-            highlight: state.furniture.isEmpty,
-          ),
-          const SizedBox(width: 6),
-          // Item list (opens bottom sheet)
-          if (state.furniture.isNotEmpty) ...[
-            _TopBarBtn(
-              icon: Icons.list_rounded,
-              onTap: () => _showFurnitureSheet(),
+          if (!_showingReference) ...[
+            const SizedBox(width: 6),
+            // Add item — blink when empty
+            _AddItemBtn(
+              onTap: () => _showDimensionDialog(),
               theme: theme,
+              highlight: state.furniture.isEmpty,
             ),
             const SizedBox(width: 6),
+            // Item list (opens bottom sheet)
+            if (state.furniture.isNotEmpty) ...[
+              _TopBarBtn(
+                icon: Icons.list_rounded,
+                onTap: () => _showFurnitureSheet(),
+                theme: theme,
+              ),
+              const SizedBox(width: 6),
+            ],
           ],
         ],
       ),
