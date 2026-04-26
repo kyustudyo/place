@@ -187,3 +187,9 @@
 - 수정 파일: `lib/screens/placement_screen.dart`, `lib/providers/theme_provider.dart`
 - `flutter analyze` 통과 (0 issues)
 - 배포 완료: https://place-cbp.pages.dev/
+
+### 참조 이미지 웹 버그 수정
+- `MissingPluginException`: `flutter clean` 후 재빌드로 해결 (웹 플러그인 등록자 갱신)
+- 브라우저 파일 피커 차단: 바텀시트 안에서 직접 `pickImage()` 호출로 해결
+- 커맨더에 웹 이미지 첨부 규칙 전달 (`from_place_image_picker_web.md`)
+- `MISTAKES.md`에 실수 2건 기록
