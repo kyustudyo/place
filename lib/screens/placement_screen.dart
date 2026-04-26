@@ -389,6 +389,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
               child: refImage != null
                   ? PageView(
                       controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
                       onPageChanged: (i) =>
                           setState(() => _showingReference = i == 1),
                       children: [
@@ -409,7 +410,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                       ? _buildWideLayout(state)
                       : _buildNarrowLayout(state),
             ),
-            if (!_showingReference) _buildStatusBar(state, theme),
+            _buildStatusBar(state, theme),
           ],
         ),
       ),
