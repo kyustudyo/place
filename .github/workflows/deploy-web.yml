@@ -31,10 +31,9 @@ jobs:
         if: success()
         continue-on-error: true
         run: |
-          SAFE_MSG=$(echo "${{ github.event.head_commit.message }}" | tr -d "<>" | head -c 80 | tr "\n" " ")
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CI_CHAT_ID }}" \
-            -d text="✅ 배포 완료 - ${{ github.repository }} (${SAFE_MSG})"
+            -d text="${{ github.event.repository.name }} - 배포성공"
 
       - name: 배포 실패 알림
         if: failure()
@@ -43,7 +42,7 @@ jobs:
           SAFE_MSG=$(echo "${{ github.event.head_commit.message }}" | tr -d "<>" | head -c 80 | tr "\n" " ")
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CI_CHAT_ID }}" \
-            -d text="🔴 배포 실패 - ${{ github.repository }} (${SAFE_MSG})"
+            -d text="${{ github.event.repository.name }} - 배포실패 (${SAFE_MSG})"
 
 # ─── 필요한 GitHub Secrets ───
 # CLOUDFLARE_API_TOKEN    — Cloudflare API 토큰
