@@ -326,15 +326,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     );
   }
 
-  Future<void> _pickReferenceImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
-    ref.read(referenceImageProvider.notifier).set(bytes);
-  }
-
   void _showSettings() {
     final theme = ref.read(currentThemeProvider);
     final state = ref.read(placementProvider);
@@ -349,7 +340,9 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onLoad: _loadSession,
         onImport: _pasteJson,
         onExport: _copyJson,
-        onPickReference: _pickReferenceImage,
+        onReferenceImagePicked: (bytes) {
+          ref.read(referenceImageProvider.notifier).set(bytes);
+        },
         hasFurniture: state.furniture.isNotEmpty,
         hasSession: _hasSession,
       ),
@@ -762,7 +755,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onLoad;
   final VoidCallback onImport;
   final VoidCallback onExport;
-  final Future<void> Function() onPickReference;
+  final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
   final bool hasSession;
 
@@ -773,7 +766,7 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onLoad,
     required this.onImport,
     required this.onExport,
-    required this.onPickReference,
+    required this.onReferenceImagePicked,
     required this.hasFurniture,
     required this.hasSession,
   });
@@ -1005,7 +998,12 @@ class _SettingsSheet extends ConsumerWidget {
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () async {
-                      await onPickReference();
+                      final picker = ImagePicker();
+                      final picked = await picker.pickImage(
+                          source: ImageSource.gallery);
+                      if (picked == null) return;
+                      final bytes = await picked.readAsBytes();
+                      onReferenceImagePicked(bytes);
                       if (context.mounted) Navigator.pop(context);
                     },
                     child: Container(
