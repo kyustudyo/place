@@ -762,7 +762,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onLoad;
   final VoidCallback onImport;
   final VoidCallback onExport;
-  final VoidCallback onPickReference;
+  final Future<void> Function() onPickReference;
   final bool hasFurniture;
   final bool hasSession;
 
@@ -1004,10 +1004,9 @@ class _SettingsSheet extends ConsumerWidget {
                     ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                      Future.delayed(
-                          const Duration(milliseconds: 300), onPickReference);
+                    onTap: () async {
+                      await onPickReference();
+                      if (context.mounted) Navigator.pop(context);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
