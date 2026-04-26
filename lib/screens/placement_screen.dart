@@ -653,8 +653,6 @@ class _RefImageBtn extends StatefulWidget {
 class _RefImageBtnState extends State<_RefImageBtn>
     with SingleTickerProviderStateMixin {
   late final AnimationController _anim;
-  bool _wasActive = false;
-
   @override
   void initState() {
     super.initState();
@@ -662,16 +660,7 @@ class _RefImageBtnState extends State<_RefImageBtn>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-  }
-
-  @override
-  void didUpdateWidget(covariant _RefImageBtn old) {
-    super.didUpdateWidget(old);
-    // Blink when first appearing (active goes from not-mounted to mounted)
-    if (!_wasActive) {
-      _wasActive = true;
-      _blink();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _blink());
   }
 
   Future<void> _blink() async {
