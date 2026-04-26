@@ -996,32 +996,43 @@ class _SettingsSheet extends ConsumerWidget {
                       ),
                     ),
                   const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () async {
-                      final picker = ImagePicker();
-                      final picked = await picker.pickImage(
-                          source: ImageSource.gallery);
-                      if (picked == null) return;
-                      final bytes = await picked.readAsBytes();
-                      onReferenceImagePicked(bytes);
-                      if (context.mounted) Navigator.pop(context);
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        final picker = ImagePicker();
+                        final picked = await picker.pickImage(
+                            source: ImageSource.gallery);
+                        if (picked == null) return;
+                        final bytes = await picked.readAsBytes();
+                        onReferenceImagePicked(bytes);
+                        if (context.mounted) Navigator.pop(context);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('이미지 선택 실패: $e')),
+                          );
+                        }
+                      }
                     },
-                    child: Container(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.accent.withValues(alpha: 0.15),
+                      foregroundColor: theme.accent,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: theme.accent.withValues(alpha: 0.1),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
+                        side: BorderSide(
                             color: theme.accent.withValues(alpha: 0.25)),
                       ),
-                      child: Text(
-                        hasRefImage ? '변경' : '추가',
-                        style: TextStyle(
-                          color: theme.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    ),
+                    child: Text(
+                      hasRefImage ? '변경' : '추가',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
