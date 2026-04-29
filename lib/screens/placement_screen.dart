@@ -392,6 +392,40 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     );
   }
 
+  Future<void> _resetRoom() async {
+    final theme = ref.read(currentThemeProvider);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.headerBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('초기화', style: TextStyle(color: theme.textPrimary, fontSize: 16)),
+        content: Text(
+          '현재 배치를 모두 초기화하시겠습니까?\n저장하지 않은 내용은 사라집니다.',
+          style: TextStyle(color: theme.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('취소', style: TextStyle(color: theme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('초기화', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    ref.read(placementProvider.notifier).reset();
+    _runInitialFlow();
+  }
+
   Future<void> _copyJson() async {
     final theme = ref.read(currentThemeProvider);
     final json = ref.read(placementProvider.notifier).exportJson();
@@ -422,6 +456,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onLoad: _loadSession,
         onImport: _pasteJson,
         onExport: _copyJson,
+        onReset: _resetRoom,
         onReferenceImagePicked: (bytes) {
           ref.read(referenceImageProvider.notifier).set(bytes);
           precacheImage(MemoryImage(bytes), context);
@@ -937,6 +972,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onLoad;
   final VoidCallback onImport;
   final VoidCallback onExport;
+  final VoidCallback onReset;
   final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
 
@@ -947,6 +983,7 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onLoad,
     required this.onImport,
     required this.onExport,
+    required this.onReset,
     required this.onReferenceImagePicked,
     required this.hasFurniture,
   });
@@ -995,6 +1032,16 @@ class _SettingsSheet extends ConsumerWidget {
             Future.delayed(const Duration(milliseconds: 300), onExport);
           },
         ),
+      _SettingsActionBtn(
+        icon: Icons.refresh_rounded,
+        label: '초기화',
+        theme: theme,
+        isDestructive: true,
+        onTap: () {
+          Navigator.pop(context);
+          Future.delayed(const Duration(milliseconds: 300), onReset);
+        },
+      ),
     ];
 
     return Container(
@@ -1525,32 +1572,35 @@ class _SettingsActionBtn extends StatelessWidget {
   final String label;
   final AppTheme theme;
   final VoidCallback onTap;
+  final bool isDestructive;
 
   const _SettingsActionBtn({
     required this.icon,
     required this.label,
     required this.theme,
     required this.onTap,
+    this.isDestructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = isDestructive ? Colors.red : theme.accent;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: theme.accent.withValues(alpha: 0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: theme.accent.withValues(alpha: 0.25)),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: theme.accent),
+            Icon(icon, size: 16, color: color),
             const SizedBox(width: 6),
             Text(label, style: TextStyle(
-              color: theme.accent,
+              color: color,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             )),

@@ -337,6 +337,13 @@ class PlacementNotifier extends Notifier<PlacementState> {
     return JsonParser.generateOutput(state.furniture);
   }
 
+  void reset() {
+    _undoStack.clear();
+    _redoStack.clear();
+    _nextNumber = 1;
+    state = const PlacementState(room: _defaultRoom);
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }
