@@ -46,6 +46,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: (d) => _handleTap(d.localPosition, state),
+          onLongPressStart: (d) => _handleLongPress(d.globalPosition, d.localPosition, state),
           onPanStart: (d) => _handleDragStart(d.localPosition, state),
           onPanUpdate: (d) => _handleDragUpdate(d.localPosition, state),
           onPanEnd: (_) => _handleDragEnd(),
@@ -359,6 +360,45 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     if (result.name.isNotEmpty) {
       notifier.updateFurnitureName(item.id, result.name);
     }
+  }
+
+  void _handleLongPress(Offset globalPos, Offset localPos, PlacementState state) {
+    if (_isDragging) return;
+    final hit = _hitTest(localPos, state);
+    if (hit == null) return;
+
+    final theme = ref.read(currentThemeProvider);
+    final notifier = ref.read(placementProvider.notifier);
+    notifier.selectFurniture(hit.id);
+
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        globalPos.dx, globalPos.dy, globalPos.dx, globalPos.dy,
+      ),
+      color: theme.headerBg,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: [
+        PopupMenuItem<String>(
+          value: 'duplicate',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.copy_rounded, size: 18, color: theme.accent),
+              const SizedBox(width: 8),
+              Text('복제하기', style: TextStyle(
+                color: theme.textPrimary,
+                fontSize: 14,
+              )),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == 'duplicate') {
+        notifier.duplicateFurniture(hit.id);
+      }
+    });
   }
 
   void _handleTap(Offset pos, PlacementState state) {

@@ -326,6 +326,34 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(furniture: checked);
   }
 
+  void duplicateFurniture(String id) {
+    _saveUndo();
+    final source = state.furniture.firstWhere((f) => f.id == id);
+    final newId = 'item_${DateTime.now().millisecondsSinceEpoch}';
+    final index = state.furniture.length;
+    final color = _furnitureColors[index % _furnitureColors.length];
+
+    // Offset position by 1 tile
+    final tile = state.room.tileSize;
+    final copy = Furniture(
+      id: newId,
+      name: '${source.name} 복사',
+      size: Vec3(x: source.size.x, y: source.size.y, z: source.size.z),
+      position: Vec3(
+        x: source.position.x + tile,
+        y: source.position.y,
+        z: source.position.z + tile,
+      ),
+      rotation: source.rotation,
+      color: color,
+      isPlaced: true,
+    );
+
+    final updated = [...state.furniture, copy];
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
+    state = state.copyWith(furniture: checked, selectedId: newId);
+  }
+
   void removeFurniture(String id) {
     _saveUndo();
     final updated = state.furniture.where((f) => f.id != id).toList();
