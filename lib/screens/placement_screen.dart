@@ -1447,7 +1447,7 @@ class _SaveDialogState extends State<_SaveDialog> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: widget.existingName ?? '');
   }
 
   @override
@@ -1456,10 +1456,35 @@ class _SaveDialogState extends State<_SaveDialog> {
     super.dispose();
   }
 
+  void _save() async {
+    final hasExisting = widget.existingName != null;
+    if (hasExisting && !_newName) {
+      Navigator.pop(context, widget.existingName);
+      return;
+    }
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    // 같은 이름 체크
+    if (hasExisting && text == widget.existingName) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('기존과 같은 이름입니다. 다른 이름을 입력해주세요.'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    Navigator.pop(context, text);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
     final hasExisting = widget.existingName != null;
+    final editable = !hasExisting || _newName;
 
     return Dialog(
       backgroundColor: t.headerBg,
@@ -1473,22 +1498,46 @@ class _SaveDialogState extends State<_SaveDialog> {
           children: [
             Text('파일 저장', style: TextStyle(color: t.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
-            if (hasExisting) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: t.cardBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '"${widget.existingName}"에 덮어쓰기',
-                  style: TextStyle(color: t.textPrimary, fontSize: 14),
-                ),
+            TextField(
+              controller: _controller,
+              enabled: editable,
+              autofocus: !hasExisting,
+              style: TextStyle(
+                color: editable ? t.textPrimary : t.textSecondary,
               ),
+              decoration: InputDecoration(
+                hintText: '예: 한국 내 방',
+                hintStyle: TextStyle(color: t.textSecondary),
+                filled: true,
+                fillColor: editable ? t.cardBg : t.cardBg.withValues(alpha: 0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: !editable
+                    ? Icon(Icons.lock_outline, size: 16, color: t.textSecondary.withValues(alpha: 0.5))
+                    : null,
+              ),
+            ),
+            if (hasExisting) ...[
               const SizedBox(height: 12),
               GestureDetector(
-                onTap: () => setState(() => _newName = !_newName),
+                onTap: () => setState(() {
+                  _newName = !_newName;
+                  if (_newName) {
+                    // 포커스를 텍스트필드로
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _controller.selection = TextSelection(
+                        baseOffset: 0,
+                        extentOffset: _controller.text.length,
+                      );
+                    });
+                  }
+                }),
                 child: Row(
                   children: [
                     SizedBox(
@@ -1496,7 +1545,17 @@ class _SaveDialogState extends State<_SaveDialog> {
                       height: 20,
                       child: Checkbox(
                         value: _newName,
-                        onChanged: (v) => setState(() => _newName = v ?? false),
+                        onChanged: (v) => setState(() {
+                          _newName = v ?? false;
+                          if (_newName) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _controller.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: _controller.text.length,
+                              );
+                            });
+                          }
+                        }),
                         activeColor: t.accent,
                         side: BorderSide(color: t.textSecondary),
                       ),
@@ -1510,24 +1569,6 @@ class _SaveDialogState extends State<_SaveDialog> {
                 ),
               ),
             ],
-            if (!hasExisting || _newName) ...[
-              if (hasExisting) const SizedBox(height: 12),
-              TextField(
-                controller: _controller,
-                autofocus: !hasExisting,
-                style: TextStyle(color: t.textPrimary),
-                decoration: InputDecoration(
-                  hintText: '예: 한국 내 방',
-                  hintStyle: TextStyle(color: t.textSecondary),
-                  filled: true,
-                  fillColor: t.cardBg,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ],
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -1538,14 +1579,7 @@ class _SaveDialogState extends State<_SaveDialog> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () {
-                    if (hasExisting && !_newName) {
-                      Navigator.pop(context, widget.existingName);
-                    } else {
-                      final text = _controller.text.trim();
-                      if (text.isNotEmpty) Navigator.pop(context, text);
-                    }
-                  },
+                  onPressed: _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: t.accent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
