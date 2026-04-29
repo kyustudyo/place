@@ -221,3 +221,15 @@
   - SharedPreferences `place_saved_rooms` 키에 JSON 맵으로 저장
 - unity팀에 회신 완료 (`from_place_multi_room_reply.md`)
 - `flutter analyze` 통과 (0 issues, 1 info)
+
+### 설정에 초기화 버튼 추가
+- 초기화 버튼 → 확인 팝업 → 방+사물 전부 리셋 → ① 공간 크기 설정부터 재시작
+- 빨간색 destructive 스타일 적용
+- 수정 파일: `lib/providers/placement_provider.dart`, `lib/screens/placement_screen.dart`
+
+### 사물 롱프레스 복제 기능 추가
+- 배치된 사물 꾹 누르면 "복제하기" 팝업 메뉴 표시
+- 복제 시 1타일 오프셋 위치에 복사본 생성, 이름에 "복사" 접미어
+- 드래그 중에는 팝업 안 뜸
+- 수정 파일: `lib/providers/placement_provider.dart`, `lib/widgets/isometric_room.dart`
+- 배포 완료: https://place-cbp.pages.dev/
