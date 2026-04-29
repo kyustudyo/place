@@ -39,6 +39,7 @@ const _jsonExample = '''{
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
   bool _showingReference = false;
+  String? _currentRoomName;
   final PageController _pageController = PageController();
 
   @override
@@ -278,46 +279,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
   Future<void> _saveSession() async {
     final theme = ref.read(currentThemeProvider);
-    final controller = TextEditingController();
+    final hasExisting = _currentRoomName != null;
 
     final name = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: theme.headerBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('방 저장', style: TextStyle(color: theme.textPrimary, fontSize: 16)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: TextStyle(color: theme.textPrimary),
-          decoration: InputDecoration(
-            hintText: '예: 한국 내 방',
-            hintStyle: TextStyle(color: theme.textSecondary),
-            filled: true,
-            fillColor: theme.cardBg,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('취소', style: TextStyle(color: theme.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) Navigator.pop(ctx, text);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.accent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('저장', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      builder: (ctx) => _SaveDialog(
+        theme: theme,
+        existingName: hasExisting ? _currentRoomName! : null,
       ),
     );
 
@@ -326,6 +294,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     final state = ref.read(placementProvider);
     await SessionStorage.saveRoom(name, state.room, state.furniture);
     if (!mounted) return;
+    setState(() => _currentRoomName = name);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('"$name" 저장 완료'),
@@ -369,6 +338,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           if (json != null) {
             ref.read(placementProvider.notifier).loadJson(json);
             if (!mounted) return;
+            setState(() => _currentRoomName = name);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('"$name" 불러오기 완료'),
@@ -423,6 +393,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
     if (confirmed != true || !mounted) return;
     ref.read(placementProvider.notifier).reset();
+    setState(() => _currentRoomName = null);
     _runInitialFlow();
   }
 
@@ -1457,6 +1428,127 @@ class _SettingsSheet extends ConsumerWidget {
         width: s, height: s,
         decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)),
       );
+}
+
+class _SaveDialog extends StatefulWidget {
+  final AppTheme theme;
+  final String? existingName;
+
+  const _SaveDialog({required this.theme, this.existingName});
+
+  @override
+  State<_SaveDialog> createState() => _SaveDialogState();
+}
+
+class _SaveDialogState extends State<_SaveDialog> {
+  late final TextEditingController _controller;
+  bool _newName = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.theme;
+    final hasExisting = widget.existingName != null;
+
+    return AlertDialog(
+      backgroundColor: t.headerBg,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text('방 저장', style: TextStyle(color: t.textPrimary, fontSize: 16)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasExisting) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: t.cardBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '"${widget.existingName}"에 덮어쓰기',
+                style: TextStyle(color: t.textPrimary, fontSize: 14),
+              ),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => setState(() => _newName = !_newName),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Checkbox(
+                      value: _newName,
+                      onChanged: (v) => setState(() => _newName = v ?? false),
+                      activeColor: t.accent,
+                      side: BorderSide(color: t.textSecondary),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('새 이름으로 저장', style: TextStyle(
+                    color: t.textPrimary,
+                    fontSize: 13,
+                  )),
+                ],
+              ),
+            ),
+          ],
+          if (!hasExisting || _newName) ...[
+            if (hasExisting) const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              autofocus: !hasExisting,
+              style: TextStyle(color: t.textPrimary),
+              decoration: InputDecoration(
+                hintText: '예: 한국 내 방',
+                hintStyle: TextStyle(color: t.textSecondary),
+                filled: true,
+                fillColor: t.cardBg,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('취소', style: TextStyle(color: t.textSecondary)),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (hasExisting && !_newName) {
+              Navigator.pop(context, widget.existingName);
+            } else {
+              final text = _controller.text.trim();
+              if (text.isNotEmpty) Navigator.pop(context, text);
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: t.accent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: const Text('저장', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
+  }
 }
 
 class _SavedRoomsSheet extends StatelessWidget {
