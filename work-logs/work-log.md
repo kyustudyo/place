@@ -193,3 +193,31 @@
 - 브라우저 파일 피커 차단: 바텀시트 안에서 직접 `pickImage()` 호출로 해결
 - 커맨더에 웹 이미지 첨부 규칙 전달 (`from_place_image_picker_web.md`)
 - `MISTAKES.md`에 실수 2건 기록
+
+## 2026-04-27
+
+### v1.1.0 iOS + Android 배포
+- 버전: 1.1.0+7
+- iOS: `xcrun altool` → App Store Connect 업로드 성공
+- Android: `fastlane supply` → Google Play 내부 테스트 업로드 성공
+- Git 태그: `v1.1.0`
+- 주요 변경사항:
+  - 참조 이미지 기능 (설정에서 추가, 상단 탭 전환, 핀치 줌)
+  - 사물 크기 수정 비율 유지 체크박스
+  - JSON 다이얼로그 붙여넣기 버튼
+  - 테마 설정 SharedPreferences 영속화
+  - JSON 가져오기 시 room 키 선택사항
+  - 참조 화면에서 + 버튼/목록 숨김, 상태바 텍스트 숨김
+
+## 2026-04-29
+
+### 다중 방 저장/불러오기 기능 추가
+- inbox `from_unity_multi_room_save.md` 확인 → 조치 → 삭제
+- unity팀 요청: 여러 방을 이름 붙여 저장/불러오기/삭제
+- 구현:
+  - `lib/utils/session_storage.dart` — `saveRoom()`, `loadRoom()`, `deleteRoom()`, `getSavedRoomNames()` 추가
+  - `lib/screens/placement_screen.dart` — 저장 시 이름 입력 다이얼로그, 불러오기 시 방 목록 바텀시트(`_SavedRoomsSheet`)
+  - 불러오기 버튼 항상 표시 (저장된 방 없으면 스낵바 안내)
+  - SharedPreferences `place_saved_rooms` 키에 JSON 맵으로 저장
+- unity팀에 회신 완료 (`from_place_multi_room_reply.md`)
+- `flutter analyze` 통과 (0 issues, 1 info)

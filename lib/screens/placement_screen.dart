@@ -38,7 +38,6 @@ const _jsonExample = '''{
 
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
-  bool _hasSession = false;
   bool _showingReference = false;
   final PageController _pageController = PageController();
 
@@ -53,9 +52,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     super.didChangeDependencies();
     if (!_initialFlowStarted) {
       _initialFlowStarted = true;
-      SessionStorage.hasSession().then((v) {
-        if (mounted) setState(() => _hasSession = v);
-      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _runInitialFlow();
       });
@@ -281,14 +277,58 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   Future<void> _saveSession() async {
-    final state = ref.read(placementProvider);
-    await SessionStorage.save(state.room, state.furniture);
-    if (!mounted) return;
-    setState(() => _hasSession = true);
     final theme = ref.read(currentThemeProvider);
+    final controller = TextEditingController();
+
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.headerBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('방 저장', style: TextStyle(color: theme.textPrimary, fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: TextStyle(color: theme.textPrimary),
+          decoration: InputDecoration(
+            hintText: '예: 한국 내 방',
+            hintStyle: TextStyle(color: theme.textSecondary),
+            filled: true,
+            fillColor: theme.cardBg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('취소', style: TextStyle(color: theme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) Navigator.pop(ctx, text);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.accent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('저장', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (name == null || name.isEmpty) return;
+
+    final state = ref.read(placementProvider);
+    await SessionStorage.saveRoom(name, state.room, state.furniture);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('저장 완료'),
+        content: Text('"$name" 저장 완료'),
         backgroundColor: theme.accentSecondary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -298,23 +338,58 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   Future<void> _loadSession() async {
-    final json = await SessionStorage.load();
-    if (json == null) {
+    final theme = ref.read(currentThemeProvider);
+    final names = await SessionStorage.getSavedRoomNames();
+
+    if (names.isEmpty) {
       if (!mounted) return;
-      final theme = ref.read(currentThemeProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('저장된 세션이 없습니다'),
+          content: const Text('저장된 방이 없습니다'),
           backgroundColor: theme.textSecondary,
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           duration: const Duration(seconds: 2),
         ),
       );
       return;
     }
-    ref.read(placementProvider.notifier).loadJson(json);
+
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _SavedRoomsSheet(
+        theme: theme,
+        names: names,
+        onLoad: (name) async {
+          Navigator.pop(ctx);
+          final json = await SessionStorage.loadRoom(name);
+          if (json != null) {
+            ref.read(placementProvider.notifier).loadJson(json);
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('"$name" 불러오기 완료'),
+                backgroundColor: theme.accentSecondary,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+        onDelete: (name) async {
+          await SessionStorage.deleteRoom(name);
+          if (ctx.mounted) Navigator.pop(ctx);
+          // Re-open with updated list
+          if (mounted) {
+            Future.delayed(const Duration(milliseconds: 300), _loadSession);
+          }
+        },
+      ),
+    );
   }
 
   Future<void> _copyJson() async {
@@ -352,7 +427,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           precacheImage(MemoryImage(bytes), context);
         },
         hasFurniture: state.furniture.isNotEmpty,
-        hasSession: _hasSession,
       ),
     );
   }
@@ -865,7 +939,6 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onExport;
   final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
-  final bool hasSession;
 
   const _SettingsSheet({
     required this.ref,
@@ -876,7 +949,6 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onExport,
     required this.onReferenceImagePicked,
     required this.hasFurniture,
-    required this.hasSession,
   });
 
   @override
@@ -891,20 +963,19 @@ class _SettingsSheet extends ConsumerWidget {
           label: '저장',
           theme: theme,
           onTap: () {
-            onSave();
             Navigator.pop(context);
+            Future.delayed(const Duration(milliseconds: 300), onSave);
           },
         ),
-      if (hasSession)
-        _SettingsActionBtn(
-          icon: Icons.folder_open_outlined,
-          label: '불러오기',
-          theme: theme,
-          onTap: () {
-            Navigator.pop(context);
-            Future.delayed(const Duration(milliseconds: 300), onLoad);
-          },
-        ),
+      _SettingsActionBtn(
+        icon: Icons.folder_open_outlined,
+        label: '불러오기',
+        theme: theme,
+        onTap: () {
+          Navigator.pop(context);
+          Future.delayed(const Duration(milliseconds: 300), onLoad);
+        },
+      ),
       _SettingsActionBtn(
         icon: Icons.file_download_outlined,
         label: 'JSON 가져오기',
@@ -1339,6 +1410,114 @@ class _SettingsSheet extends ConsumerWidget {
         width: s, height: s,
         decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)),
       );
+}
+
+class _SavedRoomsSheet extends StatelessWidget {
+  final AppTheme theme;
+  final List<String> names;
+  final void Function(String name) onLoad;
+  final void Function(String name) onDelete;
+
+  const _SavedRoomsSheet({
+    required this.theme,
+    required this.names,
+    required this.onLoad,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.55,
+      ),
+      decoration: BoxDecoration(
+        color: theme.panelBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.textSecondary.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('저장된 방', style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            )),
+          ),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: names.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (ctx, i) {
+                final name = names[i];
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme.cardBg,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.meeting_room_outlined, color: theme.accent, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(name, style: TextStyle(
+                          color: theme.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        )),
+                      ),
+                      GestureDetector(
+                        onTap: () => onDelete(name),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(Icons.delete_outline, size: 16, color: Colors.red.shade300),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => onLoad(name),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: theme.accent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('열기', style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          )),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
 }
 
 class _SettingsActionBtn extends StatelessWidget {
