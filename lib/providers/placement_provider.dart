@@ -333,11 +333,25 @@ class PlacementNotifier extends Notifier<PlacementState> {
     final index = state.furniture.length;
     final color = _furnitureColors[index % _furnitureColors.length];
 
+    // Strip trailing number from base name, then find next number
+    final numRegex = RegExp(r'^(.+?)(\d+)$');
+    final match = numRegex.firstMatch(source.name);
+    final baseName = match != null ? match.group(1)! : source.name;
+    int maxNum = 0;
+    for (final f in state.furniture) {
+      final m = numRegex.firstMatch(f.name);
+      if (m != null && m.group(1) == baseName) {
+        final n = int.tryParse(m.group(2)!) ?? 0;
+        if (n > maxNum) maxNum = n;
+      }
+    }
+    final copyName = '$baseName${maxNum + 1}';
+
     // Offset position by 1 tile
     final tile = state.room.tileSize;
     final copy = Furniture(
       id: newId,
-      name: '${source.name} 복사',
+      name: copyName,
       size: Vec3(x: source.size.x, y: source.size.y, z: source.size.z),
       position: Vec3(
         x: source.position.x + tile,

@@ -393,10 +393,26 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
             ],
           ),
         ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.delete_outline, size: 18, color: Colors.red.shade400),
+              const SizedBox(width: 8),
+              Text('삭제하기', style: TextStyle(
+                color: Colors.red.shade400,
+                fontSize: 14,
+              )),
+            ],
+          ),
+        ),
       ],
     ).then((value) {
       if (value == 'duplicate') {
         notifier.duplicateFurniture(hit.id);
+      } else if (value == 'delete') {
+        notifier.removeFurniture(hit.id);
       }
     });
   }
