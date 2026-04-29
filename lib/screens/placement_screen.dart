@@ -1461,92 +1461,102 @@ class _SaveDialogState extends State<_SaveDialog> {
     final t = widget.theme;
     final hasExisting = widget.existingName != null;
 
-    return AlertDialog(
+    return Dialog(
       backgroundColor: t.headerBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text('방 저장', style: TextStyle(color: t.textPrimary, fontSize: 16)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (hasExisting) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: t.cardBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '"${widget.existingName}"에 덮어쓰기',
-                style: TextStyle(color: t.textPrimary, fontSize: 14),
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => setState(() => _newName = !_newName),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: Checkbox(
-                      value: _newName,
-                      onChanged: (v) => setState(() => _newName = v ?? false),
-                      activeColor: t.accent,
-                      side: BorderSide(color: t.textSecondary),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('새 이름으로 저장', style: TextStyle(
-                    color: t.textPrimary,
-                    fontSize: 13,
-                  )),
-                ],
-              ),
-            ),
-          ],
-          if (!hasExisting || _newName) ...[
-            if (hasExisting) const SizedBox(height: 12),
-            TextField(
-              controller: _controller,
-              autofocus: !hasExisting,
-              style: TextStyle(color: t.textPrimary),
-              decoration: InputDecoration(
-                hintText: '예: 한국 내 방',
-                hintStyle: TextStyle(color: t.textSecondary),
-                filled: true,
-                fillColor: t.cardBg,
-                border: OutlineInputBorder(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('파일 저장', style: TextStyle(color: t.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            if (hasExisting) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: t.cardBg,
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
+                ),
+                child: Text(
+                  '"${widget.existingName}"에 덮어쓰기',
+                  style: TextStyle(color: t.textPrimary, fontSize: 14),
                 ),
               ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => setState(() => _newName = !_newName),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: _newName,
+                        onChanged: (v) => setState(() => _newName = v ?? false),
+                        activeColor: t.accent,
+                        side: BorderSide(color: t.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('새 이름으로 저장', style: TextStyle(
+                      color: t.textPrimary,
+                      fontSize: 13,
+                    )),
+                  ],
+                ),
+              ),
+            ],
+            if (!hasExisting || _newName) ...[
+              if (hasExisting) const SizedBox(height: 12),
+              TextField(
+                controller: _controller,
+                autofocus: !hasExisting,
+                style: TextStyle(color: t.textPrimary),
+                decoration: InputDecoration(
+                  hintText: '예: 한국 내 방',
+                  hintStyle: TextStyle(color: t.textSecondary),
+                  filled: true,
+                  fillColor: t.cardBg,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('취소', style: TextStyle(color: t.textSecondary)),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    if (hasExisting && !_newName) {
+                      Navigator.pop(context, widget.existingName);
+                    } else {
+                      final text = _controller.text.trim();
+                      if (text.isNotEmpty) Navigator.pop(context, text);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: t.accent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('저장', style: TextStyle(color: Colors.white)),
+                ),
+              ],
             ),
           ],
-        ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('취소', style: TextStyle(color: t.textSecondary)),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (hasExisting && !_newName) {
-              Navigator.pop(context, widget.existingName);
-            } else {
-              final text = _controller.text.trim();
-              if (text.isNotEmpty) Navigator.pop(context, text);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: t.accent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          child: const Text('저장', style: TextStyle(color: Colors.white)),
-        ),
-      ],
     );
   }
 }
