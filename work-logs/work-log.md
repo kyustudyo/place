@@ -227,9 +227,28 @@
 - 빨간색 destructive 스타일 적용
 - 수정 파일: `lib/providers/placement_provider.dart`, `lib/screens/placement_screen.dart`
 
-### 사물 롱프레스 복제 기능 추가
-- 배치된 사물 꾹 누르면 "복제하기" 팝업 메뉴 표시
-- 복제 시 1타일 오프셋 위치에 복사본 생성, 이름에 "복사" 접미어
+### 사물 롱프레스 복제/삭제 기능
+- 배치된 사물 꾹 누르면 "복제하기" + "삭제하기" 팝업 메뉴 표시
+- 복제 이름: 숫자 순번 방식 (소파 → 소파2 → 소파3)
 - 드래그 중에는 팝업 안 뜸
 - 수정 파일: `lib/providers/placement_provider.dart`, `lib/widgets/isometric_room.dart`
-- 배포 완료: https://place-cbp.pages.dev/
+
+### 저장 다이얼로그 UX 개선
+- "방 저장" → "파일 저장"으로 변경
+- `AlertDialog` → `Dialog`로 변경하여 키보드 밀림 방지
+- 기존 저장된 방이면 텍스트필드에 이름 표시 + 잠금 아이콘 (비활성)
+- "새 이름으로 저장" 체크 → 텍스트필드 활성화 + 전체 선택
+- 같은 이름 입력 시 저장 거부 스낵바
+- 수정 파일: `lib/screens/placement_screen.dart`
+
+### v1.2.0 iOS + Android 배포
+- 버전: 1.2.0+8
+- iOS: `xcrun altool` → App Store Connect 업로드 성공
+- Android: `fastlane supply` → Google Play 내부 테스트 업로드 성공
+- Git 태그: `v1.2.0`
+- 주요 변경사항:
+  - 다중 방 저장/불러오기/삭제
+  - 초기화 버튼 (확인 팝업)
+  - 사물 롱프레스 → 복제/삭제 메뉴
+  - 복제 이름 숫자 순번 방식
+  - 저장 다이얼로그 덮어쓰기/새 이름 UX
