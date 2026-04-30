@@ -325,19 +325,22 @@ class GridPainter extends CustomPainter {
     final xMid = IsometricMath.worldToScreen(
         room.width * 0.5, 0, room.depth);
     _drawRotatedLabel(
-        canvas, '−$xLabel+', xMid + const Offset(0, 14), xAngle, theme.accent);
+        canvas, '− $xLabel +', xMid + const Offset(0, 14), xAngle, theme.accent);
 
     // Z axis: outer edge (x=width side, bottom-left of floor)
     final zAngle = atan2(IsometricMath.sinA, -IsometricMath.cosA);
     final zMid = IsometricMath.worldToScreen(
         room.width, 0, room.depth * 0.5);
     _drawRotatedLabel(
-        canvas, '−$zLabel+', zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
+        canvas, '− $zLabel +', zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
 
-    // Y axis: upright text at top of left wall corner
+    // Y axis: upright, +/- above and below
     final yTop = IsometricMath.worldToScreen(0, room.height, 0);
     final yBot = IsometricMath.worldToScreen(0, 0, 0);
-    _drawFlatLabel(canvas, '−Y+', Offset(yTop.dx - 16, (yTop.dy + yBot.dy) / 2), theme.textSecondary);
+    final yMidY = (yTop.dy + yBot.dy) / 2;
+    _drawFlatLabel(canvas, 'Y', Offset(yTop.dx - 16, yMidY), theme.textSecondary);
+    _drawFlatLabel(canvas, '+', Offset(yTop.dx - 16, yMidY - 14), theme.textSecondary.withValues(alpha: 0.5));
+    _drawFlatLabel(canvas, '−', Offset(yTop.dx - 16, yMidY + 14), theme.textSecondary.withValues(alpha: 0.5));
   }
 
   void _drawRotatedLabel(
