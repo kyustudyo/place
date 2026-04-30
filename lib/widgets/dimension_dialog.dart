@@ -70,6 +70,10 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
         TextEditingController(text: (widget.initialHeight ?? 4.0).toString());
     _tCtrl = TextEditingController(
         text: (widget.initialTileSize ?? 1.0).toString());
+    _wCtrl.addListener(_validate);
+    _dCtrl.addListener(_validate);
+    _hCtrl.addListener(_validate);
+    _tCtrl.addListener(_validate);
   }
 
   @override
@@ -83,30 +87,34 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
 
   String? _error;
 
+  void _validate() {
+    final w = double.tryParse(_wCtrl.text);
+    final d = double.tryParse(_dCtrl.text);
+    final h = double.tryParse(_hCtrl.text);
+    final t = double.tryParse(_tCtrl.text);
+    String? err;
+    if ((w != null && w > 50) || (d != null && d > 50)) {
+      err = '가로/세로는 최대 50m까지 가능합니다';
+    } else if (h != null && h > 20) {
+      err = '높이는 최대 20m까지 가능합니다';
+    } else if (t != null && t > 0 && t < 0.1) {
+      err = '타일 크기는 최소 0.1m입니다';
+    } else if (t != null && w != null && d != null && (t > w || t > d)) {
+      err = '타일 크기가 맵보다 클 수 없습니다';
+    }
+    if (err != _error) setState(() => _error = err);
+  }
+
   void _submit() {
+    _validate();
+    if (_error != null) return;
+
     final w = double.tryParse(_wCtrl.text);
     final d = double.tryParse(_dCtrl.text);
     final h = double.tryParse(_hCtrl.text);
     final t = double.tryParse(_tCtrl.text);
     if (w == null || d == null || h == null || t == null) return;
     if (w <= 0 || d <= 0 || h <= 0 || t <= 0) return;
-
-    if (w > 50 || d > 50) {
-      setState(() => _error = '가로/세로는 최대 50m까지 가능합니다');
-      return;
-    }
-    if (h > 20) {
-      setState(() => _error = '높이는 최대 20m까지 가능합니다');
-      return;
-    }
-    if (t < 0.1) {
-      setState(() => _error = '타일 크기는 최소 0.1m입니다');
-      return;
-    }
-    if (t > w || t > d) {
-      setState(() => _error = '타일 크기가 맵보다 클 수 없습니다');
-      return;
-    }
 
     Navigator.pop(
       context,
@@ -191,7 +199,7 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
               ],
             ),
             if (_error != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(_error!, style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
             ],
           ],
@@ -330,6 +338,9 @@ class _DimensionDialogState extends State<DimensionDialog> {
       _yCtrl.addListener(() => _onDimChanged(_yCtrl, _origY, _origX, _origZ, _xCtrl, _zCtrl));
       _zCtrl.addListener(() => _onDimChanged(_zCtrl, _origZ, _origX, _origY, _xCtrl, _yCtrl));
     }
+    _xCtrl.addListener(_validateDim);
+    _yCtrl.addListener(_validateDim);
+    _zCtrl.addListener(_validateDim);
   }
 
   void _onDimChanged(
@@ -364,24 +375,31 @@ class _DimensionDialogState extends State<DimensionDialog> {
 
   String? _error;
 
+  void _validateDim() {
+    final x = double.tryParse(_xCtrl.text);
+    final y = double.tryParse(_yCtrl.text);
+    final z = double.tryParse(_zCtrl.text);
+    final mw = widget.maxWidth ?? 50;
+    final md = widget.maxDepth ?? 50;
+    final mh = widget.maxHeight ?? 20;
+    String? err;
+    if ((x != null && x > mw) || (z != null && z > md)) {
+      err = '맵 크기(${mw.toStringAsFixed(1)}×${md.toStringAsFixed(1)})보다 클 수 없습니다';
+    } else if (y != null && y > mh) {
+      err = '높이가 맵 높이(${mh.toStringAsFixed(1)}m)를 초과합니다';
+    }
+    if (err != _error) setState(() => _error = err);
+  }
+
   void _submit() {
+    _validateDim();
+    if (_error != null) return;
+
     final x = double.tryParse(_xCtrl.text);
     final y = double.tryParse(_yCtrl.text);
     final z = double.tryParse(_zCtrl.text);
     if (x == null || y == null || z == null) return;
     if (x <= 0 || y <= 0 || z <= 0) return;
-
-    final mw = widget.maxWidth ?? 50;
-    final md = widget.maxDepth ?? 50;
-    final mh = widget.maxHeight ?? 20;
-    if (x > mw || z > md) {
-      setState(() => _error = '맵 크기(${mw}×$md)보다 클 수 없습니다');
-      return;
-    }
-    if (y > mh) {
-      setState(() => _error = '높이가 맵 높이(${mh}m)를 초과합니다');
-      return;
-    }
 
     final name = _nameCtrl.text.trim();
 
@@ -514,7 +532,7 @@ class _DimensionDialogState extends State<DimensionDialog> {
               ),
             ],
             if (_error != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(_error!, style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
             ],
             const SizedBox(height: 6),
