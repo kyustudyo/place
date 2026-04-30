@@ -321,9 +321,6 @@ class DimensionDialog extends StatefulWidget {
   final double? initialZ;
   final bool isEdit;
   final bool showStepNumber;
-  final double? maxWidth;
-  final double? maxDepth;
-  final double? maxHeight;
 
   const DimensionDialog({
     super.key,
@@ -334,9 +331,6 @@ class DimensionDialog extends StatefulWidget {
     this.initialZ,
     this.isEdit = false,
     this.showStepNumber = false,
-    this.maxWidth,
-    this.maxDepth,
-    this.maxHeight,
   });
 
   @override
@@ -413,14 +407,13 @@ class _DimensionDialogState extends State<DimensionDialog> {
     final x = double.tryParse(_xCtrl.text);
     final y = double.tryParse(_yCtrl.text);
     final z = double.tryParse(_zCtrl.text);
-    final mw = widget.maxWidth ?? 50;
-    final md = widget.maxDepth ?? 50;
-    final mh = widget.maxHeight ?? 20;
     String? err;
-    if ((x != null && x > mw) || (z != null && z > md)) {
-      err = '맵 크기(${mw.toStringAsFixed(1)}×${md.toStringAsFixed(1)})보다 클 수 없습니다';
-    } else if (y != null && y > mh) {
-      err = '높이가 맵 높이(${mh.toStringAsFixed(1)}m)를 초과합니다';
+    if ((x != null && x <= 0) || (y != null && y <= 0) || (z != null && z <= 0)) {
+      err = '0보다 큰 값을 입력하세요';
+    } else if ((x != null && x > 50) || (z != null && z > 50)) {
+      err = '가로/세로는 최대 50m까지 가능합니다';
+    } else if (y != null && y > 20) {
+      err = '높이는 최대 20m까지 가능합니다';
     }
     if (err != _error) setState(() => _error = err);
   }
