@@ -88,19 +88,20 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     await _showDimensionDialog(showStepNumber: true);
   }
 
-  Future<RoomSizeResult?> _showRoomSizeDialog() async {
+  Future<RoomSizeResult?> _showRoomSizeDialog({bool canClose = false}) async {
     final theme = ref.read(currentThemeProvider);
     final room = ref.read(placementProvider).room;
 
     return showDialog<RoomSizeResult>(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: canClose,
       builder: (ctx) => RoomSizeDialog(
         theme: theme,
         initialWidth: room.width,
         initialDepth: room.depth,
         initialHeight: room.height,
         initialTileSize: room.tileSize,
+        showCloseButton: canClose,
       ),
     );
   }
@@ -427,7 +428,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onExport: _copyJson,
         onReset: _resetRoom,
         onRoomSize: () async {
-          final result = await _showRoomSizeDialog();
+          final result = await _showRoomSizeDialog(canClose: true);
           if (result != null && mounted) {
             ref.read(placementProvider.notifier).setRoom(
                   width: result.width,

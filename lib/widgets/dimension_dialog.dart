@@ -39,6 +39,7 @@ class RoomSizeDialog extends StatefulWidget {
   final double? initialDepth;
   final double? initialHeight;
   final double? initialTileSize;
+  final bool showCloseButton;
 
   const RoomSizeDialog({
     super.key,
@@ -47,6 +48,7 @@ class RoomSizeDialog extends StatefulWidget {
     this.initialDepth,
     this.initialHeight,
     this.initialTileSize,
+    this.showCloseButton = false,
   });
 
   @override
@@ -135,31 +137,40 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
         children: [
           Row(
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: t.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+              if (!widget.showCloseButton)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: t.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '①',
+                    style: TextStyle(
+                      color: t.accent,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
+              if (!widget.showCloseButton)
+                const SizedBox(width: 10),
+              Expanded(
                 child: Text(
-                  '①',
+                  '공간 크기 설정',
                   style: TextStyle(
-                    color: t.accent,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    color: t.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Text(
-                '공간 크기 설정',
-                style: TextStyle(
-                  color: t.textPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+              if (widget.showCloseButton)
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(Icons.close, size: 22, color: t.textSecondary),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 8),
