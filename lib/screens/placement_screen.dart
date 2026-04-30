@@ -437,6 +437,9 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                   tileSize: result.tileSize,
                 );
           }
+          if (mounted) {
+            Future.delayed(const Duration(milliseconds: 300), _showSettings);
+          }
         },
         onAppearance: () {
           showModalBottomSheet(
