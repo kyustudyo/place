@@ -128,117 +128,109 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
   Widget build(BuildContext context) {
     final t = widget.theme;
 
-    return AlertDialog(
+    final buttonLabel = widget.showCloseButton ? '적용' : '다음';
+
+    return Dialog(
       backgroundColor: t.headerBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (!widget.showCloseButton)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: t.accent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (!widget.showCloseButton)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: t.accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '①',
+                      style: TextStyle(
+                        color: t.accent,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                if (!widget.showCloseButton)
+                  const SizedBox(width: 10),
+                Expanded(
                   child: Text(
-                    '①',
+                    '공간 크기 설정',
                     style: TextStyle(
-                      color: t.accent,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      color: t.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-              if (!widget.showCloseButton)
-                const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '공간 크기 설정',
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                if (widget.showCloseButton)
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.close, size: 22, color: t.textSecondary),
                   ),
-                ),
-              ),
-              if (widget.showCloseButton)
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Icon(Icons.close, size: 22, color: t.textSecondary),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '배치할 공간의 크기를 입력하세요.\n기본값은 15 × 15 (타일 1) 입니다.',
-            style: TextStyle(
-              color: t.textSecondary,
-              fontSize: 13,
-              height: 1.5,
+              ],
             ),
-          ),
-        ],
-      ),
-      content: SizedBox(
-        width: 320,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
             const SizedBox(height: 8),
+            Text(
+              '배치할 공간의 크기를 입력하세요.\n기본값은 15 × 15 (타일 1) 입니다.',
+              style: TextStyle(
+                color: t.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                    child: _field(t, '가로 (m)', _wCtrl, '7.5')),
+                Expanded(child: _field(t, '가로 (m)', _wCtrl, '7.5')),
                 const SizedBox(width: 10),
-                Expanded(
-                    child: _field(t, '세로 (m)', _dCtrl, '7.5')),
+                Expanded(child: _field(t, '세로 (m)', _dCtrl, '7.5')),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                    child: _field(t, '높이 (m)', _hCtrl, '4.0')),
+                Expanded(child: _field(t, '높이 (m)', _hCtrl, '4.0')),
                 const SizedBox(width: 10),
-                Expanded(
-                    child: _field(t, '타일 크기 (m)', _tCtrl, '0.5')),
+                Expanded(child: _field(t, '타일 크기 (m)', _tCtrl, '0.5')),
               ],
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(_error!, style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: t.accent,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text(
+                  buttonLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
-      actions: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: t.accent,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            child: const Text(
-              '다음',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
