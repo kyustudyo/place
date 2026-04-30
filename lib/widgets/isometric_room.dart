@@ -277,10 +277,16 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         constraints.maxHeight / 2 - focusScreen.dy,
       );
     } else {
+      // Center the map visually: floor center + wall height offset
+      final s = IsometricMath.scale;
+      final floorCenterX = (room.width / 2 - room.depth / 2) * IsometricMath.cosA * s;
+      final topY = -room.height * s;
+      final bottomY = (room.width + room.depth) / 2 * IsometricMath.sinA * s;
+      final visualCenterY = (topY + bottomY) / 2;
+
       IsometricMath.origin = Offset(
-        constraints.maxWidth / 2,
-        constraints.maxHeight * 0.35 +
-            room.height * IsometricMath.scale * 0.5,
+        constraints.maxWidth / 2 - floorCenterX,
+        constraints.maxHeight / 2 - visualCenterY,
       );
     }
   }
