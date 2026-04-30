@@ -430,15 +430,16 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onRoomSize: () async {
           final result = await _showRoomSizeDialog(canClose: true);
           if (result != null && mounted) {
-            ref.read(placementProvider.notifier).setRoom(
+            final notifier = ref.read(placementProvider.notifier);
+            if (!result.keepFurniture) {
+              notifier.reset();
+            }
+            notifier.setRoom(
                   width: result.width,
                   depth: result.depth,
                   height: result.height,
                   tileSize: result.tileSize,
                 );
-          }
-          if (mounted) {
-            Future.delayed(const Duration(milliseconds: 300), _showSettings);
           }
         },
         onAppearance: () {

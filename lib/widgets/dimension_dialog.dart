@@ -8,12 +8,14 @@ class RoomSizeResult {
   final double depth;
   final double height;
   final double tileSize;
+  final bool keepFurniture;
 
   const RoomSizeResult({
     required this.width,
     required this.depth,
     required this.height,
     required this.tileSize,
+    this.keepFurniture = true,
   });
 }
 
@@ -60,6 +62,7 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
   late final TextEditingController _dCtrl;
   late final TextEditingController _hCtrl;
   late final TextEditingController _tCtrl;
+  bool _keepFurniture = true;
 
   @override
   void initState() {
@@ -122,7 +125,7 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
 
     Navigator.pop(
       context,
-      RoomSizeResult(width: w, depth: d, height: h, tileSize: t),
+      RoomSizeResult(width: w, depth: d, height: h, tileSize: t, keepFurniture: _keepFurniture),
     );
   }
 
@@ -208,6 +211,31 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(_error!, style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
+            ],
+            if (widget.showCloseButton) ...[
+              const SizedBox(height: 14),
+              GestureDetector(
+                onTap: () => setState(() => _keepFurniture = !_keepFurniture),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: _keepFurniture,
+                        onChanged: (v) => setState(() => _keepFurniture = v ?? true),
+                        activeColor: t.accent,
+                        side: BorderSide(color: t.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('기존 사물 유지', style: TextStyle(
+                      color: t.textPrimary,
+                      fontSize: 13,
+                    )),
+                  ],
+                ),
+              ),
             ],
             const SizedBox(height: 20),
             SizedBox(
