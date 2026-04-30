@@ -81,6 +81,8 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
     super.dispose();
   }
 
+  String? _error;
+
   void _submit() {
     final w = double.tryParse(_wCtrl.text);
     final d = double.tryParse(_dCtrl.text);
@@ -88,6 +90,23 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
     final t = double.tryParse(_tCtrl.text);
     if (w == null || d == null || h == null || t == null) return;
     if (w <= 0 || d <= 0 || h <= 0 || t <= 0) return;
+
+    if (w > 50 || d > 50) {
+      setState(() => _error = '가로/세로는 최대 50m까지 가능합니다');
+      return;
+    }
+    if (h > 20) {
+      setState(() => _error = '높이는 최대 20m까지 가능합니다');
+      return;
+    }
+    if (t < 0.1) {
+      setState(() => _error = '타일 크기는 최소 0.1m입니다');
+      return;
+    }
+    if (t > w || t > d) {
+      setState(() => _error = '타일 크기가 맵보다 클 수 없습니다');
+      return;
+    }
 
     Navigator.pop(
       context,
@@ -171,6 +190,10 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
                     child: _field(t, '타일 크기 (m)', _tCtrl, '0.5')),
               ],
             ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!, style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
+            ],
           ],
         ),
       ),
@@ -256,6 +279,9 @@ class DimensionDialog extends StatefulWidget {
   final double? initialZ;
   final bool isEdit;
   final bool showStepNumber;
+  final double? maxWidth;
+  final double? maxDepth;
+  final double? maxHeight;
 
   const DimensionDialog({
     super.key,
@@ -266,6 +292,9 @@ class DimensionDialog extends StatefulWidget {
     this.initialZ,
     this.isEdit = false,
     this.showStepNumber = false,
+    this.maxWidth,
+    this.maxDepth,
+    this.maxHeight,
   });
 
   @override
@@ -333,12 +362,26 @@ class _DimensionDialogState extends State<DimensionDialog> {
     super.dispose();
   }
 
+  String? _error;
+
   void _submit() {
     final x = double.tryParse(_xCtrl.text);
     final y = double.tryParse(_yCtrl.text);
     final z = double.tryParse(_zCtrl.text);
     if (x == null || y == null || z == null) return;
     if (x <= 0 || y <= 0 || z <= 0) return;
+
+    final mw = widget.maxWidth ?? 50;
+    final md = widget.maxDepth ?? 50;
+    final mh = widget.maxHeight ?? 20;
+    if (x > mw || z > md) {
+      setState(() => _error = '맵 크기(${mw}×$md)보다 클 수 없습니다');
+      return;
+    }
+    if (y > mh) {
+      setState(() => _error = '높이가 맵 높이(${mh}m)를 초과합니다');
+      return;
+    }
 
     final name = _nameCtrl.text.trim();
 
@@ -469,6 +512,10 @@ class _DimensionDialogState extends State<DimensionDialog> {
                   ],
                 ),
               ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!, style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
             ],
             const SizedBox(height: 6),
             Text(

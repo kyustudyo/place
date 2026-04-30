@@ -136,6 +136,9 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         initialZ: initialZ,
         isEdit: isEdit,
         showStepNumber: showStepNumber,
+        maxWidth: state.room.width,
+        maxDepth: state.room.depth,
+        maxHeight: state.room.height,
       ),
     );
 

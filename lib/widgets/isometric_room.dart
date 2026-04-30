@@ -342,6 +342,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
 
   Future<void> _showSizeDialog(Furniture item) async {
     final theme = ref.read(currentThemeProvider);
+    final room = ref.read(placementProvider).room;
     final result = await showDialog<DimensionResult>(
       context: context,
       barrierDismissible: true,
@@ -352,6 +353,9 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
         initialY: item.size.y,
         initialZ: item.size.z,
         isEdit: true,
+        maxWidth: room.width,
+        maxDepth: room.depth,
+        maxHeight: room.height,
       ),
     );
     if (result == null) return;
