@@ -44,6 +44,7 @@ class JsonParser {
               id: f.id,
               position: f.position,
               rotation: f.rotation,
+              size: f.size,
             ).toJson())
         .toList();
 
