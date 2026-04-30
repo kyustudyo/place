@@ -506,33 +506,44 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: _showingReference
-                ? () {
-                    _pageController.animateToPage(0,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut);
-                  }
-                : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: !_showingReference
-                    ? theme.accent
-                    : theme.accent.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'Place',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
+          if (hasRefImage)
+            GestureDetector(
+              onTap: _showingReference
+                  ? () {
+                      _pageController.animateToPage(0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut);
+                    }
+                  : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: !_showingReference
+                      ? theme.accent
+                      : theme.accent.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Place',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
+            )
+          else
+            Text(
+              'Place',
+              style: TextStyle(
+                color: theme.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
           if (hasRefImage) ...[
             const SizedBox(width: 8),
             _RefImageBtn(
