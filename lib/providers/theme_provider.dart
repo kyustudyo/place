@@ -39,16 +39,80 @@ final currentThemeProvider = Provider<AppTheme>((ref) {
   return appThemes[index];
 });
 
-/// X-Z axis swap
-class AxisSwapNotifier extends Notifier<bool> {
-  @override
-  bool build() => false; // false = default (X→오른쪽아래, Z→왼쪽아래)
+/// World axis enum for axis mapping
+enum WorldAxis { x, y, z }
 
-  void toggle() => state = !state;
+/// Axis mapping — which world axis maps to each visual direction
+class AxisMapping {
+  /// Right-down visual direction (southeast on isometric floor)
+  final WorldAxis rightDown;
+  /// Left-down visual direction (southwest on isometric floor)
+  final WorldAxis leftDown;
+  /// Up visual direction (vertical)
+  final WorldAxis up;
+
+  const AxisMapping({
+    this.rightDown = WorldAxis.x,
+    this.leftDown = WorldAxis.z,
+    this.up = WorldAxis.y,
+  });
+
+  /// Whether this is a valid mapping (each axis used exactly once)
+  bool get isValid {
+    final used = {rightDown, leftDown, up};
+    return used.length == 3;
+  }
+
+  /// Get the visual direction label for a given world axis
+  String directionLabel(WorldAxis axis) {
+    if (axis == rightDown) return '오른쪽아래';
+    if (axis == leftDown) return '왼쪽아래';
+    if (axis == up) return '위';
+    return '?';
+  }
+
+  /// Get the world axis name string
+  static String axisName(WorldAxis axis) => switch (axis) {
+    WorldAxis.x => 'X',
+    WorldAxis.y => 'Y',
+    WorldAxis.z => 'Z',
+  };
+
+  AxisMapping copyWith({
+    WorldAxis? rightDown,
+    WorldAxis? leftDown,
+    WorldAxis? up,
+  }) {
+    return AxisMapping(
+      rightDown: rightDown ?? this.rightDown,
+      leftDown: leftDown ?? this.leftDown,
+      up: up ?? this.up,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is AxisMapping &&
+      rightDown == other.rightDown &&
+      leftDown == other.leftDown &&
+      up == other.up;
+
+  @override
+  int get hashCode => Object.hash(rightDown, leftDown, up);
 }
 
-final axisSwapProvider = NotifierProvider<AxisSwapNotifier, bool>(
-  AxisSwapNotifier.new,
+/// Axis mapping notifier
+class AxisMappingNotifier extends Notifier<AxisMapping> {
+  @override
+  AxisMapping build() => const AxisMapping(); // default: X→right, Z→left, Y→up
+
+  void set(AxisMapping mapping) {
+    if (mapping.isValid) state = mapping;
+  }
+}
+
+final axisMappingProvider = NotifierProvider<AxisMappingNotifier, AxisMapping>(
+  AxisMappingNotifier.new,
 );
 
 /// Guide line color

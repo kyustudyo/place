@@ -3,13 +3,14 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../models/room.dart';
 import '../models/app_theme.dart';
+import '../providers/theme_provider.dart';
 import '../utils/isometric_math.dart';
 
 class GridPainter extends CustomPainter {
   final Room room;
   final AppTheme theme;
   final double? selectedHeight;
-  final bool axisSwapped;
+  final AxisMapping axisMapping;
   final Color guideColor;
   // Selected item position/size for wall projection
   final double? selX;
@@ -23,7 +24,7 @@ class GridPainter extends CustomPainter {
     required this.room,
     required this.theme,
     this.selectedHeight,
-    this.axisSwapped = false,
+    this.axisMapping = const AxisMapping(),
     this.guideColor = const Color(0xFFE74C3C),
     this.guideOpacity = 1.0,
     this.selX,
@@ -317,8 +318,8 @@ class GridPainter extends CustomPainter {
   }
 
   void _drawAxisLabels(Canvas canvas) {
-    final xLabel = axisSwapped ? 'Z' : 'X';
-    final zLabel = axisSwapped ? 'X' : 'Z';
+    final xLabel = AxisMapping.axisName(axisMapping.rightDown);
+    final zLabel = AxisMapping.axisName(axisMapping.leftDown);
 
     // X axis: outer edge (z=depth side, bottom-right of floor)
     final xAngle = atan2(IsometricMath.sinA, IsometricMath.cosA);
@@ -334,11 +335,12 @@ class GridPainter extends CustomPainter {
     _drawRotatedLabel(
         canvas, '− $zLabel +', zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
 
-    // Y axis: upright, +/- above and below
+    // Up axis: upright, +/- above and below
+    final upLabel = AxisMapping.axisName(axisMapping.up);
     final yTop = IsometricMath.worldToScreen(0, room.height, 0);
     final yBot = IsometricMath.worldToScreen(0, 0, 0);
     final yMidY = (yTop.dy + yBot.dy) / 2;
-    _drawFlatLabel(canvas, 'Y', Offset(yTop.dx - 16, yMidY), theme.textSecondary);
+    _drawFlatLabel(canvas, upLabel, Offset(yTop.dx - 16, yMidY), theme.textSecondary);
     _drawFlatLabel(canvas, '+', Offset(yTop.dx - 16, yMidY - 14), theme.textSecondary.withValues(alpha: 0.5));
     _drawFlatLabel(canvas, '−', Offset(yTop.dx - 16, yMidY + 14), theme.textSecondary.withValues(alpha: 0.5));
   }

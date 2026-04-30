@@ -33,10 +33,10 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   Widget build(BuildContext context) {
     final state = ref.watch(placementProvider);
     final theme = ref.watch(currentThemeProvider);
-    final axisSwapped = ref.watch(axisSwapProvider);
+    final axisMapping = ref.watch(axisMappingProvider);
     final guideColor = ref.watch(guideColorProvider);
     final guideOpacity = ref.watch(guideOpacityProvider);
-    IsometricMath.swapAxes = axisSwapped;
+    IsometricMath.axisMapping = axisMapping;
     final room = state.room;
 
     return LayoutBuilder(
@@ -61,7 +61,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                       ? state.selectedFurniture!.position.y +
                           state.selectedFurniture!.size.y
                       : null,
-                  axisSwapped: axisSwapped,
+                  axisMapping: axisMapping,
                   guideColor: guideColor,
                   guideOpacity: guideOpacity,
                   selX: state.selectedFurniture?.position.x,

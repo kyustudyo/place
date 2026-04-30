@@ -454,6 +454,21 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
           );
         },
+        onAxisConfig: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (_) => _AxisConfigSheet(
+              theme: theme,
+              ref: ref,
+              onBack: () {
+                Navigator.pop(context);
+                Future.delayed(const Duration(milliseconds: 300), _showSettings);
+              },
+            ),
+          );
+        },
         onReferenceImagePicked: (bytes) {
           ref.read(referenceImageProvider.notifier).set(bytes);
           precacheImage(MemoryImage(bytes), context);
@@ -983,6 +998,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onReset;
   final VoidCallback onRoomSize;
   final VoidCallback onAppearance;
+  final VoidCallback onAxisConfig;
   final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
 
@@ -996,13 +1012,14 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onReset,
     required this.onRoomSize,
     required this.onAppearance,
+    required this.onAxisConfig,
     required this.onReferenceImagePicked,
     required this.hasFurniture,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final axisSwapped = ref.watch(axisSwapProvider);
+    final axisMapping = ref.watch(axisMappingProvider);
     final hasRefImage = ref.watch(referenceImageProvider) != null;
     final dataActions = <Widget>[
       if (hasFurniture)
@@ -1087,48 +1104,49 @@ class _SettingsSheet extends ConsumerWidget {
               )),
             ),
           ),
-          // Axis swap toggle
+          // Axis config button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: theme.cardBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.swap_horiz, color: theme.accent, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('X-Z 축 방향 스왑', style: TextStyle(
-                          color: theme.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        )),
-                        const SizedBox(height: 2),
-                        Text(
-                          axisSwapped
-                              ? 'X→왼쪽아래  Z→오른쪽아래'
-                              : 'X→오른쪽아래  Z→왼쪽아래',
-                          style: TextStyle(
-                            color: theme.textSecondary,
-                            fontSize: 11,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                Future.delayed(const Duration(milliseconds: 300), onAxisConfig);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.threed_rotation, color: theme.accent, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('축 방향 설정', style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          )),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${AxisMapping.axisName(axisMapping.rightDown)}→오른쪽  '
+                            '${AxisMapping.axisName(axisMapping.leftDown)}→왼쪽  '
+                            '${AxisMapping.axisName(axisMapping.up)}→위',
+                            style: TextStyle(
+                              color: theme.textSecondary,
+                              fontSize: 11,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Switch.adaptive(
-                    value: axisSwapped,
-                    activeTrackColor: theme.accent,
-                    onChanged: (_) =>
-                        ref.read(axisSwapProvider.notifier).toggle(),
-                  ),
-                ],
+                    Icon(Icons.chevron_right, color: theme.textSecondary, size: 20),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1601,6 +1619,339 @@ class _AppearanceSheet extends ConsumerWidget {
         width: s, height: s,
         decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2)),
       );
+}
+
+class _AxisConfigSheet extends ConsumerWidget {
+  final AppTheme theme;
+  final WidgetRef ref;
+  final VoidCallback? onBack;
+
+  const _AxisConfigSheet({required this.theme, required this.ref, this.onBack});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mapping = ref.watch(axisMappingProvider);
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
+      decoration: BoxDecoration(
+        color: theme.panelBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: theme.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                if (onBack != null)
+                  GestureDetector(
+                    onTap: onBack,
+                    child: Icon(Icons.arrow_back_ios_rounded, size: 20, color: theme.textSecondary),
+                  ),
+                const Spacer(),
+                Text('축 방향 설정', style: TextStyle(
+                  color: theme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                )),
+                const Spacer(),
+                if (onBack != null)
+                  const SizedBox(width: 20),
+              ],
+            ),
+          ),
+          // Isometric cuboid preview
+          SizedBox(
+            height: 200,
+            child: CustomPaint(
+              painter: _AxisPreviewPainter(mapping: mapping, theme: theme),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Axis selectors
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.cardBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  _axisRow(
+                    context, ref, mapping,
+                    label: '오른쪽아래',
+                    icon: Icons.south_east,
+                    current: mapping.rightDown,
+                    color: const Color(0xFF5B8DEF),
+                    onChanged: (axis) {
+                      final swapped = _swapMapping(mapping, 'rightDown', axis);
+                      ref.read(axisMappingProvider.notifier).set(swapped);
+                    },
+                  ),
+                  Divider(color: theme.textSecondary.withValues(alpha: 0.15), height: 20),
+                  _axisRow(
+                    context, ref, mapping,
+                    label: '왼쪽아래',
+                    icon: Icons.south_west,
+                    current: mapping.leftDown,
+                    color: const Color(0xFF5BCA8A),
+                    onChanged: (axis) {
+                      final swapped = _swapMapping(mapping, 'leftDown', axis);
+                      ref.read(axisMappingProvider.notifier).set(swapped);
+                    },
+                  ),
+                  Divider(color: theme.textSecondary.withValues(alpha: 0.15), height: 20),
+                  _axisRow(
+                    context, ref, mapping,
+                    label: '위',
+                    icon: Icons.north,
+                    current: mapping.up,
+                    color: const Color(0xFFE8A838),
+                    onChanged: (axis) {
+                      final swapped = _swapMapping(mapping, 'up', axis);
+                      ref.read(axisMappingProvider.notifier).set(swapped);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _axisRow(
+    BuildContext context,
+    WidgetRef ref,
+    AxisMapping mapping, {
+    required String label,
+    required IconData icon,
+    required WorldAxis current,
+    required Color color,
+    required void Function(WorldAxis) onChanged,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(
+          color: theme.textPrimary,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        )),
+        const Spacer(),
+        for (final axis in WorldAxis.values)
+          Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: GestureDetector(
+              onTap: () => onChanged(axis),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 40,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: current == axis
+                      ? color.withValues(alpha: 0.2)
+                      : theme.scaffoldBg.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: current == axis ? color : theme.textSecondary.withValues(alpha: 0.2),
+                    width: current == axis ? 2 : 1,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  AxisMapping.axisName(axis),
+                  style: TextStyle(
+                    color: current == axis ? color : theme.textSecondary,
+                    fontSize: 14,
+                    fontWeight: current == axis ? FontWeight.w700 : FontWeight.w400,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// When user picks a new axis for a slot, swap with whichever slot had it
+  AxisMapping _swapMapping(AxisMapping m, String slot, WorldAxis newAxis) {
+    var rd = m.rightDown;
+    var ld = m.leftDown;
+    var up = m.up;
+
+    // Find which slot currently has the newAxis
+    final oldSlot = newAxis == rd ? 'rightDown'
+        : newAxis == ld ? 'leftDown'
+        : 'up';
+
+    // Get the current value of the target slot
+    final currentValue = slot == 'rightDown' ? rd
+        : slot == 'leftDown' ? ld
+        : up;
+
+    // Swap: put currentValue into the old slot
+    if (oldSlot == 'rightDown') rd = currentValue;
+    if (oldSlot == 'leftDown') ld = currentValue;
+    if (oldSlot == 'up') up = currentValue;
+
+    // Set new axis into the target slot
+    if (slot == 'rightDown') rd = newAxis;
+    if (slot == 'leftDown') ld = newAxis;
+    if (slot == 'up') up = newAxis;
+
+    return AxisMapping(rightDown: rd, leftDown: ld, up: up);
+  }
+}
+
+/// Custom painter for the axis preview cuboid
+class _AxisPreviewPainter extends CustomPainter {
+  final AxisMapping mapping;
+  final AppTheme theme;
+
+  _AxisPreviewPainter({required this.mapping, required this.theme});
+
+  static const double _cos30 = 0.866025;
+  static const double _sin30 = 0.5;
+
+  Offset _toScreen(double x, double y, double z, Offset origin, double scale) {
+    final sx = (x - z) * _cos30 * scale;
+    final sy = (x + z) * _sin30 * scale - y * scale;
+    return Offset(origin.dx + sx, origin.dy + sy);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final origin = Offset(size.width / 2, size.height * 0.55);
+    const s = 35.0;
+    const w = 3.0, h = 2.0, d = 2.5; // cuboid proportions
+
+    // Faces
+    final topFace = [
+      _toScreen(0, h, 0, origin, s),
+      _toScreen(w, h, 0, origin, s),
+      _toScreen(w, h, d, origin, s),
+      _toScreen(0, h, d, origin, s),
+    ];
+    final leftFace = [
+      _toScreen(0, 0, d, origin, s),
+      _toScreen(w, 0, d, origin, s),
+      _toScreen(w, h, d, origin, s),
+      _toScreen(0, h, d, origin, s),
+    ];
+    final rightFace = [
+      _toScreen(w, 0, 0, origin, s),
+      _toScreen(w, 0, d, origin, s),
+      _toScreen(w, h, d, origin, s),
+      _toScreen(w, h, 0, origin, s),
+    ];
+
+    // Colors
+    final topColor = theme.floorColor.withValues(alpha: 0.8);
+    final leftColor = theme.leftWallColor.withValues(alpha: 0.7);
+    final rightColor = theme.backWallColor.withValues(alpha: 0.7);
+
+    void drawFace(List<Offset> pts, Color fill) {
+      final path = Path()..moveTo(pts[0].dx, pts[0].dy);
+      for (int i = 1; i < pts.length; i++) {
+        path.lineTo(pts[i].dx, pts[i].dy);
+      }
+      path.close();
+      canvas.drawPath(path, Paint()..color = fill);
+      canvas.drawPath(path, Paint()
+        ..color = theme.wallBorderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5);
+    }
+
+    drawFace(leftFace, leftColor);
+    drawFace(rightFace, rightColor);
+    drawFace(topFace, topColor);
+
+    // Axis arrows and labels
+    final corner = _toScreen(0, 0, 0, origin, s);
+
+    // Right-down axis (X default)
+    final rdEnd = _toScreen(w + 1.2, 0, 0, origin, s);
+    _drawAxisArrow(canvas, corner, rdEnd, const Color(0xFF5B8DEF),
+        AxisMapping.axisName(mapping.rightDown));
+
+    // Left-down axis (Z default)
+    final ldEnd = _toScreen(0, 0, d + 1.2, origin, s);
+    _drawAxisArrow(canvas, corner, ldEnd, const Color(0xFF5BCA8A),
+        AxisMapping.axisName(mapping.leftDown));
+
+    // Up axis (Y default)
+    final upEnd = _toScreen(0, h + 1.5, 0, origin, s);
+    _drawAxisArrow(canvas, corner, upEnd, const Color(0xFFE8A838),
+        AxisMapping.axisName(mapping.up));
+  }
+
+  void _drawAxisArrow(Canvas canvas, Offset from, Offset to, Color color, String label) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(from, to, paint);
+
+    // Arrowhead
+    final dx = to.dx - from.dx;
+    final dy = to.dy - from.dy;
+    final len = Offset(dx, dy).distance;
+    if (len == 0) return;
+    final ux = dx / len;
+    final uy = dy / len;
+    const arrowLen = 8.0;
+    final ax = to.dx - ux * arrowLen + uy * arrowLen * 0.4;
+    final ay = to.dy - uy * arrowLen - ux * arrowLen * 0.4;
+    final bx = to.dx - ux * arrowLen - uy * arrowLen * 0.4;
+    final by = to.dy - uy * arrowLen + ux * arrowLen * 0.4;
+    final arrowPath = Path()
+      ..moveTo(to.dx, to.dy)
+      ..lineTo(ax, ay)
+      ..lineTo(bx, by)
+      ..close();
+    canvas.drawPath(arrowPath, Paint()..color = color);
+
+    // Label
+    final tp = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: color,
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(to.dx + ux * 6 - tp.width / 2, to.dy + uy * 6 - tp.height / 2));
+  }
+
+  @override
+  bool shouldRepaint(covariant _AxisPreviewPainter oldDelegate) =>
+      mapping != oldDelegate.mapping;
 }
 
 class _SaveDialog extends StatefulWidget {
