@@ -352,11 +352,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         },
         onDelete: (name) async {
           await SessionStorage.deleteRoom(name);
-          if (ctx.mounted) Navigator.pop(ctx);
-          // Re-open with updated list
-          if (mounted) {
-            Future.delayed(const Duration(milliseconds: 300), _loadSession);
-          }
         },
       ),
     );
@@ -1746,7 +1741,7 @@ class _SaveDialogState extends State<_SaveDialog> {
   }
 }
 
-class _SavedRoomsSheet extends StatelessWidget {
+class _SavedRoomsSheet extends StatefulWidget {
   final AppTheme theme;
   final List<String> names;
   final void Function(String name) onLoad;
@@ -1760,7 +1755,57 @@ class _SavedRoomsSheet extends StatelessWidget {
   });
 
   @override
+  State<_SavedRoomsSheet> createState() => _SavedRoomsSheetState();
+}
+
+class _SavedRoomsSheetState extends State<_SavedRoomsSheet> {
+  late final List<String> _names;
+
+  @override
+  void initState() {
+    super.initState();
+    _names = List.of(widget.names);
+  }
+
+  Future<void> _confirmDelete(String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: widget.theme.headerBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('삭제', style: TextStyle(color: widget.theme.textPrimary, fontSize: 16)),
+        content: Text(
+          '"$name"을(를) 삭제하시겠습니까?',
+          style: TextStyle(color: widget.theme.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('취소', style: TextStyle(color: widget.theme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('삭제', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    widget.onDelete(name);
+    setState(() => _names.remove(name));
+    if (_names.isEmpty && mounted) {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = widget.theme;
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.55,
@@ -1793,10 +1838,10 @@ class _SavedRoomsSheet extends StatelessWidget {
             child: ListView.separated(
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: names.length,
+              itemCount: _names.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (ctx, i) {
-                final name = names[i];
+                final name = _names[i];
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
@@ -1815,7 +1860,7 @@ class _SavedRoomsSheet extends StatelessWidget {
                         )),
                       ),
                       GestureDetector(
-                        onTap: () => onDelete(name),
+                        onTap: () => _confirmDelete(name),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -1827,7 +1872,7 @@ class _SavedRoomsSheet extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
-                        onTap: () => onLoad(name),
+                        onTap: () => widget.onLoad(name),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
