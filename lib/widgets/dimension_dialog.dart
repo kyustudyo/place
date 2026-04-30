@@ -213,6 +213,7 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
               const SizedBox(height: 12),
               Text(_error!, style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
             ],
+            const SizedBox(height: 8),
           ],
         ),
       ),
