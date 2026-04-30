@@ -442,7 +442,14 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             context: context,
             backgroundColor: Colors.transparent,
             isScrollControlled: true,
-            builder: (_) => _AppearanceSheet(theme: theme, ref: ref),
+            builder: (_) => _AppearanceSheet(
+              theme: theme,
+              ref: ref,
+              onBack: () {
+                Navigator.pop(context);
+                Future.delayed(const Duration(milliseconds: 300), _showSettings);
+              },
+            ),
           );
         },
         onReferenceImagePicked: (bytes) {
@@ -1351,8 +1358,9 @@ class _SettingsSheet extends ConsumerWidget {
 class _AppearanceSheet extends ConsumerWidget {
   final AppTheme theme;
   final WidgetRef ref;
+  final VoidCallback? onBack;
 
-  const _AppearanceSheet({required this.theme, required this.ref});
+  const _AppearanceSheet({required this.theme, required this.ref, this.onBack});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1381,13 +1389,24 @@ class _AppearanceSheet extends ConsumerWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Center(
-              child: Text('꾸미기', style: TextStyle(
-                color: theme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              )),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                if (onBack != null)
+                  GestureDetector(
+                    onTap: onBack,
+                    child: Icon(Icons.arrow_back_ios_rounded, size: 20, color: theme.textSecondary),
+                  ),
+                const Spacer(),
+                Text('꾸미기', style: TextStyle(
+                  color: theme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                )),
+                const Spacer(),
+                if (onBack != null)
+                  const SizedBox(width: 20),
+              ],
             ),
           ),
           // Guide line color
