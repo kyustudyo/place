@@ -437,6 +437,14 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                 );
           }
         },
+        onAppearance: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (_) => _AppearanceSheet(theme: theme, ref: ref),
+          );
+        },
         onReferenceImagePicked: (bytes) {
           ref.read(referenceImageProvider.notifier).set(bytes);
           precacheImage(MemoryImage(bytes), context);
@@ -965,6 +973,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onExport;
   final VoidCallback onReset;
   final VoidCallback onRoomSize;
+  final VoidCallback onAppearance;
   final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
 
@@ -977,6 +986,7 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onExport,
     required this.onReset,
     required this.onRoomSize,
+    required this.onAppearance,
     required this.onReferenceImagePicked,
     required this.hasFurniture,
   });
@@ -1297,14 +1307,7 @@ class _SettingsSheet extends ConsumerWidget {
             child: GestureDetector(
               onTap: () {
                 Navigator.pop(context);
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    isScrollControlled: true,
-                    builder: (_) => _AppearanceSheet(theme: theme, ref: ref),
-                  );
-                });
+                Future.delayed(const Duration(milliseconds: 300), onAppearance);
               },
               child: Container(
                 padding: const EdgeInsets.all(14),
