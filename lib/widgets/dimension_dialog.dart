@@ -95,11 +95,13 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
     final h = double.tryParse(_hCtrl.text);
     final t = double.tryParse(_tCtrl.text);
     String? err;
-    if ((w != null && w > 50) || (d != null && d > 50)) {
+    if ((w != null && w <= 0) || (d != null && d <= 0) || (h != null && h <= 0) || (t != null && t <= 0)) {
+      err = '0보다 큰 값을 입력하세요';
+    } else if ((w != null && w > 50) || (d != null && d > 50)) {
       err = '가로/세로는 최대 50m까지 가능합니다';
     } else if (h != null && h > 20) {
       err = '높이는 최대 20m까지 가능합니다';
-    } else if (t != null && t > 0 && t < 0.1) {
+    } else if (t != null && t < 0.1) {
       err = '타일 크기는 최소 0.1m입니다';
     } else if (t != null && w != null && d != null && (t > w || t > d)) {
       err = '타일 크기가 맵보다 클 수 없습니다';
