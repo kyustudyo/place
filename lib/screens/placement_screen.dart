@@ -428,6 +428,17 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         onImport: _pasteJson,
         onExport: _copyJson,
         onReset: _resetRoom,
+        onRoomSize: () async {
+          final result = await _showRoomSizeDialog();
+          if (result != null && mounted) {
+            ref.read(placementProvider.notifier).setRoom(
+                  width: result.width,
+                  depth: result.depth,
+                  height: result.height,
+                  tileSize: result.tileSize,
+                );
+          }
+        },
         onReferenceImagePicked: (bytes) {
           ref.read(referenceImageProvider.notifier).set(bytes);
           precacheImage(MemoryImage(bytes), context);
@@ -955,6 +966,7 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onImport;
   final VoidCallback onExport;
   final VoidCallback onReset;
+  final VoidCallback onRoomSize;
   final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
 
@@ -966,6 +978,7 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onImport,
     required this.onExport,
     required this.onReset,
+    required this.onRoomSize,
     required this.onReferenceImagePicked,
     required this.hasFurniture,
   });
@@ -973,7 +986,6 @@ class _SettingsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final axisSwapped = ref.watch(axisSwapProvider);
-    final currentThemeIndex = ref.watch(themeProvider);
     final hasRefImage = ref.watch(referenceImageProvider) != null;
     final dataActions = <Widget>[
       if (hasFurniture)
@@ -1249,6 +1261,134 @@ class _SettingsSheet extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // Map size
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                Future.delayed(const Duration(milliseconds: 300), onRoomSize);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.aspect_ratio, color: theme.accent, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text('맵 크기 변경', style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      )),
+                    ),
+                    Icon(Icons.chevron_right, color: theme.textSecondary, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Appearance (guide color + theme) — opens sub sheet
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (_) => _AppearanceSheet(theme: theme, ref: ref),
+                  );
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.palette_outlined, color: theme.accent, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text('꾸미기', style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      )),
+                    ),
+                    // Current theme preview dot
+                    Container(
+                      width: 20, height: 20,
+                      decoration: BoxDecoration(
+                        color: theme.accent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.chevron_right, color: theme.textSecondary, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _AppearanceSheet extends ConsumerWidget {
+  final AppTheme theme;
+  final WidgetRef ref;
+
+  const _AppearanceSheet({required this.theme, required this.ref});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentThemeIndex = ref.watch(themeProvider);
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
+      decoration: BoxDecoration(
+        color: theme.panelBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: theme.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Text('꾸미기', style: TextStyle(
+                color: theme.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              )),
+            ),
+          ),
           // Guide line color
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1366,70 +1506,70 @@ class _SettingsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 2.8,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: appThemes.length,
-              itemBuilder: (ctx, i) {
-                final t = appThemes[i];
-                final selected = i == currentThemeIndex;
-                return GestureDetector(
-                  onTap: () =>
-                      ref.read(themeProvider.notifier).setTheme(i),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: t.scaffoldBg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: selected ? t.accent : theme.textSecondary.withValues(alpha: 0.3),
-                        width: selected ? 2.5 : 1,
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(children: [
-                              _dot(t.backWallColor, 8),
-                              const SizedBox(width: 2),
-                              _dot(t.leftWallColor, 8),
-                            ]),
-                            const SizedBox(height: 2),
-                            _dot(t.floorColor, 10),
-                          ],
-                        ),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(t.nameKo, style: TextStyle(
-                                color: t.textPrimary, fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ), overflow: TextOverflow.ellipsis),
-                              Text(t.name, style: TextStyle(
-                                color: t.textSecondary, fontSize: 10,
-                              ), overflow: TextOverflow.ellipsis),
-                            ],
-                          ),
-                        ),
-                        if (selected)
-                          Icon(Icons.check_circle, size: 16, color: t.accent),
-                      ],
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2.8,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: appThemes.length,
+            itemBuilder: (ctx, i) {
+              final t = appThemes[i];
+              final selected = i == currentThemeIndex;
+              return GestureDetector(
+                onTap: () =>
+                    ref.read(themeProvider.notifier).setTheme(i),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: t.scaffoldBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: selected ? t.accent : theme.textSecondary.withValues(alpha: 0.3),
+                      width: selected ? 2.5 : 1,
                     ),
                   ),
-                );
-              },
-            ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(children: [
+                            _dot(t.backWallColor, 8),
+                            const SizedBox(width: 2),
+                            _dot(t.leftWallColor, 8),
+                          ]),
+                          const SizedBox(height: 2),
+                          _dot(t.floorColor, 10),
+                        ],
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(t.nameKo, style: TextStyle(
+                              color: t.textPrimary, fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ), overflow: TextOverflow.ellipsis),
+                            Text(t.name, style: TextStyle(
+                              color: t.textSecondary, fontSize: 10,
+                            ), overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                      if (selected)
+                        Icon(Icons.check_circle, size: 16, color: t.accent),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
