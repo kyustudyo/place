@@ -266,3 +266,26 @@
 - 설정 화면이 간결해짐
 - 수정 파일: `lib/screens/placement_screen.dart`
 - 배포 완료: https://place-cbp.pages.dev/
+
+### 그리드/축/중앙정렬 개선
+- 비정사각형 맵(30×10 등)에서 Z축 그리드 초과 버그 수정
+- 맵이 화면 중앙에 오도록 origin 계산 개선
+- 축 라벨: `− X +`, `− Z +`, Y축 위아래 +/− 표시
+- 수정 파일: `lib/widgets/grid_painter.dart`, `lib/widgets/isometric_room.dart`
+
+### 크기 입력 UX 개선
+- 실시간 검증 (입력 즉시 빨간 에러 표시)
+- 0 이하 값 검증 추가
+- 키보드 밀림 방지 (AlertDialog → Dialog)
+- 에러 메시지와 버튼 간격 개선
+- 공간 크기 설정에 닫기(X) 버튼 (설정에서 열 때만)
+- 맵 크기 변경 시 '기존 사물 유지' 체크박스
+- 가구 크기 제한: 맵 기준 → 절대 최대값(50m/20m)
+- 꾸미기 바텀시트 안 열리는 버그 수정 + 뒤로가기 버튼
+- 수정 파일: `lib/widgets/dimension_dialog.dart`, `lib/screens/placement_screen.dart`
+
+### v1.3.0 iOS + Android 배포
+- 버전: 1.3.0+10
+- iOS: App Store Connect 업로드 성공
+- Android: Google Play 비공개 테스트(alpha) 업로드 성공
+- Git 태그: `v1.3.0`
