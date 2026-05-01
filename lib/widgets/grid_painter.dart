@@ -320,29 +320,36 @@ class GridPainter extends CustomPainter {
   void _drawAxisLabels(Canvas canvas) {
     final xLabel = AxisMapping.axisName(axisMapping.rightDown);
     final zLabel = AxisMapping.axisName(axisMapping.leftDown);
+    // Flip: swap + and − signs
+    final xLeft = axisMapping.flipRD ? '+' : '−';
+    final xRight = axisMapping.flipRD ? '−' : '+';
+    final zLeft = axisMapping.flipLD ? '+' : '−';
+    final zRight = axisMapping.flipLD ? '−' : '+';
 
     // X axis: outer edge (z=depth side, bottom-right of floor)
     final xAngle = atan2(IsometricMath.sinA, IsometricMath.cosA);
     final xMid = IsometricMath.worldToScreen(
         room.width * 0.5, 0, room.depth);
     _drawRotatedLabel(
-        canvas, '− $xLabel +', xMid + const Offset(0, 14), xAngle, theme.accent);
+        canvas, '$xLeft $xLabel $xRight', xMid + const Offset(0, 14), xAngle, theme.accent);
 
     // Z axis: outer edge (x=width side, bottom-left of floor)
     final zAngle = atan2(IsometricMath.sinA, -IsometricMath.cosA);
     final zMid = IsometricMath.worldToScreen(
         room.width, 0, room.depth * 0.5);
     _drawRotatedLabel(
-        canvas, '− $zLabel +', zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
+        canvas, '$zLeft $zLabel $zRight', zMid + const Offset(0, 14), zAngle, theme.accentSecondary);
 
     // Up axis: upright, +/- above and below
     final upLabel = AxisMapping.axisName(axisMapping.up);
+    final upPlus = axisMapping.flipUp ? '−' : '+';
+    final upMinus = axisMapping.flipUp ? '+' : '−';
     final yTop = IsometricMath.worldToScreen(0, room.height, 0);
     final yBot = IsometricMath.worldToScreen(0, 0, 0);
     final yMidY = (yTop.dy + yBot.dy) / 2;
     _drawFlatLabel(canvas, upLabel, Offset(yTop.dx - 16, yMidY), theme.textSecondary);
-    _drawFlatLabel(canvas, '+', Offset(yTop.dx - 16, yMidY - 14), theme.textSecondary.withValues(alpha: 0.5));
-    _drawFlatLabel(canvas, '−', Offset(yTop.dx - 16, yMidY + 14), theme.textSecondary.withValues(alpha: 0.5));
+    _drawFlatLabel(canvas, upPlus, Offset(yTop.dx - 16, yMidY - 14), theme.textSecondary.withValues(alpha: 0.5));
+    _drawFlatLabel(canvas, upMinus, Offset(yTop.dx - 16, yMidY + 14), theme.textSecondary.withValues(alpha: 0.5));
   }
 
   void _drawRotatedLabel(
