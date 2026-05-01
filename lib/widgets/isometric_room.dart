@@ -36,7 +36,6 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     final axisMapping = ref.watch(axisMappingProvider);
     final guideColor = ref.watch(guideColorProvider);
     final guideOpacity = ref.watch(guideOpacityProvider);
-    IsometricMath.axisMapping = axisMapping;
     final room = state.room;
 
     return LayoutBuilder(
