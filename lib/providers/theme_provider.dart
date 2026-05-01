@@ -50,25 +50,24 @@ class AxisMapping {
   final WorldAxis leftDown;
   /// Up visual direction (vertical)
   final WorldAxis up;
+  /// Whether each direction's + is flipped (reversed)
+  final bool flipRD;
+  final bool flipLD;
+  final bool flipUp;
 
   const AxisMapping({
     this.rightDown = WorldAxis.x,
     this.leftDown = WorldAxis.z,
     this.up = WorldAxis.y,
+    this.flipRD = false,
+    this.flipLD = false,
+    this.flipUp = false,
   });
 
   /// Whether this is a valid mapping (each axis used exactly once)
   bool get isValid {
     final used = {rightDown, leftDown, up};
     return used.length == 3;
-  }
-
-  /// Get the visual direction label for a given world axis
-  String directionLabel(WorldAxis axis) {
-    if (axis == rightDown) return '오른쪽아래';
-    if (axis == leftDown) return '왼쪽아래';
-    if (axis == up) return '위';
-    return '?';
   }
 
   /// Get the world axis name string
@@ -82,11 +81,17 @@ class AxisMapping {
     WorldAxis? rightDown,
     WorldAxis? leftDown,
     WorldAxis? up,
+    bool? flipRD,
+    bool? flipLD,
+    bool? flipUp,
   }) {
     return AxisMapping(
       rightDown: rightDown ?? this.rightDown,
       leftDown: leftDown ?? this.leftDown,
       up: up ?? this.up,
+      flipRD: flipRD ?? this.flipRD,
+      flipLD: flipLD ?? this.flipLD,
+      flipUp: flipUp ?? this.flipUp,
     );
   }
 
@@ -95,10 +100,13 @@ class AxisMapping {
       other is AxisMapping &&
       rightDown == other.rightDown &&
       leftDown == other.leftDown &&
-      up == other.up;
+      up == other.up &&
+      flipRD == other.flipRD &&
+      flipLD == other.flipLD &&
+      flipUp == other.flipUp;
 
   @override
-  int get hashCode => Object.hash(rightDown, leftDown, up);
+  int get hashCode => Object.hash(rightDown, leftDown, up, flipRD, flipLD, flipUp);
 }
 
 /// Axis mapping notifier

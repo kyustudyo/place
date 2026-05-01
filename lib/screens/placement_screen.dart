@@ -1133,9 +1133,9 @@ class _SettingsSheet extends ConsumerWidget {
                           )),
                           const SizedBox(height: 2),
                           Text(
-                            '${AxisMapping.axisName(axisMapping.rightDown)}→오른쪽  '
-                            '${AxisMapping.axisName(axisMapping.leftDown)}→왼쪽  '
-                            '${AxisMapping.axisName(axisMapping.up)}→위',
+                            '${axisMapping.flipRD ? "−" : "+"}${AxisMapping.axisName(axisMapping.rightDown)}→오른쪽  '
+                            '${axisMapping.flipLD ? "−" : "+"}${AxisMapping.axisName(axisMapping.leftDown)}→왼쪽  '
+                            '${axisMapping.flipUp ? "−" : "+"}${AxisMapping.axisName(axisMapping.up)}→위',
                             style: TextStyle(
                               color: theme.textSecondary,
                               fontSize: 11,
@@ -1677,12 +1677,15 @@ class _AxisConfigSheet extends ConsumerWidget {
           ),
           // Isometric cuboid preview
           SizedBox(
-            height: 200,
-            child: CustomPaint(
-              painter: _AxisPreviewPainter(mapping: mapping, theme: theme),
+            height: 220,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: CustomPaint(
+                painter: _AxisPreviewPainter(mapping: mapping, theme: theme),
+              ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           // Axis selectors
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1699,10 +1702,16 @@ class _AxisConfigSheet extends ConsumerWidget {
                     label: '오른쪽아래',
                     icon: Icons.south_east,
                     current: mapping.rightDown,
+                    flipped: mapping.flipRD,
                     color: const Color(0xFF5B8DEF),
                     onChanged: (axis) {
                       final swapped = _swapMapping(mapping, 'rightDown', axis);
                       ref.read(axisMappingProvider.notifier).set(swapped);
+                    },
+                    onFlip: () {
+                      ref.read(axisMappingProvider.notifier).set(
+                        mapping.copyWith(flipRD: !mapping.flipRD),
+                      );
                     },
                   ),
                   Divider(color: theme.textSecondary.withValues(alpha: 0.15), height: 20),
@@ -1711,10 +1720,16 @@ class _AxisConfigSheet extends ConsumerWidget {
                     label: '왼쪽아래',
                     icon: Icons.south_west,
                     current: mapping.leftDown,
+                    flipped: mapping.flipLD,
                     color: const Color(0xFF5BCA8A),
                     onChanged: (axis) {
                       final swapped = _swapMapping(mapping, 'leftDown', axis);
                       ref.read(axisMappingProvider.notifier).set(swapped);
+                    },
+                    onFlip: () {
+                      ref.read(axisMappingProvider.notifier).set(
+                        mapping.copyWith(flipLD: !mapping.flipLD),
+                      );
                     },
                   ),
                   Divider(color: theme.textSecondary.withValues(alpha: 0.15), height: 20),
@@ -1723,10 +1738,16 @@ class _AxisConfigSheet extends ConsumerWidget {
                     label: '위',
                     icon: Icons.north,
                     current: mapping.up,
+                    flipped: mapping.flipUp,
                     color: const Color(0xFFE8A838),
                     onChanged: (axis) {
                       final swapped = _swapMapping(mapping, 'up', axis);
                       ref.read(axisMappingProvider.notifier).set(swapped);
+                    },
+                    onFlip: () {
+                      ref.read(axisMappingProvider.notifier).set(
+                        mapping.copyWith(flipUp: !mapping.flipUp),
+                      );
                     },
                   ),
                 ],
@@ -1746,18 +1767,49 @@ class _AxisConfigSheet extends ConsumerWidget {
     required String label,
     required IconData icon,
     required WorldAxis current,
+    required bool flipped,
     required Color color,
     required void Function(WorldAxis) onChanged,
+    required VoidCallback onFlip,
   }) {
     return Row(
       children: [
         Icon(icon, color: color, size: 20),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Text(label, style: TextStyle(
           color: theme.textPrimary,
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: FontWeight.w500,
         )),
+        const SizedBox(width: 8),
+        // +/- flip toggle
+        GestureDetector(
+          onTap: onFlip,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 36,
+            height: 28,
+            decoration: BoxDecoration(
+              color: flipped
+                  ? color.withValues(alpha: 0.15)
+                  : theme.scaffoldBg.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: flipped ? color.withValues(alpha: 0.5) : theme.textSecondary.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              flipped ? '−' : '+',
+              style: TextStyle(
+                color: flipped ? color : theme.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
         const Spacer(),
         for (final axis in WorldAxis.values)
           Padding(
@@ -1842,9 +1894,9 @@ class _AxisPreviewPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final origin = Offset(size.width / 2, size.height * 0.55);
-    const s = 35.0;
-    const w = 3.0, h = 2.0, d = 2.5; // cuboid proportions
+    final origin = Offset(size.width / 2, size.height * 0.6);
+    const s = 30.0;
+    const w = 3.0, h = 2.0, d = 2.5;
 
     // Faces
     final topFace = [
@@ -1866,7 +1918,6 @@ class _AxisPreviewPainter extends CustomPainter {
       _toScreen(w, h, 0, origin, s),
     ];
 
-    // Colors
     final topColor = theme.floorColor.withValues(alpha: 0.8);
     final leftColor = theme.leftWallColor.withValues(alpha: 0.7);
     final rightColor = theme.backWallColor.withValues(alpha: 0.7);
@@ -1888,23 +1939,26 @@ class _AxisPreviewPainter extends CustomPainter {
     drawFace(rightFace, rightColor);
     drawFace(topFace, topColor);
 
-    // Axis arrows and labels
+    // Axis arrows with +/- labels
     final corner = _toScreen(0, 0, 0, origin, s);
 
-    // Right-down axis (X default)
+    // Right-down axis
     final rdEnd = _toScreen(w + 1.2, 0, 0, origin, s);
+    final rdSign = mapping.flipRD ? '−' : '+';
     _drawAxisArrow(canvas, corner, rdEnd, const Color(0xFF5B8DEF),
-        AxisMapping.axisName(mapping.rightDown));
+        '$rdSign${AxisMapping.axisName(mapping.rightDown)}');
 
-    // Left-down axis (Z default)
+    // Left-down axis
     final ldEnd = _toScreen(0, 0, d + 1.2, origin, s);
+    final ldSign = mapping.flipLD ? '−' : '+';
     _drawAxisArrow(canvas, corner, ldEnd, const Color(0xFF5BCA8A),
-        AxisMapping.axisName(mapping.leftDown));
+        '$ldSign${AxisMapping.axisName(mapping.leftDown)}');
 
-    // Up axis (Y default)
+    // Up axis
     final upEnd = _toScreen(0, h + 1.5, 0, origin, s);
+    final upSign = mapping.flipUp ? '−' : '+';
     _drawAxisArrow(canvas, corner, upEnd, const Color(0xFFE8A838),
-        AxisMapping.axisName(mapping.up));
+        '$upSign${AxisMapping.axisName(mapping.up)}');
   }
 
   void _drawAxisArrow(Canvas canvas, Offset from, Offset to, Color color, String label) {
@@ -1940,13 +1994,13 @@ class _AxisPreviewPainter extends CustomPainter {
         text: label,
         style: TextStyle(
           color: color,
-          fontSize: 16,
+          fontSize: 15,
           fontWeight: FontWeight.w800,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    tp.paint(canvas, Offset(to.dx + ux * 6 - tp.width / 2, to.dy + uy * 6 - tp.height / 2));
+    tp.paint(canvas, Offset(to.dx + ux * 8 - tp.width / 2, to.dy + uy * 8 - tp.height / 2));
   }
 
   @override

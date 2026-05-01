@@ -27,9 +27,9 @@ class IsometricMath {
 
   /// World (x, y, z) → Screen (px, py)
   static Offset worldToScreen(double x, double y, double z) {
-    final wx = _axisValue(axisMapping.rightDown, x, y, z);
-    final wz = _axisValue(axisMapping.leftDown, x, y, z);
-    final wy = _axisValue(axisMapping.up, x, y, z);
+    final wx = _axisValue(axisMapping.rightDown, x, y, z) * (axisMapping.flipRD ? -1 : 1);
+    final wz = _axisValue(axisMapping.leftDown, x, y, z) * (axisMapping.flipLD ? -1 : 1);
+    final wy = _axisValue(axisMapping.up, x, y, z) * (axisMapping.flipUp ? -1 : 1);
     final sx = (wx - wz) * cosA * scale;
     final sy = (wx + wz) * sinA * scale - wy * scale;
     return Offset(origin.dx + sx, origin.dy + sy);
@@ -44,11 +44,14 @@ class IsometricMath {
     final sx = dx / (cosA * scale);
     final sy = dy / (sinA * scale);
 
-    final rawRD = (sx + sy) / 2; // right-down visual value
-    final rawLD = (sy - sx) / 2; // left-down visual value
+    var rawRD = (sx + sy) / 2; // right-down visual value
+    var rawLD = (sy - sx) / 2; // left-down visual value
+
+    // Un-flip: visual value was flipped, so invert back
+    if (axisMapping.flipRD) rawRD = -rawRD;
+    if (axisMapping.flipLD) rawLD = -rawLD;
 
     // Map visual values back to world X and Z
-    // We need to figure out which world axis is "room width" (X) and "room depth" (Z)
     double worldX = 0, worldZ = 0;
     _setWorldAxis(axisMapping.rightDown, rawRD, (v) => worldX = v, (v) => worldZ = v);
     _setWorldAxis(axisMapping.leftDown, rawLD, (v) => worldX = v, (v) => worldZ = v);
