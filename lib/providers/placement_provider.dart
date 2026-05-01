@@ -4,6 +4,7 @@ import '../models/furniture.dart';
 import '../utils/collision.dart';
 import '../utils/json_parser.dart';
 import '../models/room.dart';
+import '../providers/theme_provider.dart';
 
 const _defaultRoom = Room(
   width: 15.0,
@@ -217,7 +218,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(furniture: updated);
   }
 
-  void loadJson(String jsonStr) {
+  /// Load JSON and return the saved axis mapping (if any)
+  AxisMapping? loadJson(String jsonStr) {
     _saveUndo();
     try {
       final parsed = JsonParser.parseInput(jsonStr);
@@ -231,8 +233,10 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
       final checked = CollisionDetector.updateCollisions(items, room);
       state = PlacementState(room: room, furniture: checked);
+      return parsed.axisMapping;
     } catch (e) {
       state = state.copyWith(error: '잘못된 JSON 형식입니다: $e', clearError: false);
+      return null;
     }
   }
 
@@ -375,8 +379,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(furniture: checked, clearSelected: true);
   }
 
-  String exportJson() {
-    return JsonParser.generateOutput(state.furniture);
+  String exportJson({AxisMapping mapping = const AxisMapping()}) {
+    return JsonParser.generateOutput(state.furniture, mapping: mapping);
   }
 
   void reset() {

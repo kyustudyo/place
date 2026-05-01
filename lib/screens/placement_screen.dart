@@ -293,7 +293,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     if (name == null || name.isEmpty) return;
 
     final state = ref.read(placementProvider);
-    await SessionStorage.saveRoom(name, state.room, state.furniture);
+    final axisMapping = ref.read(axisMappingProvider);
+    await SessionStorage.saveRoom(name, state.room, state.furniture, axisMapping: axisMapping);
     if (!mounted) return;
     setState(() => _currentRoomName = name);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -337,7 +338,10 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           Navigator.pop(ctx);
           final json = await SessionStorage.loadRoom(name);
           if (json != null) {
-            ref.read(placementProvider.notifier).loadJson(json);
+            final savedMapping = ref.read(placementProvider.notifier).loadJson(json);
+            if (savedMapping != null) {
+              ref.read(axisMappingProvider.notifier).set(savedMapping);
+            }
             if (!mounted) return;
             setState(() => _currentRoomName = name);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -395,7 +399,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
   Future<void> _copyJson() async {
     final theme = ref.read(currentThemeProvider);
-    final json = ref.read(placementProvider.notifier).exportJson();
+    final axisMapping = ref.read(axisMappingProvider);
+    final json = ref.read(placementProvider.notifier).exportJson(mapping: axisMapping);
     await Clipboard.setData(ClipboardData(text: json));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

@@ -3,14 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/json_parser.dart';
 import '../models/room.dart';
 import '../models/furniture.dart';
+import '../providers/theme_provider.dart';
 
 const _key = 'place_session';
 const _roomsKey = 'place_saved_rooms';
 
 class SessionStorage {
-  static Future<void> save(Room room, List<Furniture> furniture) async {
+  static Future<void> save(Room room, List<Furniture> furniture, {AxisMapping? axisMapping}) async {
     final prefs = await SharedPreferences.getInstance();
-    final json = JsonParser.generateFullJson(room, furniture);
+    final json = JsonParser.generateFullJson(room, furniture, axisMapping: axisMapping);
     await prefs.setString(_key, json);
   }
 
@@ -42,13 +43,13 @@ class SessionStorage {
 
   /// Save current room+furniture with a name
   static Future<void> saveRoom(
-      String name, Room room, List<Furniture> furniture) async {
+      String name, Room room, List<Furniture> furniture, {AxisMapping? axisMapping}) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_roomsKey);
     final map =
         raw != null ? json.decode(raw) as Map<String, dynamic> : <String, dynamic>{};
     map[name] = {
-      'data': JsonParser.generateFullJson(room, furniture),
+      'data': JsonParser.generateFullJson(room, furniture, axisMapping: axisMapping),
       'savedAt': DateTime.now().millisecondsSinceEpoch,
     };
     await prefs.setString(_roomsKey, json.encode(map));
