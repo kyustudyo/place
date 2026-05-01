@@ -109,13 +109,56 @@ class AxisMapping {
   int get hashCode => Object.hash(rightDown, leftDown, up, flipRD, flipLD, flipUp);
 }
 
-/// Axis mapping notifier
+const _kAxisMappingKey = 'axis_mapping';
+
+/// Axis mapping notifier with persistence
 class AxisMappingNotifier extends Notifier<AxisMapping> {
+  static const _axisValues = WorldAxis.values;
+
   @override
-  AxisMapping build() => const AxisMapping(); // default: X→right, Z→left, Y→up
+  AxisMapping build() {
+    _load();
+    return const AxisMapping();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_kAxisMappingKey);
+    if (saved == null) return;
+    final parts = saved.split(',');
+    if (parts.length != 6) return;
+    final rd = int.tryParse(parts[0]);
+    final ld = int.tryParse(parts[1]);
+    final up = int.tryParse(parts[2]);
+    if (rd == null || ld == null || up == null) return;
+    if (rd < 0 || rd > 2 || ld < 0 || ld > 2 || up < 0 || up > 2) return;
+    final mapping = AxisMapping(
+      rightDown: _axisValues[rd],
+      leftDown: _axisValues[ld],
+      up: _axisValues[up],
+      flipRD: parts[3] == '1',
+      flipLD: parts[4] == '1',
+      flipUp: parts[5] == '1',
+    );
+    if (mapping.isValid) state = mapping;
+  }
+
+  void _save(AxisMapping m) {
+    final str = '${m.rightDown.index},${m.leftDown.index},${m.up.index},'
+        '${m.flipRD ? 1 : 0},${m.flipLD ? 1 : 0},${m.flipUp ? 1 : 0}';
+    SharedPreferences.getInstance().then((p) => p.setString(_kAxisMappingKey, str));
+  }
 
   void set(AxisMapping mapping) {
-    if (mapping.isValid) state = mapping;
+    if (mapping.isValid) {
+      state = mapping;
+      _save(mapping);
+    }
+  }
+
+  void reset() {
+    state = const AxisMapping();
+    SharedPreferences.getInstance().then((p) => p.remove(_kAxisMappingKey));
   }
 }
 
@@ -123,24 +166,51 @@ final axisMappingProvider = NotifierProvider<AxisMappingNotifier, AxisMapping>(
   AxisMappingNotifier.new,
 );
 
-/// Guide line color
+const _kGuideColorKey = 'guide_color';
+const _kGuideOpacityKey = 'guide_opacity';
+
+/// Guide line color with persistence
 class GuideColorNotifier extends Notifier<Color> {
   @override
-  Color build() => const Color(0xFFE74C3C); // red default — visible on most walls
+  Color build() {
+    _load();
+    return const Color(0xFFE74C3C); // red default
+  }
 
-  void set(Color c) => state = c;
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt(_kGuideColorKey);
+    if (saved != null) state = Color(saved);
+  }
+
+  void set(Color c) {
+    state = c;
+    SharedPreferences.getInstance().then((p) => p.setInt(_kGuideColorKey, c.toARGB32()));
+  }
 }
 
 final guideColorProvider = NotifierProvider<GuideColorNotifier, Color>(
   GuideColorNotifier.new,
 );
 
-/// Guide line opacity (0.0 ~ 1.0)
+/// Guide line opacity (0.0 ~ 1.0) with persistence
 class GuideOpacityNotifier extends Notifier<double> {
   @override
-  double build() => 0.5; // 50% default
+  double build() {
+    _load();
+    return 0.5; // 50% default
+  }
 
-  void set(double v) => state = v.clamp(0.0, 1.0);
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getDouble(_kGuideOpacityKey);
+    if (saved != null) state = saved.clamp(0.0, 1.0);
+  }
+
+  void set(double v) {
+    state = v.clamp(0.0, 1.0);
+    SharedPreferences.getInstance().then((p) => p.setDouble(_kGuideOpacityKey, v));
+  }
 }
 
 final guideOpacityProvider = NotifierProvider<GuideOpacityNotifier, double>(

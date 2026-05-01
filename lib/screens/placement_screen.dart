@@ -1670,8 +1670,21 @@ class _AxisConfigSheet extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 )),
                 const Spacer(),
-                if (onBack != null)
-                  const SizedBox(width: 20),
+                GestureDetector(
+                  onTap: () => ref.read(axisMappingProvider.notifier).reset(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: theme.textSecondary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('초기화', style: TextStyle(
+                      color: theme.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    )),
+                  ),
+                ),
               ],
             ),
           ),
