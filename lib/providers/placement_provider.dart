@@ -304,6 +304,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
   /// Adjust Y (height) position
   void nudgeHeight(String id, double dy) {
+    _saveUndo();
     final updated = state.furniture.map((f) {
       if (f.id == id) {
         final newY = (f.position.y + dy).clamp(0.0, 100.0);
@@ -315,6 +316,25 @@ class PlacementNotifier extends Notifier<PlacementState> {
       return f;
     }).toList();
     state = state.copyWith(furniture: updated);
+  }
+
+  /// Nudge position by delta (for fine-tune panel +/- buttons)
+  void nudgePosition(String id, double dx, double dz) {
+    _saveUndo();
+    final updated = state.furniture.map((f) {
+      if (f.id == id) {
+        final newX = (f.position.x + dx);
+        final newZ = (f.position.z + dz);
+        final roundedX = (newX * 10).round() / 10;
+        final roundedZ = (newZ * 10).round() / 10;
+        return f.copyWith(
+          position: Vec3(x: roundedX, y: f.position.y, z: roundedZ),
+        );
+      }
+      return f;
+    }).toList();
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
+    state = state.copyWith(furniture: checked);
   }
 
   void rotateFurniture(String id) {

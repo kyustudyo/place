@@ -105,11 +105,18 @@ class JsonParser {
   }
 
   /// Generate placement_result.json with axis mapping applied
+  /// Position is exported as bottom center of the furniture
   static String generateOutput(List<Furniture> items, {AxisMapping mapping = const AxisMapping()}) {
     final placements = items
         .where((f) => f.isPlaced)
         .map((f) {
-          final pos = _remapForExport(f.position, mapping, applyFlip: true);
+          // Convert min corner → bottom center
+          final bottomCenter = Vec3(
+            x: f.position.x + f.size.x / 2,
+            y: f.position.y,
+            z: f.position.z + f.size.z / 2,
+          );
+          final pos = _remapForExport(bottomCenter, mapping, applyFlip: true);
           final size = _remapForExport(f.size, mapping);
           return PlacementResult(
             id: f.id,

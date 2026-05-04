@@ -170,15 +170,11 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     item: state.selectedFurniture!,
                     theme: theme,
                     onNudge: (dx, dy, dz) {
-                      final f = state.selectedFurniture!;
                       final notifier =
                           ref.read(placementProvider.notifier);
                       if (dx != 0 || dz != 0) {
-                        notifier.placeFurniture(
-                          state.selectedId!,
-                          f.position.x + dx,
-                          f.position.z + dz,
-                        );
+                        notifier.nudgePosition(
+                          state.selectedId!, dx, dz);
                       }
                       if (dy != 0) {
                         notifier.nudgeHeight(state.selectedId!, dy);
