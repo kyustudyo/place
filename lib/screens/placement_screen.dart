@@ -570,7 +570,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
-                  'Place v2',
+                  'Place',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -582,7 +582,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             )
           else
             Text(
-              'Place v2',
+              'Place',
               style: TextStyle(
                 color: theme.textPrimary,
                 fontSize: 16,
