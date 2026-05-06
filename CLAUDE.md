@@ -12,9 +12,10 @@
 1. **계획 먼저**: 작업 전 계획이 모호하면 반드시 주인님에게 확인받아라
 2. **자기 점검 필수**: 작업 완료 후 반드시 `flutter analyze` 통과 확인. 검증 없이 "끝났습니다" 하지 마라
 3. **실수 기록 필수**: 작업 중 실수가 발생하면 `MISTAKES.md`에 즉시 기록
-4. **즉시 커밋**: 작업했으면 바로 커밋해라
+4. **즉시 커밋 & 푸시**: 작업했으면 바로 커밋하고 **푸시까지** 완료해라. 푸시해야 배포된다
 5. **수정 범위 제한**: 요청받은 것만 수정하라
 6. **작업일지 필수**: 작업 시작/완료 시 `work-logs/work-log.md`에 반드시 기록. 빠뜨리지 마라
+7. **작업 완료 = 배포 완료**: 코드를 수정했으면 커밋 → 푸시 → 웹 배포까지 끝내야 "완료"다. 로컬에만 있으면 안 끝난 것이다
 
 ## 작업 시작 전 (매 응답 시)
 - `inbox/` 확인 — 파일 있으면 읽고 조치 후 삭제
@@ -27,7 +28,7 @@
 - `claude-rules/INCIDENT_REPORTS.md` — 새 기능/아키텍처 변경 시만
 - `claude-rules/guides/` — 빌드, 배포, 테스트, 디자인 가이드
 - **디자인 작업 시**: `claude-rules/guides/design-workflow.md` 처음부터 끝까지 읽어라
-- **배포/출시 요청 시**: `claude-rules/guides/ios-release.md` + `claude-rules/guides/aos-release.md` 읽어라. 물어보지 말고 가이드대로 전부 준비하라
+- **iOS/AOS 배포/출시 요청 시**: `claude-rules/guides/ios-release.md` + `claude-rules/guides/aos-release.md`를 **반드시 열어서 읽어라**. 릴리즈 스킬 같은 것은 없다. 가이드 문서를 직접 읽고 그 안의 단계를 하나씩 실행하라. 물어보지 말고 가이드대로 전부 준비하라
 - `~/tools/figma-web-capture-pro/GUEST_GUIDE.md` — 디자인 작업 시 반드시 먼저 읽어라. 이 안에 DESIGN_MIX.md 등 전체 프로세스가 있다
 - 디자인 폴더: `design/` (프로젝트 루트) — 화면별 폴더에 HTML 버전 관리
 
