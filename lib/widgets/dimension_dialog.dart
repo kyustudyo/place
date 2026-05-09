@@ -321,6 +321,7 @@ class DimensionDialog extends StatefulWidget {
   final double? initialZ;
   final bool isEdit;
   final bool showStepNumber;
+  final bool hideZ;
 
   const DimensionDialog({
     super.key,
@@ -331,6 +332,7 @@ class DimensionDialog extends StatefulWidget {
     this.initialZ,
     this.isEdit = false,
     this.showStepNumber = false,
+    this.hideZ = false,
   });
 
   @override
@@ -424,7 +426,7 @@ class _DimensionDialogState extends State<DimensionDialog> {
 
     final x = double.tryParse(_xCtrl.text);
     final y = double.tryParse(_yCtrl.text);
-    final z = double.tryParse(_zCtrl.text);
+    final z = widget.hideZ ? 1.0 : double.tryParse(_zCtrl.text);
     if (x == null || y == null || z == null) return;
     if (x <= 0 || y <= 0 || z <= 0) return;
 
@@ -515,16 +517,20 @@ class _DimensionDialogState extends State<DimensionDialog> {
             Row(
               children: [
                 Expanded(
-                    child:
-                        _buildField(t, 'X (가로)', _xCtrl, '1.5')),
+                    child: _buildField(t,
+                        widget.hideZ ? '가로 (m)' : 'X (가로)',
+                        _xCtrl, '1.5')),
                 const SizedBox(width: 10),
                 Expanded(
-                    child:
-                        _buildField(t, 'Y (높이)', _yCtrl, '0.8')),
-                const SizedBox(width: 10),
-                Expanded(
-                    child:
-                        _buildField(t, 'Z (세로)', _zCtrl, '1.0')),
+                    child: _buildField(t,
+                        widget.hideZ ? '높이 (m)' : 'Y (높이)',
+                        _yCtrl, '0.8')),
+                if (!widget.hideZ) ...[
+                  const SizedBox(width: 10),
+                  Expanded(
+                      child:
+                          _buildField(t, 'Z (세로)', _zCtrl, '1.0')),
+                ],
               ],
             ),
             if (widget.isEdit) ...[

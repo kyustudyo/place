@@ -3,13 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/app_theme.dart';
+import '../models/wall.dart';
 import '../providers/placement_provider.dart';
+import '../providers/wall_placement_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/isometric_room.dart';
+import '../widgets/wall_view.dart';
 import '../widgets/furniture_panel.dart';
 import '../widgets/dimension_dialog.dart';
 import '../utils/session_storage.dart';
+import '../utils/wall_json_parser.dart';
 import '../main.dart' show isScreenshotMode;
+
+enum PlacementMode { floor, backWall, rightWall }
 
 class PlacementScreen extends ConsumerStatefulWidget {
   const PlacementScreen({super.key});
@@ -40,6 +46,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
   bool _showingReference = false;
   String? _currentRoomName;
+  PlacementMode _currentMode = PlacementMode.floor;
   final PageController _pageController = PageController();
 
   @override
@@ -156,6 +163,239 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         z: result.z,
       );
     }
+  }
+
+  Future<void> _showWallDimensionDialog({String? editId}) async {
+    final theme = ref.read(currentThemeProvider);
+    final wallState = ref.read(wallPlacementProvider);
+
+    String? initialName;
+    double? initialX, initialY;
+    bool isEdit = false;
+
+    if (editId != null) {
+      final item = wallState.currentItems.firstWhere((i) => i.id == editId);
+      initialName = item.name;
+      initialX = item.width;
+      initialY = item.height;
+      isEdit = true;
+    }
+
+    final result = await showDialog<DimensionResult>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => DimensionDialog(
+        theme: theme,
+        initialName: initialName,
+        initialX: initialX,
+        initialY: initialY,
+        initialZ: 0,
+        isEdit: isEdit,
+        hideZ: true,
+      ),
+    );
+
+    if (result == null) return;
+
+    final notifier = ref.read(wallPlacementProvider.notifier);
+    if (isEdit && editId != null) {
+      notifier.updateItemSize(editId, result.x, result.y);
+      if (result.name.isNotEmpty) {
+        notifier.updateItemName(editId, result.name);
+      }
+    } else {
+      notifier.addItem(
+        name: result.name,
+        width: result.x,
+        height: result.y,
+      );
+    }
+  }
+
+  Future<void> _copyWallJson() async {
+    final theme = ref.read(currentThemeProvider);
+    final wallState = ref.read(wallPlacementProvider);
+    final wall = wallState.currentWallData;
+    final items = wallState.currentItems;
+    final json = WallJsonParser.generateOutput(
+        wallState.currentWall, wall, items);
+    await Clipboard.setData(ClipboardData(text: json));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('벽 JSON 클립보드에 복사되었습니다'),
+        backgroundColor: theme.accentSecondary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _switchMode(PlacementMode mode) {
+    if (_currentMode == mode) return;
+    setState(() {
+      _currentMode = mode;
+      _showingReference = false;
+    });
+    if (mode == PlacementMode.backWall) {
+      ref.read(wallPlacementProvider.notifier).switchWall(WallType.back);
+      // Sync wall size from room
+      final room = ref.read(placementProvider).room;
+      ref.read(wallPlacementProvider.notifier).updateFromRoom(room);
+    } else if (mode == PlacementMode.rightWall) {
+      ref.read(wallPlacementProvider.notifier).switchWall(WallType.right);
+      final room = ref.read(placementProvider).room;
+      ref.read(wallPlacementProvider.notifier).updateFromRoom(room);
+    }
+  }
+
+  void _showWallItemSheet() {
+    final theme = ref.read(currentThemeProvider);
+    final wallState = ref.read(wallPlacementProvider);
+    final items = wallState.currentItems;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.55,
+        ),
+        decoration: BoxDecoration(
+          color: theme.panelBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    '${wallState.currentWall == WallType.back ? "뒷벽" : "오른벽"} 아이템 (${items.length})',
+                    style: TextStyle(
+                      color: theme.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: items.length,
+                itemBuilder: (_, i) {
+                  final item = items[i];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.cardBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: item.hasCollision
+                          ? Border.all(color: Colors.red.withValues(alpha: 0.5))
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: item.color,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.name,
+                                  style: TextStyle(
+                                    color: theme.textPrimary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  )),
+                              Text(
+                                '${item.width} \u00d7 ${item.height}m',
+                                style: TextStyle(
+                                  color: theme.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (item.hasCollision)
+                          Icon(Icons.warning_rounded,
+                              size: 16, color: Colors.red.shade400),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _showWallDimensionDialog(editId: item.id);
+                          },
+                          child: Icon(Icons.straighten,
+                              size: 18, color: theme.accent),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            ref
+                                .read(wallPlacementProvider.notifier)
+                                .removeItem(item.id);
+                            Navigator.pop(ctx);
+                            _showWallItemSheet();
+                          },
+                          child: Icon(Icons.delete_outline,
+                              size: 18, color: Colors.red.shade400),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showWallDimensionDialog();
+                  },
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: const Text('아이템 추가'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _pasteJson() async {
@@ -479,6 +719,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           precacheImage(MemoryImage(bytes), context);
         },
         hasFurniture: state.furniture.isNotEmpty,
+        onWallExport: _copyWallJson,
+        hasWallItems: ref.read(wallPlacementProvider).currentItems.isNotEmpty,
       ),
     );
   }
@@ -486,9 +728,12 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(placementProvider);
+    final wallState = ref.watch(wallPlacementProvider);
     final theme = ref.watch(currentThemeProvider);
     final refImage = ref.watch(referenceImageProvider);
     final isWide = MediaQuery.of(context).size.width > 768;
+    final isWallMode = _currentMode == PlacementMode.backWall ||
+        _currentMode == PlacementMode.rightWall;
 
     ref.listen<PlacementState>(placementProvider, (prev, next) {
       if (next.error != null) {
@@ -512,31 +757,35 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           children: [
             _buildTopBar(state, theme, refImage != null),
             Expanded(
-              child: refImage != null
-                  ? PageView(
-                      controller: _pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      onPageChanged: (i) =>
-                          setState(() => _showingReference = i == 1),
-                      children: [
-                        isWide
-                            ? _buildWideLayout(state)
-                            : _buildNarrowLayout(state),
-                        InteractiveViewer(
-                          minScale: 0.5,
-                          maxScale: 5.0,
-                          child: Center(
-                            child:
-                                Image.memory(refImage, fit: BoxFit.contain),
-                          ),
-                        ),
-                      ],
-                    )
-                  : isWide
-                      ? _buildWideLayout(state)
-                      : _buildNarrowLayout(state),
+              child: isWallMode
+                  ? const WallView()
+                  : refImage != null
+                      ? PageView(
+                          controller: _pageController,
+                          physics: const NeverScrollableScrollPhysics(),
+                          onPageChanged: (i) =>
+                              setState(() => _showingReference = i == 1),
+                          children: [
+                            isWide
+                                ? _buildWideLayout(state)
+                                : _buildNarrowLayout(state),
+                            InteractiveViewer(
+                              minScale: 0.5,
+                              maxScale: 5.0,
+                              child: Center(
+                                child:
+                                    Image.memory(refImage, fit: BoxFit.contain),
+                              ),
+                            ),
+                          ],
+                        )
+                      : isWide
+                          ? _buildWideLayout(state)
+                          : _buildNarrowLayout(state),
             ),
-            _buildStatusBar(state, theme, _showingReference),
+            isWallMode
+                ? _buildWallStatusBar(wallState, theme)
+                : _buildStatusBar(state, theme, _showingReference),
           ],
         ),
       ),
@@ -544,6 +793,10 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   Widget _buildTopBar(PlacementState state, AppTheme theme, bool hasRefImage) {
+    final isWallMode = _currentMode == PlacementMode.backWall ||
+        _currentMode == PlacementMode.rightWall;
+    final wallState = ref.read(wallPlacementProvider);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
@@ -552,46 +805,36 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       ),
       child: Row(
         children: [
-          if (hasRefImage)
-            GestureDetector(
-              onTap: _showingReference
-                  ? () {
-                      _pageController.animateToPage(0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut);
-                    }
-                  : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: !_showingReference
-                      ? theme.accent
-                      : theme.accent.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Place',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ),
-            )
-          else
-            Text(
-              'Place',
-              style: TextStyle(
-                color: theme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-          if (hasRefImage) ...[
-            const SizedBox(width: 8),
+          // Mode tabs
+          _ModeTab(
+            label: '바닥',
+            active: _currentMode == PlacementMode.floor && !_showingReference,
+            theme: theme,
+            onTap: () {
+              _switchMode(PlacementMode.floor);
+              if (_showingReference) {
+                _pageController.animateToPage(0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut);
+              }
+            },
+          ),
+          const SizedBox(width: 6),
+          _ModeTab(
+            label: '뒷벽',
+            active: _currentMode == PlacementMode.backWall,
+            theme: theme,
+            onTap: () => _switchMode(PlacementMode.backWall),
+          ),
+          const SizedBox(width: 6),
+          _ModeTab(
+            label: '오른벽',
+            active: _currentMode == PlacementMode.rightWall,
+            theme: theme,
+            onTap: () => _switchMode(PlacementMode.rightWall),
+          ),
+          if (!isWallMode && hasRefImage) ...[
+            const SizedBox(width: 6),
             _RefImageBtn(
               active: _showingReference,
               theme: theme,
@@ -603,7 +846,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
           ],
           const Spacer(),
-          // Theme
+          // Settings
           _TopBarBtn(
             icon: Icons.settings_outlined,
             onTap: _showSettings,
@@ -611,15 +854,26 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           ),
           if (!_showingReference) ...[
             const SizedBox(width: 6),
-            // Add item — blink when empty
+            // Add item — mode-aware
             _AddItemBtn(
-              onTap: () => _showDimensionDialog(),
+              onTap: isWallMode
+                  ? () => _showWallDimensionDialog()
+                  : () => _showDimensionDialog(),
               theme: theme,
-              highlight: state.furniture.isEmpty,
+              highlight: isWallMode
+                  ? wallState.currentItems.isEmpty
+                  : state.furniture.isEmpty,
             ),
             const SizedBox(width: 6),
-            // Item list (opens bottom sheet)
-            if (state.furniture.isNotEmpty) ...[
+            // Item list — mode-aware
+            if (isWallMode && wallState.currentItems.isNotEmpty) ...[
+              _TopBarBtn(
+                icon: Icons.list_rounded,
+                onTap: () => _showWallItemSheet(),
+                theme: theme,
+              ),
+              const SizedBox(width: 6),
+            ] else if (!isWallMode && state.furniture.isNotEmpty) ...[
               _TopBarBtn(
                 icon: Icons.list_rounded,
                 onTap: () => _showFurnitureSheet(),
@@ -723,6 +977,43 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     );
   }
 
+  Widget _buildWallStatusBar(WallPlacementState wallState, AppTheme theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.headerBg,
+        border: Border(top: BorderSide(color: theme.headerBorder)),
+      ),
+      child: Row(
+        children: [
+          _StatusChip(
+            icon: Icons.view_in_ar,
+            label: '${wallState.placedCount}/${wallState.currentItems.length} 배치',
+            color: theme.accent,
+          ),
+          const SizedBox(width: 16),
+          _StatusChip(
+            icon: wallState.collisionCount > 0
+                ? Icons.warning_rounded
+                : Icons.check_circle,
+            label: wallState.collisionCount > 0
+                ? '충돌 ${wallState.collisionCount}건'
+                : '충돌 없음',
+            color: wallState.collisionCount > 0
+                ? Colors.red.shade400
+                : theme.accentSecondary,
+          ),
+          const Spacer(),
+          if (wallState.selectedItem != null)
+            Text(
+              wallState.selectedItem!.name,
+              style: TextStyle(color: theme.textSecondary, fontSize: 12),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatusBar(PlacementState state, AppTheme theme, bool hideContent) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -770,6 +1061,42 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                   ),
               ],
             ),
+    );
+  }
+}
+
+class _ModeTab extends StatelessWidget {
+  final String label;
+  final bool active;
+  final AppTheme theme;
+  final VoidCallback onTap;
+
+  const _ModeTab({
+    required this.label,
+    required this.active,
+    required this.theme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? theme.accent : theme.accent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : theme.textSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1006,6 +1333,8 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onAxisConfig;
   final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
+  final VoidCallback? onWallExport;
+  final bool hasWallItems;
 
   const _SettingsSheet({
     required this.ref,
@@ -1020,6 +1349,8 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onAxisConfig,
     required this.onReferenceImagePicked,
     required this.hasFurniture,
+    this.onWallExport,
+    this.hasWallItems = false,
   });
 
   @override
@@ -1063,6 +1394,16 @@ class _SettingsSheet extends ConsumerWidget {
           onTap: () {
             Navigator.pop(context);
             Future.delayed(const Duration(milliseconds: 300), onExport);
+          },
+        ),
+      if (hasWallItems && onWallExport != null)
+        _SettingsActionBtn(
+          icon: Icons.vertical_split_outlined,
+          label: '벽 JSON 내보내기',
+          theme: theme,
+          onTap: () {
+            Navigator.pop(context);
+            Future.delayed(const Duration(milliseconds: 300), onWallExport!);
           },
         ),
       _SettingsActionBtn(
