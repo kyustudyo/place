@@ -270,8 +270,8 @@ class GridPainter extends CustomPainter {
       }
     }
 
-    // Floor shadow when elevated (Y > 0) — shows where item is on the floor
-    if (baseY > 0.01) {
+    // Floor shadow when elevated (Y > 0) — skip for wall-attached items
+    if (baseY > 0.01 && !isOnBackWall && !isOnLeftWall) {
       final shadowPaint = Paint()
         ..color = guideColor.withValues(alpha: (0.8 * guideOpacity).clamp(0.0, 1.0))
         ..style = PaintingStyle.stroke

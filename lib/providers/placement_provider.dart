@@ -301,8 +301,15 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
     final updated = state.furniture.map((f) {
       if (f.id == id) {
+        // Wall-attached items: keep on wall during drag
+        final isOnBackWall = f.position.z < 0.01 && f.size.z < 0.2;
+        final isOnLeftWall = f.position.x < 0.01 && f.size.x < 0.2;
+
+        final finalX = isOnLeftWall ? 0.0 : clampedX;
+        final finalZ = isOnBackWall ? 0.0 : clampedZ;
+
         return f.copyWith(
-          position: Vec3(x: clampedX, y: f.position.y, z: clampedZ),
+          position: Vec3(x: finalX, y: f.position.y, z: finalZ),
           isPlaced: true,
         );
       }
