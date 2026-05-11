@@ -160,6 +160,55 @@ class PlacementNotifier extends Notifier<PlacementState> {
     return item;
   }
 
+  /// Add a wall-attached furniture piece (door, window, etc.)
+  /// [isBackWall] true = z=0 wall, false = x=0 wall
+  Furniture addWallFurniture({
+    required String name,
+    required double width,
+    required double height,
+    required bool isBackWall,
+    double thickness = 0.1,
+  }) {
+    _saveUndo();
+    final index = state.furniture.length;
+    final id = 'item_${DateTime.now().millisecondsSinceEpoch}';
+    final color = _furnitureColors[index % _furnitureColors.length];
+    final displayName = name.isEmpty ? '사물${_nextNumber++}' : name;
+    final ts = state.room.tileSize;
+
+    final Vec3 size;
+    final Vec3 position;
+
+    if (isBackWall) {
+      // Back wall (z=0): spans X axis
+      size = Vec3(x: width, y: height, z: thickness);
+      final posX = (state.room.width / 2 - width / 2);
+      final snappedX = (posX / ts).round() * ts;
+      position = Vec3(x: snappedX, y: 0.0, z: 0.0);
+    } else {
+      // Right wall (x=0): spans Z axis
+      size = Vec3(x: thickness, y: height, z: width);
+      final posZ = (state.room.depth / 2 - width / 2);
+      final snappedZ = (posZ / ts).round() * ts;
+      position = Vec3(x: 0.0, y: 0.0, z: snappedZ);
+    }
+
+    final item = Furniture(
+      id: id,
+      name: displayName,
+      size: size,
+      position: position,
+      rotation: 0,
+      color: color,
+      isPlaced: true,
+    );
+
+    final updated = [...state.furniture, item];
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
+    state = state.copyWith(furniture: checked, selectedId: id);
+    return item;
+  }
+
   /// Update dimensions of an existing furniture piece
   void updateFurnitureSize(String id, double x, double y, double z) {
     final updated = state.furniture.map((f) {

@@ -3,16 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/app_theme.dart';
-import '../models/wall.dart';
 import '../providers/placement_provider.dart';
-import '../providers/wall_placement_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/isometric_room.dart';
-import '../widgets/wall_view.dart';
 import '../widgets/furniture_panel.dart';
 import '../widgets/dimension_dialog.dart';
 import '../utils/session_storage.dart';
-import '../utils/wall_json_parser.dart';
 import '../main.dart' show isScreenshotMode;
 
 enum PlacementMode { floor, backWall, rightWall }
@@ -165,71 +161,31 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     }
   }
 
-  Future<void> _showWallDimensionDialog({String? editId}) async {
+  /// Show dimension dialog for wall-attached furniture (width + height only)
+  Future<void> _showWallDimensionDialog() async {
     final theme = ref.read(currentThemeProvider);
-    final wallState = ref.read(wallPlacementProvider);
-
-    String? initialName;
-    double? initialX, initialY;
-    bool isEdit = false;
-
-    if (editId != null) {
-      final item = wallState.currentItems.firstWhere((i) => i.id == editId);
-      initialName = item.name;
-      initialX = item.width;
-      initialY = item.height;
-      isEdit = true;
-    }
+    final isBackWall = _currentMode == PlacementMode.backWall;
 
     final result = await showDialog<DimensionResult>(
       context: context,
       barrierDismissible: true,
       builder: (ctx) => DimensionDialog(
         theme: theme,
-        initialName: initialName,
-        initialX: initialX,
-        initialY: initialY,
+        initialX: 1.5,
+        initialY: 2.0,
         initialZ: 0,
-        isEdit: isEdit,
         hideZ: true,
       ),
     );
 
     if (result == null) return;
 
-    final notifier = ref.read(wallPlacementProvider.notifier);
-    if (isEdit && editId != null) {
-      notifier.updateItemSize(editId, result.x, result.y);
-      if (result.name.isNotEmpty) {
-        notifier.updateItemName(editId, result.name);
-      }
-    } else {
-      notifier.addItem(
-        name: result.name,
-        width: result.x,
-        height: result.y,
-      );
-    }
-  }
-
-  Future<void> _copyWallJson() async {
-    final theme = ref.read(currentThemeProvider);
-    final wallState = ref.read(wallPlacementProvider);
-    final wall = wallState.currentWallData;
-    final items = wallState.currentItems;
-    final json = WallJsonParser.generateOutput(
-        wallState.currentWall, wall, items);
-    await Clipboard.setData(ClipboardData(text: json));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('벽 JSON 클립보드에 복사되었습니다'),
-        backgroundColor: theme.accentSecondary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    ref.read(placementProvider.notifier).addWallFurniture(
+          name: result.name,
+          width: result.x,
+          height: result.y,
+          isBackWall: isBackWall,
+        );
   }
 
   void _switchMode(PlacementMode mode) {
@@ -238,164 +194,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       _currentMode = mode;
       _showingReference = false;
     });
-    if (mode == PlacementMode.backWall) {
-      ref.read(wallPlacementProvider.notifier).switchWall(WallType.back);
-      // Sync wall size from room
-      final room = ref.read(placementProvider).room;
-      ref.read(wallPlacementProvider.notifier).updateFromRoom(room);
-    } else if (mode == PlacementMode.rightWall) {
-      ref.read(wallPlacementProvider.notifier).switchWall(WallType.right);
-      final room = ref.read(placementProvider).room;
-      ref.read(wallPlacementProvider.notifier).updateFromRoom(room);
-    }
-  }
-
-  void _showWallItemSheet() {
-    final theme = ref.read(currentThemeProvider);
-    final wallState = ref.read(wallPlacementProvider);
-    final items = wallState.currentItems;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(ctx).size.height * 0.55,
-        ),
-        decoration: BoxDecoration(
-          color: theme.panelBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.textSecondary.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Text(
-                    '${wallState.currentWall == WallType.back ? "뒷벽" : "오른벽"} 아이템 (${items.length})',
-                    style: TextStyle(
-                      color: theme.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Flexible(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: items.length,
-                itemBuilder: (_, i) {
-                  final item = items[i];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.cardBg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: item.hasCollision
-                          ? Border.all(color: Colors.red.withValues(alpha: 0.5))
-                          : null,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: item.color,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(item.name,
-                                  style: TextStyle(
-                                    color: theme.textPrimary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  )),
-                              Text(
-                                '${item.width} \u00d7 ${item.height}m',
-                                style: TextStyle(
-                                  color: theme.textSecondary,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (item.hasCollision)
-                          Icon(Icons.warning_rounded,
-                              size: 16, color: Colors.red.shade400),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            _showWallDimensionDialog(editId: item.id);
-                          },
-                          child: Icon(Icons.straighten,
-                              size: 18, color: theme.accent),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            ref
-                                .read(wallPlacementProvider.notifier)
-                                .removeItem(item.id);
-                            Navigator.pop(ctx);
-                            _showWallItemSheet();
-                          },
-                          child: Icon(Icons.delete_outline,
-                              size: 18, color: Colors.red.shade400),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _showWallDimensionDialog();
-                  },
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: const Text('아이템 추가'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.accent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _pasteJson() async {
@@ -719,8 +517,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           precacheImage(MemoryImage(bytes), context);
         },
         hasFurniture: state.furniture.isNotEmpty,
-        onWallExport: _copyWallJson,
-        hasWallItems: ref.read(wallPlacementProvider).currentItems.isNotEmpty,
       ),
     );
   }
@@ -728,12 +524,9 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(placementProvider);
-    final wallState = ref.watch(wallPlacementProvider);
     final theme = ref.watch(currentThemeProvider);
     final refImage = ref.watch(referenceImageProvider);
     final isWide = MediaQuery.of(context).size.width > 768;
-    final isWallMode = _currentMode == PlacementMode.backWall ||
-        _currentMode == PlacementMode.rightWall;
 
     ref.listen<PlacementState>(placementProvider, (prev, next) {
       if (next.error != null) {
@@ -757,35 +550,31 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           children: [
             _buildTopBar(state, theme, refImage != null),
             Expanded(
-              child: isWallMode
-                  ? const WallView()
-                  : refImage != null
-                      ? PageView(
-                          controller: _pageController,
-                          physics: const NeverScrollableScrollPhysics(),
-                          onPageChanged: (i) =>
-                              setState(() => _showingReference = i == 1),
-                          children: [
-                            isWide
-                                ? _buildWideLayout(state)
-                                : _buildNarrowLayout(state),
-                            InteractiveViewer(
-                              minScale: 0.5,
-                              maxScale: 5.0,
-                              child: Center(
-                                child:
-                                    Image.memory(refImage, fit: BoxFit.contain),
-                              ),
-                            ),
-                          ],
-                        )
-                      : isWide
-                          ? _buildWideLayout(state)
-                          : _buildNarrowLayout(state),
+              child: refImage != null && _currentMode == PlacementMode.floor
+                  ? PageView(
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onPageChanged: (i) =>
+                          setState(() => _showingReference = i == 1),
+                      children: [
+                        isWide
+                            ? _buildWideLayout(state)
+                            : _buildNarrowLayout(state),
+                        InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 5.0,
+                          child: Center(
+                            child:
+                                Image.memory(refImage, fit: BoxFit.contain),
+                          ),
+                        ),
+                      ],
+                    )
+                  : isWide
+                      ? _buildWideLayout(state)
+                      : _buildNarrowLayout(state),
             ),
-            isWallMode
-                ? _buildWallStatusBar(wallState, theme)
-                : _buildStatusBar(state, theme, _showingReference),
+            _buildStatusBar(state, theme, _showingReference),
           ],
         ),
       ),
@@ -795,7 +584,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   Widget _buildTopBar(PlacementState state, AppTheme theme, bool hasRefImage) {
     final isWallMode = _currentMode == PlacementMode.backWall ||
         _currentMode == PlacementMode.rightWall;
-    final wallState = ref.read(wallPlacementProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -854,26 +642,17 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           ),
           if (!_showingReference) ...[
             const SizedBox(width: 6),
-            // Add item — mode-aware
+            // Add item — wall mode creates wall furniture
             _AddItemBtn(
               onTap: isWallMode
                   ? () => _showWallDimensionDialog()
                   : () => _showDimensionDialog(),
               theme: theme,
-              highlight: isWallMode
-                  ? wallState.currentItems.isEmpty
-                  : state.furniture.isEmpty,
+              highlight: state.furniture.isEmpty,
             ),
             const SizedBox(width: 6),
-            // Item list — mode-aware
-            if (isWallMode && wallState.currentItems.isNotEmpty) ...[
-              _TopBarBtn(
-                icon: Icons.list_rounded,
-                onTap: () => _showWallItemSheet(),
-                theme: theme,
-              ),
-              const SizedBox(width: 6),
-            ] else if (!isWallMode && state.furniture.isNotEmpty) ...[
+            // Item list
+            if (state.furniture.isNotEmpty) ...[
               _TopBarBtn(
                 icon: Icons.list_rounded,
                 onTap: () => _showFurnitureSheet(),
@@ -973,43 +752,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildWallStatusBar(WallPlacementState wallState, AppTheme theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.headerBg,
-        border: Border(top: BorderSide(color: theme.headerBorder)),
-      ),
-      child: Row(
-        children: [
-          _StatusChip(
-            icon: Icons.view_in_ar,
-            label: '${wallState.placedCount}/${wallState.currentItems.length} 배치',
-            color: theme.accent,
-          ),
-          const SizedBox(width: 16),
-          _StatusChip(
-            icon: wallState.collisionCount > 0
-                ? Icons.warning_rounded
-                : Icons.check_circle,
-            label: wallState.collisionCount > 0
-                ? '충돌 ${wallState.collisionCount}건'
-                : '충돌 없음',
-            color: wallState.collisionCount > 0
-                ? Colors.red.shade400
-                : theme.accentSecondary,
-          ),
-          const Spacer(),
-          if (wallState.selectedItem != null)
-            Text(
-              wallState.selectedItem!.name,
-              style: TextStyle(color: theme.textSecondary, fontSize: 12),
-            ),
-        ],
       ),
     );
   }
@@ -1333,8 +1075,6 @@ class _SettingsSheet extends ConsumerWidget {
   final VoidCallback onAxisConfig;
   final void Function(Uint8List bytes) onReferenceImagePicked;
   final bool hasFurniture;
-  final VoidCallback? onWallExport;
-  final bool hasWallItems;
 
   const _SettingsSheet({
     required this.ref,
@@ -1349,8 +1089,6 @@ class _SettingsSheet extends ConsumerWidget {
     required this.onAxisConfig,
     required this.onReferenceImagePicked,
     required this.hasFurniture,
-    this.onWallExport,
-    this.hasWallItems = false,
   });
 
   @override
@@ -1394,16 +1132,6 @@ class _SettingsSheet extends ConsumerWidget {
           onTap: () {
             Navigator.pop(context);
             Future.delayed(const Duration(milliseconds: 300), onExport);
-          },
-        ),
-      if (hasWallItems && onWallExport != null)
-        _SettingsActionBtn(
-          icon: Icons.vertical_split_outlined,
-          label: '벽 JSON 내보내기',
-          theme: theme,
-          onTap: () {
-            Navigator.pop(context);
-            Future.delayed(const Duration(milliseconds: 300), onWallExport!);
           },
         ),
       _SettingsActionBtn(
