@@ -684,35 +684,42 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
           ],
           const Spacer(),
-          if (showActions) ...[
-            // Settings
-            _TopBarBtn(
-              icon: Icons.settings_outlined,
-              onTap: _showSettings,
-              theme: theme,
-            ),
-            if (!_showingReference) ...[
-              const SizedBox(width: 6),
-              // Add item
-              _AddItemBtn(
-                onTap: isWallMode
-                    ? () => _showWallDimensionDialog()
-                    : () => _showDimensionDialog(),
-                theme: theme,
-                highlight: !isWallMode && state.furniture.isEmpty,
+          // Always render buttons to keep layout stable; hide with Opacity
+          Opacity(
+            opacity: showActions ? 1.0 : 0.0,
+            child: IgnorePointer(
+              ignoring: !showActions,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _TopBarBtn(
+                    icon: Icons.settings_outlined,
+                    onTap: _showSettings,
+                    theme: theme,
+                  ),
+                  if (!_showingReference) ...[
+                    const SizedBox(width: 6),
+                    _AddItemBtn(
+                      onTap: isWallMode
+                          ? () => _showWallDimensionDialog()
+                          : () => _showDimensionDialog(),
+                      theme: theme,
+                      highlight: !isWallMode && state.furniture.isEmpty,
+                    ),
+                    const SizedBox(width: 6),
+                    if (state.furniture.isNotEmpty) ...[
+                      _TopBarBtn(
+                        icon: Icons.list_rounded,
+                        onTap: () => _showFurnitureSheet(),
+                        theme: theme,
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                  ],
+                ],
               ),
-              const SizedBox(width: 6),
-              // Item list
-              if (state.furniture.isNotEmpty) ...[
-                _TopBarBtn(
-                  icon: Icons.list_rounded,
-                  onTap: () => _showFurnitureSheet(),
-                  theme: theme,
-                ),
-                const SizedBox(width: 6),
-              ],
-            ],
-          ],
+            ),
+          ),
         ],
       ),
     );
