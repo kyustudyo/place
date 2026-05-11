@@ -291,6 +291,35 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(selectedId: id, clearSelected: id == null);
   }
 
+  /// Move furniture with Y — for wall items dragged along wall
+  void placeFurnitureXYZ(String id, double x, double y, double z) {
+    final tileSize = state.room.tileSize;
+    final margin = tileSize * 5;
+
+    final clampedX = x.clamp(-margin, state.room.width + margin);
+    final clampedY = y.clamp(0.0, 100.0);
+    final clampedZ = z.clamp(-margin, state.room.depth + margin);
+
+    final updated = state.furniture.map((f) {
+      if (f.id == id) {
+        final isOnBackWall = f.position.z < 0.01 && f.size.z < 0.2;
+        final isOnLeftWall = f.position.x < 0.01 && f.size.x < 0.2;
+
+        final finalX = isOnLeftWall ? 0.0 : clampedX;
+        final finalZ = isOnBackWall ? 0.0 : clampedZ;
+
+        return f.copyWith(
+          position: Vec3(x: finalX, y: clampedY, z: finalZ),
+          isPlaced: true,
+        );
+      }
+      return f;
+    }).toList();
+
+    final checked = CollisionDetector.updateCollisions(updated, state.room);
+    state = state.copyWith(furniture: checked);
+  }
+
   /// Move furniture — raw position (no snap), clamped to ±5 tiles
   void placeFurniture(String id, double x, double z) {
     final tileSize = state.room.tileSize;

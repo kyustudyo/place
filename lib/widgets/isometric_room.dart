@@ -543,19 +543,37 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
       return;
     }
 
-    // Convert screen delta to world delta
-    final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
-    final currWorld = IsometricMath.screenToWorld(pos);
-    final deltaX = currWorld.dx - prevWorld.dx;
-    final deltaZ = currWorld.dy - prevWorld.dy;
-
-    // Move item by delta
     final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
-    final nextX = item.position.x + deltaX;
-    final nextZ = item.position.z + deltaZ;
-    ref.read(placementProvider.notifier).placeFurniture(
+    final screenDelta = pos - _lastDragScreen!;
+    final isOnBackWall = item.position.z < 0.01 && item.size.z < 0.2;
+    final isOnLeftWall = item.position.x < 0.01 && item.size.x < 0.2;
+
+    double nextX = item.position.x;
+    double nextZ = item.position.z;
+    double nextY = item.position.y;
+
+    if (isOnBackWall) {
+      // Back wall: drag along X and Y
+      final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
+      nextX = item.position.x + wallDelta.dx;
+      nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
+    } else if (isOnLeftWall) {
+      // Left wall: drag along Z and Y
+      final wallDelta = IsometricMath.screenDeltaToLeftWall(screenDelta);
+      nextZ = item.position.z + wallDelta.dx;
+      nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
+    } else {
+      // Floor item: drag along X and Z
+      final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
+      final currWorld = IsometricMath.screenToWorld(pos);
+      nextX = item.position.x + (currWorld.dx - prevWorld.dx);
+      nextZ = item.position.z + (currWorld.dy - prevWorld.dy);
+    }
+
+    ref.read(placementProvider.notifier).placeFurnitureXYZ(
           state.selectedId!,
           nextX,
+          nextY,
           nextZ,
         );
 

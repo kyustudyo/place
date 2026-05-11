@@ -35,6 +35,26 @@ class IsometricMath {
     return Offset(rawX, rawZ);
   }
 
+  /// Screen delta → Back wall delta (x, y) at z=0
+  /// Returns Offset(deltaX, deltaY)
+  static Offset screenDeltaToBackWall(Offset screenDelta) {
+    final dsx = screenDelta.dx;
+    final dsy = screenDelta.dy;
+    final dx = dsx / (cosA * scale);
+    final dy = -(dsy - dx * sinA * scale) / scale;
+    return Offset(dx, dy);
+  }
+
+  /// Screen delta → Left wall delta (z, y) at x=0
+  /// Returns Offset(deltaZ, deltaY)
+  static Offset screenDeltaToLeftWall(Offset screenDelta) {
+    final dsx = screenDelta.dx;
+    final dsy = screenDelta.dy;
+    final dz = -dsx / (cosA * scale);
+    final dy = -(dsy - dz * sinA * scale) / scale;
+    return Offset(dz, dy);
+  }
+
   /// Snap to grid
   static double snapToGrid(double value, double tileSize) {
     return (value / tileSize).round() * tileSize;
