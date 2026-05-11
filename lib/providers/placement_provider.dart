@@ -300,16 +300,30 @@ class PlacementNotifier extends Notifier<PlacementState> {
     final clampedY = y.clamp(0.0, 100.0);
     final clampedZ = z.clamp(-margin, state.room.depth + margin);
 
+    final room = state.room;
     final updated = state.furniture.map((f) {
       if (f.id == id) {
         final isOnBackWall = f.position.z < 0.01 && f.size.z < 0.2;
         final isOnLeftWall = f.position.x < 0.01 && f.size.x < 0.2;
 
-        final finalX = isOnLeftWall ? 0.0 : clampedX;
-        final finalZ = isOnBackWall ? 0.0 : clampedZ;
+        double finalX = clampedX;
+        double finalY = clampedY;
+        double finalZ = clampedZ;
+
+        if (isOnBackWall) {
+          finalZ = 0.0;
+          // Clamp within back wall bounds
+          finalX = finalX.clamp(0.0, room.width - f.effectiveWidth);
+          finalY = finalY.clamp(0.0, room.height - f.size.y);
+        } else if (isOnLeftWall) {
+          finalX = 0.0;
+          // Clamp within left wall bounds
+          finalZ = finalZ.clamp(0.0, room.depth - f.effectiveDepth);
+          finalY = finalY.clamp(0.0, room.height - f.size.y);
+        }
 
         return f.copyWith(
-          position: Vec3(x: finalX, y: clampedY, z: finalZ),
+          position: Vec3(x: finalX, y: finalY, z: finalZ),
           isPlaced: true,
         );
       }
