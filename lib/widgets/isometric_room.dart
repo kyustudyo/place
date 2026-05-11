@@ -420,7 +420,46 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     });
   }
 
+  /// Check if screen position hits a wall polygon. Returns 'back', 'left', or null.
+  String? _wallHitTest(Offset pos) {
+    final room = ref.read(placementProvider).room;
+    final w = room.width;
+    final h = room.height;
+    final d = room.depth;
+
+    // Back wall polygon (z=0 face)
+    final backPoly = [
+      IsometricMath.worldToScreen(0, 0, 0),
+      IsometricMath.worldToScreen(w, 0, 0),
+      IsometricMath.worldToScreen(w, h, 0),
+      IsometricMath.worldToScreen(0, h, 0),
+    ];
+    if (_pointInPolygon(pos, backPoly)) return 'back';
+
+    // Left wall polygon (x=0 face)
+    final leftPoly = [
+      IsometricMath.worldToScreen(0, 0, 0),
+      IsometricMath.worldToScreen(0, 0, d),
+      IsometricMath.worldToScreen(0, h, d),
+      IsometricMath.worldToScreen(0, h, 0),
+    ];
+    if (_pointInPolygon(pos, leftPoly)) return 'left';
+
+    return null;
+  }
+
   void _handleTap(Offset pos, PlacementState state) {
+    // Wall selection mode: when highlight is 'both', intercept wall taps
+    final wallHighlight = ref.read(wallHighlightProvider);
+    if (wallHighlight == 'both') {
+      final wallHit = _wallHitTest(pos);
+      if (wallHit != null) {
+        ref.read(wallHighlightProvider.notifier).set(wallHit);
+        return;
+      }
+      return; // In wall selection mode, ignore non-wall taps
+    }
+
     final hit = _hitTest(pos, state);
     final notifier = ref.read(placementProvider.notifier);
 

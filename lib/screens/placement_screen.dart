@@ -206,12 +206,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     });
   }
 
-  void _selectWall(SelectedWall wall) {
-    setState(() => _selectedWall = wall);
-    ref.read(wallHighlightProvider.notifier).set(
-        wall == SelectedWall.back ? 'back' : 'left');
-  }
-
   Future<void> _pasteJson() async {
     final theme = ref.read(currentThemeProvider);
     final controller = TextEditingController();
@@ -544,6 +538,15 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     final refImage = ref.watch(referenceImageProvider);
     final isWide = MediaQuery.of(context).size.width > 768;
 
+    // Listen for wall tap from IsometricRoom
+    ref.listen<String?>(wallHighlightProvider, (prev, next) {
+      if (_currentMode == PlacementMode.wall && prev == 'both' && next != null && next != 'both') {
+        setState(() {
+          _selectedWall = next == 'back' ? SelectedWall.back : SelectedWall.left;
+        });
+      }
+    });
+
     ref.listen<PlacementState>(placementProvider, (prev, next) {
       if (next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -600,6 +603,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   Widget _buildTopBar(PlacementState state, AppTheme theme, bool hasRefImage) {
     final isWallMode = _currentMode == PlacementMode.wall;
     final wallSelected = _selectedWall != SelectedWall.none;
+    // In wall mode without selection → hide all action buttons
+    final showActions = !isWallMode || wallSelected;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -630,19 +635,16 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             theme: theme,
             onTap: () => _switchMode(PlacementMode.wall),
           ),
-          // Wall sub-tabs (appear when wall mode active)
-          if (isWallMode) ...[
-            const SizedBox(width: 10),
-            _WallSubTab(
-              label: '뒷벽',
-              active: _selectedWall == SelectedWall.back,
-              onTap: () => _selectWall(SelectedWall.back),
-            ),
-            const SizedBox(width: 4),
-            _WallSubTab(
-              label: '왼벽',
-              active: _selectedWall == SelectedWall.left,
-              onTap: () => _selectWall(SelectedWall.left),
+          // Show which wall is selected
+          if (isWallMode && wallSelected) ...[
+            const SizedBox(width: 8),
+            Text(
+              _selectedWall == SelectedWall.back ? '뒷벽' : '왼벽',
+              style: TextStyle(
+                color: const Color(0xFFE74C3C),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
           if (!isWallMode && hasRefImage) ...[
@@ -658,33 +660,33 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             ),
           ],
           const Spacer(),
-          // Settings
-          _TopBarBtn(
-            icon: Icons.settings_outlined,
-            onTap: _showSettings,
-            theme: theme,
-          ),
-          if (!_showingReference) ...[
-            const SizedBox(width: 6),
-            // Add item
-            _AddItemBtn(
-              onTap: (isWallMode && wallSelected)
-                  ? () => _showWallDimensionDialog()
-                  : isWallMode
-                      ? null // wall mode but no wall selected → disabled
-                      : () => _showDimensionDialog(),
+          if (showActions) ...[
+            // Settings
+            _TopBarBtn(
+              icon: Icons.settings_outlined,
+              onTap: _showSettings,
               theme: theme,
-              highlight: !isWallMode && state.furniture.isEmpty,
             ),
-            const SizedBox(width: 6),
-            // Item list
-            if (state.furniture.isNotEmpty) ...[
-              _TopBarBtn(
-                icon: Icons.list_rounded,
-                onTap: () => _showFurnitureSheet(),
+            if (!_showingReference) ...[
+              const SizedBox(width: 6),
+              // Add item
+              _AddItemBtn(
+                onTap: isWallMode
+                    ? () => _showWallDimensionDialog()
+                    : () => _showDimensionDialog(),
                 theme: theme,
+                highlight: !isWallMode && state.furniture.isEmpty,
               ),
               const SizedBox(width: 6),
+              // Item list
+              if (state.furniture.isNotEmpty) ...[
+                _TopBarBtn(
+                  icon: Icons.list_rounded,
+                  onTap: () => _showFurnitureSheet(),
+                  theme: theme,
+                ),
+                const SizedBox(width: 6),
+              ],
             ],
           ],
         ],
@@ -861,45 +863,6 @@ class _ModeTab extends StatelessWidget {
           style: TextStyle(
             color: active ? Colors.white : theme.textSecondary,
             fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WallSubTab extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _WallSubTab({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const red = Color(0xFFE74C3C);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        decoration: BoxDecoration(
-          color: active ? red : red.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: active ? red : red.withValues(alpha: 0.4),
-            width: active ? 1.5 : 1.0,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.white : red,
-            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
