@@ -646,8 +646,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () {
-                setState(() => _selectedWall = SelectedWall.none);
-                ref.read(wallHighlightProvider.notifier).set('both');
+                // Toggle to the other wall
+                final other = _selectedWall == SelectedWall.back
+                    ? SelectedWall.left
+                    : SelectedWall.back;
+                setState(() => _selectedWall = other);
+                ref.read(wallHighlightProvider.notifier).set(
+                    other == SelectedWall.back ? 'back' : 'left');
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
