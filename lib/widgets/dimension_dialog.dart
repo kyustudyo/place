@@ -322,6 +322,7 @@ class DimensionDialog extends StatefulWidget {
   final bool isEdit;
   final bool showStepNumber;
   final bool hideZ;
+  final bool wallMode;
 
   const DimensionDialog({
     super.key,
@@ -333,6 +334,7 @@ class DimensionDialog extends StatefulWidget {
     this.isEdit = false,
     this.showStepNumber = false,
     this.hideZ = false,
+    this.wallMode = false,
   });
 
   @override
@@ -439,7 +441,11 @@ class _DimensionDialogState extends State<DimensionDialog> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
-    final title = widget.isEdit ? '크기 수정' : '사물 추가';
+    final title = widget.isEdit
+        ? '크기 수정'
+        : widget.wallMode
+            ? '사물 추가 (벽)'
+            : '사물 추가';
     final buttonText = widget.isEdit
         ? '수정'
         : widget.showStepNumber
@@ -511,7 +517,8 @@ class _DimensionDialogState extends State<DimensionDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 8),
-            _buildField(t, '이름', _nameCtrl, '예: 소파, 테이블',
+            _buildField(t, '이름', _nameCtrl,
+                widget.wallMode ? '예: 문, 창문' : '예: 소파, 테이블',
                 isText: true),
             const SizedBox(height: 14),
             Row(

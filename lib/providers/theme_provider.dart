@@ -231,6 +231,16 @@ final referenceImageProvider =
   ReferenceImageNotifier.new,
 );
 
+/// Wall highlight state: 'back', 'left', 'both', or null
+class WallHighlightNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void set(String? value) => state = value;
+}
+
+final wallHighlightProvider =
+    NotifierProvider<WallHighlightNotifier, String?>(WallHighlightNotifier.new);
+
 final guideColorOptions = <Color>[
   const Color(0xFFE74C3C), // red
   const Color(0xFFE91E63), // pink

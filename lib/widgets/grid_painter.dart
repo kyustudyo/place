@@ -19,6 +19,8 @@ class GridPainter extends CustomPainter {
   final double? selD;
   final double? selY; // position.y (base height)
   final double guideOpacity;
+  /// Which wall to highlight: 'back', 'left', 'both', or null
+  final String? highlightWall;
 
   GridPainter({
     required this.room,
@@ -32,6 +34,7 @@ class GridPainter extends CustomPainter {
     this.selW,
     this.selD,
     this.selY,
+    this.highlightWall,
   });
 
   @override
@@ -96,9 +99,15 @@ class GridPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = theme.wallBorderWidth;
 
+    final hlLeft = highlightWall == 'left' || highlightWall == 'both';
+    final hlBack = highlightWall == 'back' || highlightWall == 'both';
+    const hlColor = Color(0xFFE74C3C); // red
+
     // Left wall
     final leftWallPaint = Paint()
-      ..color = theme.leftWallColor
+      ..color = hlLeft
+          ? hlColor.withValues(alpha: 0.35)
+          : theme.leftWallColor
       ..style = PaintingStyle.fill;
 
     final leftWall = Path()
@@ -117,11 +126,18 @@ class GridPainter extends CustomPainter {
       ..close();
 
     canvas.drawPath(leftWall, leftWallPaint);
-    canvas.drawPath(leftWall, wallBorderPaint);
+    canvas.drawPath(leftWall, hlLeft
+        ? (Paint()
+          ..color = hlColor.withValues(alpha: 0.7)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5)
+        : wallBorderPaint);
 
     // Back wall
     final backWallPaint = Paint()
-      ..color = theme.backWallColor
+      ..color = hlBack
+          ? hlColor.withValues(alpha: 0.35)
+          : theme.backWallColor
       ..style = PaintingStyle.fill;
 
     final backWall = Path()
@@ -140,7 +156,12 @@ class GridPainter extends CustomPainter {
       ..close();
 
     canvas.drawPath(backWall, backWallPaint);
-    canvas.drawPath(backWall, wallBorderPaint);
+    canvas.drawPath(backWall, hlBack
+        ? (Paint()
+          ..color = hlColor.withValues(alpha: 0.7)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5)
+        : wallBorderPaint);
   }
 
   /// Draw projection lines from selected item to both walls

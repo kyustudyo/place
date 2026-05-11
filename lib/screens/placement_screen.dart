@@ -11,7 +11,8 @@ import '../widgets/dimension_dialog.dart';
 import '../utils/session_storage.dart';
 import '../main.dart' show isScreenshotMode;
 
-enum PlacementMode { floor, backWall, rightWall }
+enum PlacementMode { floor, wall }
+enum SelectedWall { none, back, left }
 
 class PlacementScreen extends ConsumerStatefulWidget {
   const PlacementScreen({super.key});
@@ -43,6 +44,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _showingReference = false;
   String? _currentRoomName;
   PlacementMode _currentMode = PlacementMode.floor;
+  SelectedWall _selectedWall = SelectedWall.none;
   final PageController _pageController = PageController();
 
   @override
@@ -161,10 +163,9 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     }
   }
 
-  /// Show dimension dialog for wall-attached furniture (width + height only)
+  /// Show dimension dialog for wall-attached furniture
   Future<void> _showWallDimensionDialog() async {
     final theme = ref.read(currentThemeProvider);
-    final isBackWall = _currentMode == PlacementMode.backWall;
 
     final result = await showDialog<DimensionResult>(
       context: context,
@@ -173,8 +174,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
         theme: theme,
         initialX: 1.5,
         initialY: 2.0,
-        initialZ: 0,
-        hideZ: true,
+        initialZ: 0.1,
+        wallMode: true,
       ),
     );
 
@@ -182,9 +183,10 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
     ref.read(placementProvider.notifier).addWallFurniture(
           name: result.name,
-          width: result.x,
-          height: result.y,
-          isBackWall: isBackWall,
+          x: result.x,
+          y: result.y,
+          z: result.z,
+          isBackWall: _selectedWall == SelectedWall.back,
         );
   }
 
@@ -193,7 +195,21 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     setState(() {
       _currentMode = mode;
       _showingReference = false;
+      if (mode == PlacementMode.wall) {
+        _selectedWall = SelectedWall.none;
+        // Highlight both walls
+        ref.read(wallHighlightProvider.notifier).set('both');
+      } else {
+        _selectedWall = SelectedWall.none;
+        ref.read(wallHighlightProvider.notifier).set(null);
+      }
     });
+  }
+
+  void _selectWall(SelectedWall wall) {
+    setState(() => _selectedWall = wall);
+    ref.read(wallHighlightProvider.notifier).set(
+        wall == SelectedWall.back ? 'back' : 'left');
   }
 
   Future<void> _pasteJson() async {
@@ -582,8 +598,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   Widget _buildTopBar(PlacementState state, AppTheme theme, bool hasRefImage) {
-    final isWallMode = _currentMode == PlacementMode.backWall ||
-        _currentMode == PlacementMode.rightWall;
+    final isWallMode = _currentMode == PlacementMode.wall;
+    final wallSelected = _selectedWall != SelectedWall.none;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -593,7 +609,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       ),
       child: Row(
         children: [
-          // Mode tabs
+          // Main mode tabs
           _ModeTab(
             label: '바닥',
             active: _currentMode == PlacementMode.floor && !_showingReference,
@@ -609,18 +625,26 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           ),
           const SizedBox(width: 6),
           _ModeTab(
-            label: '뒷벽',
-            active: _currentMode == PlacementMode.backWall,
+            label: '벽',
+            active: isWallMode,
             theme: theme,
-            onTap: () => _switchMode(PlacementMode.backWall),
+            onTap: () => _switchMode(PlacementMode.wall),
           ),
-          const SizedBox(width: 6),
-          _ModeTab(
-            label: '오른벽',
-            active: _currentMode == PlacementMode.rightWall,
-            theme: theme,
-            onTap: () => _switchMode(PlacementMode.rightWall),
-          ),
+          // Wall sub-tabs (appear when wall mode active)
+          if (isWallMode) ...[
+            const SizedBox(width: 10),
+            _WallSubTab(
+              label: '뒷벽',
+              active: _selectedWall == SelectedWall.back,
+              onTap: () => _selectWall(SelectedWall.back),
+            ),
+            const SizedBox(width: 4),
+            _WallSubTab(
+              label: '왼벽',
+              active: _selectedWall == SelectedWall.left,
+              onTap: () => _selectWall(SelectedWall.left),
+            ),
+          ],
           if (!isWallMode && hasRefImage) ...[
             const SizedBox(width: 6),
             _RefImageBtn(
@@ -642,13 +666,15 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           ),
           if (!_showingReference) ...[
             const SizedBox(width: 6),
-            // Add item — wall mode creates wall furniture
+            // Add item
             _AddItemBtn(
-              onTap: isWallMode
+              onTap: (isWallMode && wallSelected)
                   ? () => _showWallDimensionDialog()
-                  : () => _showDimensionDialog(),
+                  : isWallMode
+                      ? null // wall mode but no wall selected → disabled
+                      : () => _showDimensionDialog(),
               theme: theme,
-              highlight: state.furniture.isEmpty,
+              highlight: !isWallMode && state.furniture.isEmpty,
             ),
             const SizedBox(width: 6),
             // Item list
@@ -843,6 +869,45 @@ class _ModeTab extends StatelessWidget {
   }
 }
 
+class _WallSubTab extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _WallSubTab({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const red = Color(0xFFE74C3C);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: active ? red : red.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: active ? red : red.withValues(alpha: 0.4),
+            width: active ? 1.5 : 1.0,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : red,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RefImageBtn extends StatefulWidget {
   final bool active;
   final AppTheme theme;
@@ -941,7 +1006,7 @@ class _RefImageBtnState extends State<_RefImageBtn>
 }
 
 class _AddItemBtn extends StatefulWidget {
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final AppTheme theme;
   final bool highlight;
 

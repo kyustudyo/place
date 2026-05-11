@@ -161,13 +161,13 @@ class PlacementNotifier extends Notifier<PlacementState> {
   }
 
   /// Add a wall-attached furniture piece (door, window, etc.)
-  /// [isBackWall] true = z=0 wall, false = x=0 wall
+  /// [isBackWall] true = z=0 wall (back), false = x=0 wall (left)
   Furniture addWallFurniture({
     required String name,
-    required double width,
-    required double height,
+    required double x,
+    required double y,
+    required double z,
     required bool isBackWall,
-    double thickness = 0.1,
   }) {
     _saveUndo();
     final index = state.furniture.length;
@@ -176,19 +176,17 @@ class PlacementNotifier extends Notifier<PlacementState> {
     final displayName = name.isEmpty ? '사물${_nextNumber++}' : name;
     final ts = state.room.tileSize;
 
-    final Vec3 size;
+    final size = Vec3(x: x, y: y, z: z);
     final Vec3 position;
 
     if (isBackWall) {
-      // Back wall (z=0): spans X axis
-      size = Vec3(x: width, y: height, z: thickness);
-      final posX = (state.room.width / 2 - width / 2);
+      // Back wall (z=0): center along X axis
+      final posX = (state.room.width / 2 - x / 2);
       final snappedX = (posX / ts).round() * ts;
       position = Vec3(x: snappedX, y: 0.0, z: 0.0);
     } else {
-      // Right wall (x=0): spans Z axis
-      size = Vec3(x: thickness, y: height, z: width);
-      final posZ = (state.room.depth / 2 - width / 2);
+      // Left wall (x=0): center along Z axis
+      final posZ = (state.room.depth / 2 - z / 2);
       final snappedZ = (posZ / ts).round() * ts;
       position = Vec3(x: 0.0, y: 0.0, z: snappedZ);
     }

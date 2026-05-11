@@ -36,6 +36,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     final axisMapping = ref.watch(axisMappingProvider);
     final guideColor = ref.watch(guideColorProvider);
     final guideOpacity = ref.watch(guideOpacityProvider);
+    final wallHighlight = ref.watch(wallHighlightProvider);
     final room = state.room;
 
     return LayoutBuilder(
@@ -68,6 +69,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   selW: state.selectedFurniture?.effectiveWidth,
                   selD: state.selectedFurniture?.effectiveDepth,
                   selY: state.selectedFurniture?.position.y,
+                  highlightWall: wallHighlight,
                 ),
                 foregroundPainter: FurnitureRenderer(
                   items: state.furniture,
