@@ -166,15 +166,21 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   /// Show dimension dialog for wall-attached furniture
   Future<void> _showWallDimensionDialog() async {
     final theme = ref.read(currentThemeProvider);
+    final isBackWall = _selectedWall == SelectedWall.back;
+
+    // Default: back wall → wide X, thin Z / left wall → thin X, wide Z
+    final defaultX = isBackWall ? 1.5 : 0.1;
+    final defaultY = 2.0;
+    final defaultZ = isBackWall ? 0.1 : 1.5;
 
     final result = await showDialog<DimensionResult>(
       context: context,
       barrierDismissible: true,
       builder: (ctx) => DimensionDialog(
         theme: theme,
-        initialX: 1.5,
-        initialY: 2.0,
-        initialZ: 0.1,
+        initialX: defaultX,
+        initialY: defaultY,
+        initialZ: defaultZ,
         wallMode: true,
       ),
     );
@@ -635,15 +641,28 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             theme: theme,
             onTap: () => _switchMode(PlacementMode.wall),
           ),
-          // Show which wall is selected
+          // Show which wall is selected — tap to go back to wall selection
           if (isWallMode && wallSelected) ...[
             const SizedBox(width: 8),
-            Text(
-              _selectedWall == SelectedWall.back ? '뒷벽' : '왼벽',
-              style: TextStyle(
-                color: const Color(0xFFE74C3C),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: () {
+                setState(() => _selectedWall = SelectedWall.none);
+                ref.read(wallHighlightProvider.notifier).set('both');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE74C3C),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  _selectedWall == SelectedWall.back ? '뒷벽' : '왼벽',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],
