@@ -566,13 +566,16 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     double nextZ = item.position.z;
     double nextY = item.position.y;
 
-    if (isWallMode && wallHighlight == 'back' && item.effectiveDepth < 1.0) {
-      // Back wall: wall-plane drag (X+Y only, stays on wall)
+    final thinD = item.effectiveDepth < 1.0;
+    final thinW = item.effectiveWidth < 1.0;
+
+    if (isWallMode && thinD && !thinW) {
+      // Back wall item: wall-plane drag (X+Y)
       final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
       nextX = item.position.x + wallDelta.dx;
       nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
-    } else if (isWallMode && wallHighlight == 'left' && item.effectiveWidth < 1.0) {
-      // Left wall: wall-plane drag (Z+Y only, stays on wall)
+    } else if (isWallMode && thinW && !thinD) {
+      // Left wall item: wall-plane drag (Z+Y)
       final wallDelta = IsometricMath.screenDeltaToLeftWall(screenDelta);
       nextZ = item.position.z + wallDelta.dx;
       nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
