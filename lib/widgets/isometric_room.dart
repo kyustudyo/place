@@ -567,25 +567,45 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     double nextY = item.position.y;
 
     if (isWallMode && wallHighlight == 'back' && item.effectiveDepth < 1.0) {
-      // Wall mode + back wall: X+Y from wall-plane, Z from floor-plane (corrected)
-      final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
-      nextX = item.position.x + wallDelta.dx;
-      nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
-      final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
-      final currWorld = IsometricMath.screenToWorld(pos);
-      final floorDz = currWorld.dy - prevWorld.dy;
-      nextZ = item.position.z + floorDz + wallDelta.dx / 2;
+      // Back wall: detect drag direction
+      // Wall direction on screen: (cosA, sinA) — along X axis
+      // Perpendicular (into room): (-cosA, sinA) — along Z axis
+      final wallProj = screenDelta.dx * IsometricMath.cosA + screenDelta.dy * IsometricMath.sinA;
+      final perpProj = -screenDelta.dx * IsometricMath.cosA + screenDelta.dy * IsometricMath.sinA;
+
+      if (perpProj.abs() > wallProj.abs()) {
+        // Dragging toward room → floor drag (X+Z)
+        final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
+        final currWorld = IsometricMath.screenToWorld(pos);
+        nextX = item.position.x + (currWorld.dx - prevWorld.dx);
+        nextZ = item.position.z + (currWorld.dy - prevWorld.dy);
+      } else {
+        // Dragging along wall → wall-plane drag (X+Y)
+        final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
+        nextX = item.position.x + wallDelta.dx;
+        nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
+      }
     } else if (isWallMode && wallHighlight == 'left' && item.effectiveWidth < 1.0) {
-      // Wall mode + left wall: Z+Y from wall-plane, X from floor-plane (corrected)
-      final wallDelta = IsometricMath.screenDeltaToLeftWall(screenDelta);
-      nextZ = item.position.z + wallDelta.dx;
-      nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
-      final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
-      final currWorld = IsometricMath.screenToWorld(pos);
-      final floorDx = currWorld.dx - prevWorld.dx;
-      nextX = item.position.x + floorDx + wallDelta.dx / 2;
+      // Left wall: detect drag direction
+      // Wall direction on screen: (-cosA, sinA) — along Z axis
+      // Perpendicular (into room): (cosA, sinA) — along X axis
+      final wallProj = -screenDelta.dx * IsometricMath.cosA + screenDelta.dy * IsometricMath.sinA;
+      final perpProj = screenDelta.dx * IsometricMath.cosA + screenDelta.dy * IsometricMath.sinA;
+
+      if (perpProj.abs() > wallProj.abs()) {
+        // Dragging toward room → floor drag (X+Z)
+        final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
+        final currWorld = IsometricMath.screenToWorld(pos);
+        nextX = item.position.x + (currWorld.dx - prevWorld.dx);
+        nextZ = item.position.z + (currWorld.dy - prevWorld.dy);
+      } else {
+        // Dragging along wall → wall-plane drag (Z+Y)
+        final wallDelta = IsometricMath.screenDeltaToLeftWall(screenDelta);
+        nextZ = item.position.z + wallDelta.dx;
+        nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
+      }
     } else {
-      // Floor drag (X+Z) — works for floor items and wall items in floor mode
+      // Floor drag (X+Z)
       final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
       final currWorld = IsometricMath.screenToWorld(pos);
       nextX = item.position.x + (currWorld.dx - prevWorld.dx);
