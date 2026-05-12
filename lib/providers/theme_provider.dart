@@ -231,7 +231,7 @@ final referenceImageProvider =
   ReferenceImageNotifier.new,
 );
 
-/// Wall highlight state: 'back', 'left', 'both', or null
+/// Wall highlight state: 'right', 'left', 'both', or null
 class WallHighlightNotifier extends Notifier<String?> {
   @override
   String? build() => null;

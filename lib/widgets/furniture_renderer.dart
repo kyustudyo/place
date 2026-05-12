@@ -253,7 +253,7 @@ class FurnitureRenderer extends CustomPainter {
       wallGuide,
     );
 
-    // Back wall (z=0)
+    // Right wall (z=0)
     _drawDashedLine(
       canvas,
       IsometricMath.worldToScreen(0, h, 0),

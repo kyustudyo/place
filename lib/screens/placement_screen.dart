@@ -12,7 +12,7 @@ import '../utils/session_storage.dart';
 import '../main.dart' show isScreenshotMode;
 
 enum PlacementMode { floor, wall }
-enum SelectedWall { none, back, left }
+enum SelectedWall { none, right, left }
 
 class PlacementScreen extends ConsumerStatefulWidget {
   const PlacementScreen({super.key});
@@ -49,9 +49,9 @@ const _jsonHelpText = '''● room (선택) — 방 크기
   rotation: 0/90/180/270
 
 ● 벽 가구 규칙
-  뒷벽: position.z = 0, size.z 얇게 (<1.0)
+  오른벽: position.z = 0, size.z 얇게 (<1.0)
   왼벽: position.x = 0, size.x 얇게 (<1.0)
-  예) 문: z=0.16 → 뒷벽에 자동 배치
+  예) 문: z=0.16 → 오른벽에 자동 배치
   예) 창문: x=0.18 → 왼벽에 자동 배치''';
 
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
@@ -181,12 +181,12 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   /// Show dimension dialog for wall-attached furniture
   Future<void> _showWallDimensionDialog() async {
     final theme = ref.read(currentThemeProvider);
-    final isBackWall = _selectedWall == SelectedWall.back;
+    final isRightWall = _selectedWall == SelectedWall.right;
 
     // Default: back wall → wide X, thin Z / left wall → thin X, wide Z
-    final defaultX = isBackWall ? 1.5 : 0.1;
+    final defaultX = isRightWall ? 1.5 : 0.1;
     final defaultY = 2.0;
-    final defaultZ = isBackWall ? 0.1 : 1.5;
+    final defaultZ = isRightWall ? 0.1 : 1.5;
 
     final result = await showDialog<DimensionResult>(
       context: context,
@@ -207,7 +207,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           x: result.x,
           y: result.y,
           z: result.z,
-          isBackWall: _selectedWall == SelectedWall.back,
+          isRightWall: _selectedWall == SelectedWall.right,
         );
   }
 
@@ -616,7 +616,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     ref.listen<String?>(wallHighlightProvider, (prev, next) {
       if (_currentMode == PlacementMode.wall && next != null && next != 'both') {
         setState(() {
-          _selectedWall = next == 'back' ? SelectedWall.back : SelectedWall.left;
+          _selectedWall = next == 'right' ? SelectedWall.right : SelectedWall.left;
         });
       }
     });
@@ -715,12 +715,12 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             GestureDetector(
               onTap: () {
                 // Toggle to the other wall
-                final other = _selectedWall == SelectedWall.back
+                final other = _selectedWall == SelectedWall.right
                     ? SelectedWall.left
-                    : SelectedWall.back;
+                    : SelectedWall.right;
                 setState(() => _selectedWall = other);
                 ref.read(wallHighlightProvider.notifier).set(
-                    other == SelectedWall.back ? 'back' : 'left');
+                    other == SelectedWall.right ? 'right' : 'left');
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -729,7 +729,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  _selectedWall == SelectedWall.back ? '뒷벽' : '왼벽',
+                  _selectedWall == SelectedWall.right ? '오른벽' : '왼벽',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -1779,7 +1779,7 @@ class _AppearanceSheet extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Row(children: [
-                            _dot(t.backWallColor, 8),
+                            _dot(t.rightWallColor, 8),
                             const SizedBox(width: 2),
                             _dot(t.leftWallColor, 8),
                           ]),
@@ -2134,7 +2134,7 @@ class _AxisPreviewPainter extends CustomPainter {
 
     final topColor = theme.floorColor.withValues(alpha: 0.8);
     final leftColor = theme.leftWallColor.withValues(alpha: 0.7);
-    final rightColor = theme.backWallColor.withValues(alpha: 0.7);
+    final rightColor = theme.rightWallColor.withValues(alpha: 0.7);
 
     void drawFace(List<Offset> pts, Color fill) {
       final path = Path()..moveTo(pts[0].dx, pts[0].dy);

@@ -161,13 +161,13 @@ class PlacementNotifier extends Notifier<PlacementState> {
   }
 
   /// Add a wall-attached furniture piece (door, window, etc.)
-  /// [isBackWall] true = z=0 wall (back), false = x=0 wall (left)
+  /// [isRightWall] true = z=0 wall (back), false = x=0 wall (left)
   Furniture addWallFurniture({
     required String name,
     required double x,
     required double y,
     required double z,
-    required bool isBackWall,
+    required bool isRightWall,
   }) {
     _saveUndo();
     final index = state.furniture.length;
@@ -179,8 +179,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
     final size = Vec3(x: x, y: y, z: z);
     final Vec3 position;
 
-    if (isBackWall) {
-      // Back wall (z=0): center along X axis
+    if (isRightWall) {
+      // Right wall (z=0): center along X axis
       final posX = (state.room.width / 2 - x / 2);
       final snappedX = (posX / ts).round() * ts;
       position = Vec3(x: snappedX, y: 0.0, z: 0.0);
@@ -291,8 +291,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(selectedId: id, clearSelected: id == null);
   }
 
-  /// Check if furniture is attached to back wall (z=0, thin depth)
-  static bool _isOnBackWall(Furniture f) =>
+  /// Check if furniture is attached to right wall (z=0, thin depth)
+  static bool _isOnRightWall(Furniture f) =>
       f.position.z < 0.01 && f.effectiveDepth < 1.0;
 
   /// Check if furniture is attached to left wall (x=0, thin width)
@@ -317,7 +317,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
         // Wall clamping only when item stays on wall (z≈0 or x≈0)
         // If moved away from wall, treat as floor item
-        if (_isOnBackWall(f) && finalZ < 0.01) {
+        if (_isOnRightWall(f) && finalZ < 0.01) {
           finalZ = 0.0;
           finalX = finalX.clamp(0.0, room.width - f.effectiveWidth);
           finalY = finalY.clamp(0.0, room.height - f.size.y);
@@ -439,18 +439,18 @@ class PlacementNotifier extends Notifier<PlacementState> {
     _saveUndo();
     final updated = state.furniture.map((f) {
       if (f.id == id) {
-        final wasOnBackWall = _isOnBackWall(f);
+        final wasOnRightWall = _isOnRightWall(f);
         final wasOnLeftWall = _isOnLeftWall(f);
 
         var rotated = f.copyWith(rotation: (f.rotation + 90) % 360);
 
         // After rotation, check if wall attachment changed
-        if (wasOnBackWall || wasOnLeftWall) {
+        if (wasOnRightWall || wasOnLeftWall) {
           final nowThinW = rotated.effectiveWidth < 1.0;
           final nowThinD = rotated.effectiveDepth < 1.0;
 
           if (nowThinD && !nowThinW) {
-            // Now thin depth → snap to back wall (z=0)
+            // Now thin depth → snap to right wall (z=0)
             rotated = rotated.copyWith(
               position: Vec3(x: rotated.position.x, y: rotated.position.y, z: 0.0),
             );
@@ -494,9 +494,9 @@ class PlacementNotifier extends Notifier<PlacementState> {
     // Offset position by 1 tile, keeping wall items on their wall
     final tile = state.room.tileSize;
     final Vec3 copyPos;
-    final onBackWall = source.position.z < 0.01;
+    final onRightWall = source.position.z < 0.01;
     final onLeftWall = source.position.x < 0.01;
-    if (onLeftWall && onBackWall) {
+    if (onLeftWall && onRightWall) {
       // Corner: determine wall by thinner dimension
       if (source.effectiveWidth < source.effectiveDepth) {
         copyPos = Vec3(x: 0.0, y: source.position.y, z: source.position.z + tile);
@@ -505,7 +505,7 @@ class PlacementNotifier extends Notifier<PlacementState> {
       }
     } else if (onLeftWall) {
       copyPos = Vec3(x: 0.0, y: source.position.y, z: source.position.z + tile);
-    } else if (onBackWall) {
+    } else if (onRightWall) {
       copyPos = Vec3(x: source.position.x + tile, y: source.position.y, z: 0.0);
     } else {
       copyPos = Vec3(

@@ -445,21 +445,21 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     });
   }
 
-  /// Check if screen position hits a wall polygon. Returns 'back', 'left', or null.
+  /// Check if screen position hits a wall polygon. Returns 'right', 'left', or null.
   String? _wallHitTest(Offset pos) {
     final room = ref.read(placementProvider).room;
     final w = room.width;
     final h = room.height;
     final d = room.depth;
 
-    // Back wall polygon (z=0 face)
-    final backPoly = [
+    // Right wall polygon (z=0 face)
+    final rightPoly = [
       IsometricMath.worldToScreen(0, 0, 0),
       IsometricMath.worldToScreen(w, 0, 0),
       IsometricMath.worldToScreen(w, h, 0),
       IsometricMath.worldToScreen(0, h, 0),
     ];
-    if (_pointInPolygon(pos, backPoly)) return 'back';
+    if (_pointInPolygon(pos, rightPoly)) return 'right';
 
     // Left wall polygon (x=0 face)
     final leftPoly = [
@@ -500,7 +500,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
           final rotated = ref.read(placementProvider).furniture
               .firstWhere((f) => f.id == hit.id);
           if (rotated.position.z < 0.01 && rotated.effectiveDepth < 1.0) {
-            ref.read(wallHighlightProvider.notifier).set('back');
+            ref.read(wallHighlightProvider.notifier).set('right');
           } else if (rotated.position.x < 0.01 && rotated.effectiveWidth < 1.0) {
             ref.read(wallHighlightProvider.notifier).set('left');
           }
@@ -594,8 +594,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     final thinW = item.effectiveWidth < 1.0;
 
     if (isWallMode && thinD && !thinW) {
-      // Back wall item: wall-plane drag (X+Y)
-      final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
+      // Right wall item: wall-plane drag (X+Y)
+      final wallDelta = IsometricMath.screenDeltaToRightWall(screenDelta);
       nextX = item.position.x + wallDelta.dx;
       nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
     } else if (isWallMode && thinW && !thinD) {

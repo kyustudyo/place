@@ -35,9 +35,9 @@ class IsometricMath {
     return Offset(rawX, rawZ);
   }
 
-  /// Screen delta → Back wall delta (x, y) at z=0
+  /// Screen delta → Right wall delta (x, y) at z=0
   /// Returns Offset(deltaX, deltaY)
-  static Offset screenDeltaToBackWall(Offset screenDelta) {
+  static Offset screenDeltaToRightWall(Offset screenDelta) {
     final dsx = screenDelta.dx;
     final dsy = screenDelta.dy;
     final dx = dsx / (cosA * scale);

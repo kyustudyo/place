@@ -19,7 +19,7 @@ class GridPainter extends CustomPainter {
   final double? selD;
   final double? selY; // position.y (base height)
   final double guideOpacity;
-  /// Which wall to highlight: 'back', 'left', 'both', or null
+  /// Which wall to highlight: 'right', 'left', 'both', or null
   final String? highlightWall;
 
   GridPainter({
@@ -100,7 +100,7 @@ class GridPainter extends CustomPainter {
       ..strokeWidth = theme.wallBorderWidth;
 
     final hlLeft = highlightWall == 'left' || highlightWall == 'both';
-    final hlBack = highlightWall == 'back' || highlightWall == 'both';
+    final hlRight = highlightWall == 'right' || highlightWall == 'both';
     const hlColor = Color(0xFFE74C3C); // red
 
     // Left wall
@@ -133,14 +133,14 @@ class GridPainter extends CustomPainter {
           ..strokeWidth = 2.5)
         : wallBorderPaint);
 
-    // Back wall
-    final backWallPaint = Paint()
-      ..color = hlBack
+    // Right wall
+    final rightWallPaint = Paint()
+      ..color = hlRight
           ? hlColor.withValues(alpha: 0.35)
-          : theme.backWallColor
+          : theme.rightWallColor
       ..style = PaintingStyle.fill;
 
-    final backWall = Path()
+    final rightWall = Path()
       ..moveTo(
           IsometricMath.worldToScreen(0, 0, 0).dx,
           IsometricMath.worldToScreen(0, 0, 0).dy)
@@ -155,8 +155,8 @@ class GridPainter extends CustomPainter {
           IsometricMath.worldToScreen(0, room.height, 0).dy)
       ..close();
 
-    canvas.drawPath(backWall, backWallPaint);
-    canvas.drawPath(backWall, hlBack
+    canvas.drawPath(rightWall, rightWallPaint);
+    canvas.drawPath(rightWall, hlRight
         ? (Paint()
           ..color = hlColor.withValues(alpha: 0.7)
           ..style = PaintingStyle.stroke
@@ -215,7 +215,7 @@ class GridPainter extends CustomPainter {
           IsometricMath.worldToScreen(0, h, wz2), softPaint);
     }
 
-    // Back wall (z=0)
+    // Right wall (z=0)
     if (wx2 > wx1) {
       final backRect = Path()
         ..moveTo(IsometricMath.worldToScreen(wx1, baseY, 0).dx,
@@ -254,7 +254,7 @@ class GridPainter extends CustomPainter {
           IsometricMath.worldToScreen(0, 0, wz2), floorGuide);
     }
 
-    // Item → back wall (clamped to map range)
+    // Item → right wall (clamped to map range)
     if (z > 0) {
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(wx1, 0, z.clamp(0.0, room.depth)),
@@ -265,7 +265,7 @@ class GridPainter extends CustomPainter {
     }
 
     // Wall items: perpendicular floor lines to opposite wall
-    // Back wall item (z≈0): lines across floor to far edge (z=room.depth)
+    // Right wall item (z≈0): lines across floor to far edge (z=room.depth)
     if (z < 0.5 && d < 1.0) {
       _drawDashedLine(canvas,
           IsometricMath.worldToScreen(wx1, 0, 0),

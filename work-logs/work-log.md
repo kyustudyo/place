@@ -284,8 +284,185 @@
 - 꾸미기 바텀시트 안 열리는 버그 수정 + 뒤로가기 버튼
 - 수정 파일: `lib/widgets/dimension_dialog.dart`, `lib/screens/placement_screen.dart`
 
+### 축 방향 설정 UI 교체
+- 기존: X-Z 축 스왑 토글 (Switch, bool)
+- 변경: 3축 자유 매핑 시트 (직육면체 프리뷰 + X/Y/Z 방향 선택 버튼)
+- `AxisSwapNotifier(bool)` → `AxisMappingNotifier(AxisMapping)` — 6가지 축 조합 지원
+- `IsometricMath`: `swapAxes` bool → `axisMapping` 객체로 3축 자유 매핑
+- 수정 파일: `lib/providers/theme_provider.dart`, `lib/screens/placement_screen.dart`, `lib/utils/isometric_math.dart`, `lib/widgets/grid_painter.dart`, `lib/widgets/isometric_room.dart`
+
+## 2026-05-01
+
+### 축 방향 설정: +/- 반전 기능 + 겹침 수정
+- 각 축(오른쪽아래/왼쪽아래/위)별 +/- 방향 반전 토글 추가
+- `AxisMapping`에 `flipRD`/`flipLD`/`flipUp` 필드 추가
+- `IsometricMath`: worldToScreen/screenToWorld에서 flip 시 값 반전
+- 프리뷰 cuboid 스케일 축소 + origin 하단 이동으로 제목 겹침 해결
+- 수정 파일: `lib/providers/theme_provider.dart`, `lib/screens/placement_screen.dart`, `lib/utils/isometric_math.dart`
+
+### 설정값 앱 내 저장 + 축 설정 초기화 버튼
+- 축 방향 설정 시트 오른쪽 상단에 "초기화" 버튼 추가 (디폴트 복원)
+- 축 방향 설정(AxisMapping): SharedPreferences로 저장/복원
+- 가이드 색상/투명도: SharedPreferences로 저장/복원
+- 테마 인덱스는 기존에 이미 저장됨
+- 수정 파일: `lib/providers/theme_provider.dart`, `lib/screens/placement_screen.dart`
+
+### 축 매핑 라벨 전용으로 변경
+- 축 변경 시 벽/가구가 회전하는 문제 해결
+- `worldToScreen`/`screenToWorld`에서 축 매핑 제거 — 맵 렌더링 항상 고정
+- 축 설정은 GridPainter 라벨과 프리뷰에서만 사용
+- 수정 파일: `lib/utils/isometric_math.dart`, `lib/widgets/isometric_room.dart`
+
+### 축 라벨 flip 반영
+- 축 설정에서 +/- 변경 시 그리드 라벨의 +/− 순서가 실제로 뒤바뀌도록 수정
+- X/Z 바닥 라벨 + Y 세로 라벨 모두 적용
+- 수정 파일: `lib/widgets/grid_painter.dart`
+
+### 저장 파일에 축 설정 포함 + JSON 내보내기 축 매핑 반영
+- 저장 시 축 설정(axisMapping) 포함, 불러올 때 자동 복원
+- JSON 내보내기에서 축 매핑에 따라 position/size 좌표 재배치
+- position은 flip 반영, size는 축 매핑만 적용
+- unity팀 요청 처리 (축 설정 → JSON 반영) + 회신 전달
+- 수정 파일: `lib/utils/json_parser.dart`, `lib/utils/session_storage.dart`, `lib/providers/placement_provider.dart`, `lib/screens/placement_screen.dart`
+
+### 스토어 에셋 정비 (Commander 요청)
+- `store-assets/listings/ios/` — description, subtitle, keywords, whats-new, promo-text
+- `store-assets/listings/android/` — short-description, full-description, whats-new
+- builds, icon은 기존에 이미 존재
+- 웹 배포 완료: https://place-cbp.pages.dev/
+
+## 2026-05-04
+
+### Android APK 빌드 추가
+- `store-assets/builds/android/place-release.apk` 생성 (50.3MB)
+- 파일 브라우저에서 다운로드 가능
+
+### JSON 내보내기에 size 추가 (unity팀 요청)
+- 내보내기 JSON에 `size` 필드 추가 (`position`, `rotation`과 함께)
+- unity팀에 position 기준점(min corner) 회신
+- 수정 파일: `lib/models/placement.dart`, `lib/utils/json_parser.dart`
+- 웹 배포 완료: https://place-cbp.pages.dev/
+
 ### v1.3.0 iOS + Android 배포
 - 버전: 1.3.0+10
 - iOS: App Store Connect 업로드 성공
 - Android: Google Play 비공개 테스트(alpha) 업로드 성공
 - Git 태그: `v1.3.0`
+
+## 2026-05-08
+
+### 상세 조정 undo 지원 + 내보내기 position 바닥 중앙으로 변경
+- fine-tune +/- 버튼에 undo 지원 추가 (`nudgePosition`, `nudgeHeight`에 `_saveUndo()`)
+- 내보내기 JSON position을 min corner → bottom center로 변경 (Unity팀 요청)
+- 수정 파일: `lib/providers/placement_provider.dart`, `lib/utils/json_parser.dart`, `lib/widgets/isometric_room.dart`
+- 웹 배포 완료: https://place-cbp.pages.dev/
+
+### v1.4.0 태그 생성
+- Git 태그: `v1.4.0`
+
+## 2026-05-09
+
+### 벽면 배치 모드 추가 (Unity팀 요청)
+- inbox `from_unity_wall_placement_mode.md` 확인 → 조치 → 삭제
+- 뒷벽(BackWall), 오른벽(RightWall)을 2D 정면 뷰로 보며 문/창문 배치
+- 벽 크기 = 방 크기에서 자동 파생 (뒷벽 가로=room.width, 오른벽 가로=room.depth)
+- `flutter analyze` 통과 (0 errors/warnings)
+- 웹 배포 완료: https://place-cbp.pages.dev/
+
+## 2026-05-11
+
+### 벽면 배치를 기존 아이소메트릭 뷰에 통합
+- 별도 2D 벽 뷰 제거 → 기존 3D 아이소메트릭 뷰에서 벽 가구도 배치
+- 상단바 모드 탭 [바닥][뒷벽][오른벽] 유지
+- 벽 모드에서 + 누르면 해당 벽에 붙는 얇은 가구 생성 (두께 0.1m)
+  - 뒷벽(z=0): size(가로, 높이, 0.1), position.z=0
+  - 오른벽(x=0): size(0.1, 높이, 가로), position.x=0
+- 기존 드래그, fine-tune(Y로 높이 조절), undo/redo 모두 그대로 사용
+- `addWallFurniture()` 메서드 추가 (`lib/providers/placement_provider.dart`)
+- `DimensionDialog`에 hideZ 옵션 (벽 아이템은 가로/높이만 입력)
+- 수정 파일: `lib/screens/placement_screen.dart`, `lib/providers/placement_provider.dart`
+- `flutter analyze` 통과 (0 errors/warnings)
+
+### 벽 모드 UX 개선
+- 상단바: [바닥] [벽] 두 탭으로 단순화
+- [벽] 누르면 뒷벽/왼벽 빨간색 서브탭 나타남 + 아이소메트릭 뷰에서 벽 빨간 하이라이트
+- 서브탭 선택 시 해당 벽만 하이라이트
+- "사물 추가 (벽)" 다이얼로그: 이름 placeholder "문, 창문", x/y/z 크기 모두 입력
+- addWallFurniture()가 x/y/z 직접 받도록 변경
+- 수정 파일: `lib/screens/placement_screen.dart`, `lib/providers/placement_provider.dart`, `lib/providers/theme_provider.dart`, `lib/widgets/grid_painter.dart`, `lib/widgets/isometric_room.dart`, `lib/widgets/dimension_dialog.dart`
+- `flutter analyze` 통과 (0 errors/warnings)
+
+### 벽 선택을 맵에서 직접 탭으로 변경
+- 서브탭(뒷벽/왼벽) 버튼 제거 → 아이소메트릭 뷰에서 벽을 직접 탭하여 선택
+- [벽] 탭 누르면 두 벽 빨간 하이라이트 + 설정/+/목록 버튼 숨김
+- 벽 탭하면 해당 벽만 하이라이트 + 버튼 표시 + 탭 옆에 "뒷벽"/"왼벽" 텍스트
+- IsometricRoom에 벽 폴리곤 히트테스트 추가 (`_wallHitTest`)
+- 수정 파일: `lib/screens/placement_screen.dart`, `lib/widgets/isometric_room.dart`
+- `flutter analyze` 통과 (0 errors/warnings)
+
+### 벽 선택 버튼 탭 시 다른 벽 전환 + 벽별 기본 크기값
+- 뒷벽/왼벽 버튼 탭 → 벽 선택 해제, 다시 두 벽 하이라이트 (다른 벽 선택 가능)
+- 뒷벽 + 기본값: X=1.5(넓은), Y=2.0, Z=0.1(얇은)
+- 왼벽 + 기본값: X=0.1(얇은), Y=2.0, Z=1.5(넓은)
+- 수정 파일: `lib/screens/placement_screen.dart`
+- `flutter analyze` 통과 (0 errors/warnings)
+- 웹 배포 완료: https://place-cbp.pages.dev/
+
+### 벽 아이템 바닥 그림자 제거 + 드래그 벽 고정 + 범위 제한 + Y 드래그
+- 벽 아이템 Y 올려도 바닥 그림자 안 나옴
+- 드래그 시 벽면 고정 (벽에서 떼려면 상세조정만 가능)
+- 드래그 범위 벽 안으로 제한 (가로 0~벽너비, 높이 0~벽높이)
+- 벽 아이템 드래그로 상하+좌우 이동 (screenDeltaToBackWall/LeftWall 변환)
+- 수정 파일: `lib/widgets/grid_painter.dart`, `lib/providers/placement_provider.dart`, `lib/utils/isometric_math.dart`, `lib/widgets/isometric_room.dart`
+
+### v1.5.0 iOS + Android 배포
+- 버전: 1.5.0+11
+- iOS: App Store Connect 업로드 성공
+- Android: Google Play 비공개 테스트(alpha) 업로드 성공
+- APK: `store-assets/builds/android/place-release.apk` 갱신
+- Git 태그: `v1.5.0`
+
+## 2026-05-12
+
+### 벽 모드 UX 개선 (8 커밋)
+- 벽 선택 후 다른 벽 탭하면 전환 (`d427629`)
+- 벽 모드에서 상세조정/오버레이 UI 숨김 → 이후 점진적 복원 (`33b98c4`, `989ec50`)
+- 벽 아이템에도 상세조정 + 양쪽 벽 가이드 점선 표시 (`ccbd959`)
+- 벽 아이템 회전 시 다른 벽으로 자동 전환 (`8e4b919`)
+- 벽 아이템 두께 감지 기준 0.2m → 1.0m 확대 (`d021ad5`)
+- 벽 모드 전환 시 선택된 가구 해제 (`8bf8af8`)
+- 벽 가구 회전 시 벽 하이라이트도 해당 벽으로 전환 (`cd9890d`)
+- 벽 모드에서도 이름/사이즈 편집 + 삭제/undo/redo 버튼 표시 (`bde9875`, `0e94690`)
+- 수정 파일: `lib/widgets/isometric_room.dart`, `lib/providers/placement_provider.dart`, `lib/screens/placement_screen.dart`
+
+### 바닥 모드에서 벽 가구 방 안쪽 드래그 가능
+- 기존: 벽 가구가 벽에 고정되어 드래그로 방 안으로 이동 불가
+- 변경: 바닥 모드(벽 하이라이트 없음)에서는 벽 가구도 바닥 드래그(X+Z)로 이동 가능
+- 벽 모드에서는 기존대로 벽면 드래그(X+Y / Z+Y) 유지
+- 수정 파일: `lib/widgets/isometric_room.dart`, `lib/providers/placement_provider.dart`
+
+### 벽 가구 드래그 동작 최종 정리
+- 벽 모드: 벽 가구는 벽-플레인 드래그(X+Y 또는 Z+Y) — Y 이동 가능, 벽 강제 스냅 없음
+- 바닥 모드: 모든 가구 바닥 드래그(X+Z) — 벽 가구도 방 안쪽 이동 가능
+- 방 안쪽 이동: 바닥 모드 드래그 또는 상세조정(fine-tune)
+- 최종: 벽 모드에서는 벽-플레인(X+Y) 드래그만, 방 안쪽 이동은 바닥 모드 또는 상세조정
+- 벽 가구 선택 시 반대벽까지 바닥 점선 가이드 추가 (`lib/widgets/grid_painter.dart`)
+- 가구 크기 수정 비율 유지 기본값 off (`lib/widgets/dimension_dialog.dart`)
+- 벽 가구 복제 시 같은 벽에 붙어서 생성 + 코너 판별 수정 (`lib/providers/placement_provider.dart`)
+- 벽 모드 드래그: wallHighlight 대신 아이템 얇은 차원으로 벽 판별 (`lib/widgets/isometric_room.dart`)
+- 벽 모드 진입 시 '벽을 선택하세요' 안내 팝업 (`lib/widgets/isometric_room.dart`)
+- JSON 가져오기: 예시에 벽 가구(문/창문) 추가 + 도움말 버튼 (`lib/screens/placement_screen.dart`)
+- 수정 파일: `lib/widgets/isometric_room.dart`
+
+### 벽 모드 벽 가구 판별 기준 변경 (위치→얇은 차원)
+- 기존: `position.z < 0.01 && effectiveDepth < 1.0`으로 판별 → 방 안으로 옮겼다 다시 벽에 놓으면 z가 0이 아니라 벽 아이템 인식 실패
+- 변경: 벽 모드에서는 `wallHighlight`(선택된 벽) + `effectiveDepth/Width < 1.0`(얇은 차원)으로 판별
+- 벽 모드 드래그 시 자동 벽 스냅(`z=0` 또는 `x=0`)
+- 수정 파일: `lib/widgets/isometric_room.dart`
+
+### inbox 처리: unity팀 벽면 JSON 형식 문의
+- 질문: 벽 아이템 JSON 가져오기/내보내기 형식
+- 답변: 기존 furniture 배열과 동일한 형식 (벽 아이템 = 얇은 가구)
+  - 뒷벽: position.z=0, size.z < 1.0
+  - 왼벽: position.x=0, size.x < 1.0
+- unity팀에 회신 완료 (`from_place_wall_json_format_reply.md`)

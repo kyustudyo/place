@@ -107,7 +107,7 @@ class _WallViewState extends ConsumerState<WallView> {
                         color: theme.textSecondary.withValues(alpha: 0.2)),
                   ),
                   child: Text(
-                    state.currentWall == WallType.back ? '뒷벽' : '오른벽',
+                    state.currentWall == WallType.back ? '오른벽' : '왼벽',
                     style: TextStyle(
                       color: theme.textPrimary,
                       fontSize: 13,
@@ -490,7 +490,7 @@ class _WallGridPainter extends CustomPainter {
 
     // Wall rectangle
     final wallColor =
-        wall.type == WallType.back ? theme.backWallColor : theme.leftWallColor;
+        wall.type == WallType.back ? theme.rightWallColor : theme.leftWallColor;
     final topLeft = _w2s(0, wall.height);
     final bottomRight = _w2s(wall.width, 0);
     final wallRect = Rect.fromLTRB(

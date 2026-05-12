@@ -1,0 +1,5 @@
+{
+  "codeAssist": {
+    "instructionFiles": ["GEMINI.md", "claude-rules/BEST_PRACTICES.md"]
+  }
+}
