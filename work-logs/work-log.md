@@ -452,6 +452,7 @@
 - 벽 모드 드래그: wallHighlight 대신 아이템 얇은 차원으로 벽 판별 (`lib/widgets/isometric_room.dart`)
 - 벽 모드 진입 시 '벽을 선택하세요' 안내 팝업 (`lib/widgets/isometric_room.dart`)
 - JSON 가져오기: 예시에 벽 가구(문/창문) 추가 + 도움말 버튼 (`lib/screens/placement_screen.dart`)
+- 뒷벽 → 오른벽 명칭 변경 (앱 전체 UI + 코드 식별자)
 - 수정 파일: `lib/widgets/isometric_room.dart`
 
 ### 벽 모드 벽 가구 판별 기준 변경 (위치→얇은 차원)
