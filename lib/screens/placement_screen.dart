@@ -30,14 +30,29 @@ const _jsonExample = '''{
   "furniture": [
     {"id": "sofa", "name": "소파", "size": {"x": 3.0, "y": 0.8, "z": 1.5}, "position": {"x": 1, "y": 0, "z": 6}, "rotation": 0},
     {"id": "table", "name": "테이블", "size": {"x": 2.0, "y": 0.7, "z": 1.0}, "position": {"x": 2, "y": 0, "z": 4}, "rotation": 0},
-    {"id": "desk", "name": "책상", "size": {"x": 1.5, "y": 0.8, "z": 0.8}, "position": {"x": 10, "y": 0, "z": 1}, "rotation": 0},
-    {"id": "chair", "name": "의자", "size": {"x": 0.5, "y": 1.0, "z": 0.5}, "position": {"x": 11, "y": 0, "z": 2}, "rotation": 0},
-    {"id": "bookshelf", "name": "책장", "size": {"x": 1.0, "y": 2.5, "z": 0.4}, "position": {"x": 0, "y": 0, "z": 0}, "rotation": 0},
     {"id": "bed", "name": "침대", "size": {"x": 2.0, "y": 0.5, "z": 3.0}, "position": {"x": 8, "y": 0, "z": 10}, "rotation": 0},
-    {"id": "wardrobe", "name": "옷장", "size": {"x": 1.8, "y": 2.2, "z": 0.6}, "position": {"x": 13, "y": 0, "z": 0}, "rotation": 0},
-    {"id": "lamp", "name": "스탠드", "size": {"x": 0.3, "y": 1.5, "z": 0.3}, "position": {"x": 14, "y": 0, "z": 10}, "rotation": 0}
+    {"id": "door", "name": "문", "size": {"x": 1.5, "y": 2.4, "z": 0.16}, "position": {"x": 5, "y": 0, "z": 0}, "rotation": 0},
+    {"id": "window", "name": "창문", "size": {"x": 0.18, "y": 1.5, "z": 1.2}, "position": {"x": 0, "y": 1.0, "z": 6}, "rotation": 0}
   ]
 }''';
+
+const _jsonHelpText = '''● room (선택) — 방 크기
+  width/depth: 가로/세로(m)
+  height: 천장 높이(m)
+  tileSize: 그리드 칸 크기(m)
+
+● furniture — 사물 목록
+  id: 고유 식별자
+  name: 이름
+  size: {x: 가로, y: 높이, z: 세로}
+  position: {x, y, z} (y=바닥에서 높이)
+  rotation: 0/90/180/270
+
+● 벽 가구 규칙
+  뒷벽: position.z = 0, size.z 얇게 (<1.0)
+  왼벽: position.x = 0, size.x 얇게 (<1.0)
+  예) 문: z=0.16 → 뒷벽에 자동 배치
+  예) 창문: x=0.18 → 왼벽에 자동 배치''';
 
 class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   bool _initialFlowStarted = false;
@@ -255,28 +270,81 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Example button
-              TextButton.icon(
-                onPressed: () {
-                  controller.text = _jsonExample;
-                  controller.selection = TextSelection.collapsed(
-                      offset: controller.text.length);
-                },
-                icon: Icon(Icons.info_outline,
-                    size: 14, color: theme.accent),
-                label: Text(
-                  '예시 채우기',
-                  style: TextStyle(
-                    color: theme.accent,
-                    fontSize: 12,
+              // Example + Help buttons
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      controller.text = _jsonExample;
+                      controller.selection = TextSelection.collapsed(
+                          offset: controller.text.length);
+                    },
+                    icon: Icon(Icons.code,
+                        size: 14, color: theme.accent),
+                    label: Text(
+                      '예시 채우기',
+                      style: TextStyle(
+                        color: theme.accent,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: ctx,
+                        builder: (hCtx) => AlertDialog(
+                          backgroundColor: theme.headerBg,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: Text('JSON 형식 도움말',
+                              style: TextStyle(color: theme.textPrimary, fontSize: 16)),
+                          content: SizedBox(
+                            width: 360,
+                            child: SingleChildScrollView(
+                              child: Text(
+                                _jsonHelpText,
+                                style: TextStyle(
+                                  color: theme.textPrimary.withValues(alpha: 0.85),
+                                  fontSize: 12,
+                                  fontFamily: 'monospace',
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(hCtx),
+                              child: Text('닫기', style: TextStyle(color: theme.accent)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.help_outline,
+                        size: 14, color: theme.textSecondary),
+                    label: Text(
+                      '도움말',
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               SizedBox(
