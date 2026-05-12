@@ -449,15 +449,18 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
   }
 
   void _handleTap(Offset pos, PlacementState state) {
-    // Wall selection mode: when highlight is 'both', intercept wall taps
+    // Wall mode: intercept wall taps for selection/switching
     final wallHighlight = ref.read(wallHighlightProvider);
-    if (wallHighlight == 'both') {
+    if (wallHighlight != null) {
       final wallHit = _wallHitTest(pos);
-      if (wallHit != null) {
+      if (wallHit != null && wallHit != wallHighlight) {
+        // Tapped a different wall → switch to it
         ref.read(wallHighlightProvider.notifier).set(wallHit);
         return;
       }
-      return; // In wall selection mode, ignore non-wall taps
+      if (wallHighlight == 'both') {
+        return; // In initial selection mode, ignore non-wall taps
+      }
     }
 
     final hit = _hitTest(pos, state);

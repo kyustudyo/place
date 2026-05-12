@@ -546,7 +546,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
 
     // Listen for wall tap from IsometricRoom
     ref.listen<String?>(wallHighlightProvider, (prev, next) {
-      if (_currentMode == PlacementMode.wall && prev == 'both' && next != null && next != 'both') {
+      if (_currentMode == PlacementMode.wall && next != null && next != 'both') {
         setState(() {
           _selectedWall = next == 'back' ? SelectedWall.back : SelectedWall.left;
         });
