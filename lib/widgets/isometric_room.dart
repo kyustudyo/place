@@ -104,8 +104,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   },
                 ),
               ),
-              // Name + color edit (top-left, hide in wall mode)
-              if (state.selectedId != null && !_isDragging && wallHighlight == null)
+              // Name + color edit (top-left)
+              if (state.selectedId != null && !_isDragging)
                 Positioned(
                   left: 12,
                   top: 12,
@@ -120,8 +120,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                         .updateFurnitureColor(state.selectedId!, color),
                   ),
                 ),
-              // Size edit button (top-right, hide in wall mode)
-              if (state.selectedId != null && !_isDragging && wallHighlight == null)
+              // Size edit button (top-right)
+              if (state.selectedId != null && !_isDragging)
                 Positioned(
                   right: 12,
                   top: 12,
