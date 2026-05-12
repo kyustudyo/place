@@ -264,6 +264,26 @@ class GridPainter extends CustomPainter {
           IsometricMath.worldToScreen(wx2, 0, 0), floorGuide);
     }
 
+    // Wall items: perpendicular floor lines to opposite wall
+    // Back wall item (z≈0): lines across floor to far edge (z=room.depth)
+    if (z < 0.5 && d < 1.0) {
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(wx1, 0, 0),
+          IsometricMath.worldToScreen(wx1, 0, room.depth), floorGuide);
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(wx2, 0, 0),
+          IsometricMath.worldToScreen(wx2, 0, room.depth), floorGuide);
+    }
+    // Left wall item (x≈0): lines across floor to far edge (x=room.width)
+    if (x < 0.5 && w < 1.0) {
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(0, 0, wz1),
+          IsometricMath.worldToScreen(room.width, 0, wz1), floorGuide);
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(0, 0, wz2),
+          IsometricMath.worldToScreen(room.width, 0, wz2), floorGuide);
+    }
+
     // Floor shadow when elevated (Y > 0)
     if (baseY > 0.01) {
       final shadowPaint = Paint()
