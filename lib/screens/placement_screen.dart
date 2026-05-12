@@ -643,7 +643,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           children: [
             _buildTopBar(state, theme, refImage != null),
             Expanded(
-              child: refImage != null && _currentMode == PlacementMode.floor
+              child: refImage != null
                   ? PageView(
                       controller: _pageController,
                       physics: const NeverScrollableScrollPhysics(),
