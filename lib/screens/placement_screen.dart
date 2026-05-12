@@ -739,7 +739,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
               ),
             ),
           ],
-          if (!isWallMode && hasRefImage) ...[
+          if (hasRefImage) ...[
             const SizedBox(width: 6),
             _RefImageBtn(
               active: _showingReference,
