@@ -212,13 +212,11 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   void _switchMode(PlacementMode mode) {
-    // Return from reference image if showing
-    if (_showingReference) {
-      _pageController.animateToPage(0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut);
-    }
     if (_currentMode == mode && !_showingReference) return;
+    // Return from reference image if showing
+    if (_showingReference && _pageController.hasClients) {
+      _pageController.jumpToPage(0);
+    }
     setState(() {
       _currentMode = mode;
       _showingReference = false;
