@@ -291,6 +291,14 @@ class PlacementNotifier extends Notifier<PlacementState> {
     state = state.copyWith(selectedId: id, clearSelected: id == null);
   }
 
+  /// Check if furniture is attached to back wall (z=0, thin depth)
+  static bool _isOnBackWall(Furniture f) =>
+      f.position.z < 0.01 && f.effectiveDepth < 0.2;
+
+  /// Check if furniture is attached to left wall (x=0, thin width)
+  static bool _isOnLeftWall(Furniture f) =>
+      f.position.x < 0.01 && f.effectiveWidth < 0.2;
+
   /// Move furniture with Y — for wall items dragged along wall
   void placeFurnitureXYZ(String id, double x, double y, double z) {
     final tileSize = state.room.tileSize;
@@ -303,21 +311,16 @@ class PlacementNotifier extends Notifier<PlacementState> {
     final room = state.room;
     final updated = state.furniture.map((f) {
       if (f.id == id) {
-        final isOnBackWall = f.position.z < 0.01 && f.size.z < 0.2;
-        final isOnLeftWall = f.position.x < 0.01 && f.size.x < 0.2;
-
         double finalX = clampedX;
         double finalY = clampedY;
         double finalZ = clampedZ;
 
-        if (isOnBackWall) {
+        if (_isOnBackWall(f)) {
           finalZ = 0.0;
-          // Clamp within back wall bounds
           finalX = finalX.clamp(0.0, room.width - f.effectiveWidth);
           finalY = finalY.clamp(0.0, room.height - f.size.y);
-        } else if (isOnLeftWall) {
+        } else if (_isOnLeftWall(f)) {
           finalX = 0.0;
-          // Clamp within left wall bounds
           finalZ = finalZ.clamp(0.0, room.depth - f.effectiveDepth);
           finalY = finalY.clamp(0.0, room.height - f.size.y);
         }
@@ -344,12 +347,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
     final updated = state.furniture.map((f) {
       if (f.id == id) {
-        // Wall-attached items: keep on wall during drag
-        final isOnBackWall = f.position.z < 0.01 && f.size.z < 0.2;
-        final isOnLeftWall = f.position.x < 0.01 && f.size.x < 0.2;
-
-        final finalX = isOnLeftWall ? 0.0 : clampedX;
-        final finalZ = isOnBackWall ? 0.0 : clampedZ;
+        final finalX = _isOnLeftWall(f) ? 0.0 : clampedX;
+        final finalZ = _isOnBackWall(f) ? 0.0 : clampedZ;
 
         return f.copyWith(
           position: Vec3(x: finalX, y: f.position.y, z: finalZ),
@@ -438,7 +437,29 @@ class PlacementNotifier extends Notifier<PlacementState> {
     _saveUndo();
     final updated = state.furniture.map((f) {
       if (f.id == id) {
-        return f.copyWith(rotation: (f.rotation + 90) % 360);
+        final wasOnBackWall = _isOnBackWall(f);
+        final wasOnLeftWall = _isOnLeftWall(f);
+
+        var rotated = f.copyWith(rotation: (f.rotation + 90) % 360);
+
+        // After rotation, check if wall attachment changed
+        if (wasOnBackWall || wasOnLeftWall) {
+          final nowThinW = rotated.effectiveWidth < 0.2;
+          final nowThinD = rotated.effectiveDepth < 0.2;
+
+          if (nowThinD && !nowThinW) {
+            // Now thin depth → snap to back wall (z=0)
+            rotated = rotated.copyWith(
+              position: Vec3(x: rotated.position.x, y: rotated.position.y, z: 0.0),
+            );
+          } else if (nowThinW && !nowThinD) {
+            // Now thin width → snap to left wall (x=0)
+            rotated = rotated.copyWith(
+              position: Vec3(x: 0.0, y: rotated.position.y, z: rotated.position.z),
+            );
+          }
+        }
+        return rotated;
       }
       return f;
     }).toList();
