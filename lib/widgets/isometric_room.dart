@@ -86,7 +86,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
               // Loupe while dragging
               if (_isDragging && _dragScreenPos != null)
                 _buildLoupe(state, theme, constraints),
-              // Zoom toggle button
+              // Zoom toggle button (hide in wall mode)
+              if (wallHighlight == null)
               Positioned(
                 right: 12,
                 bottom: 12,
@@ -103,8 +104,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   },
                 ),
               ),
-              // Name + color edit (top-left)
-              if (state.selectedId != null && !_isDragging)
+              // Name + color edit (top-left, hide in wall mode)
+              if (state.selectedId != null && !_isDragging && wallHighlight == null)
                 Positioned(
                   left: 12,
                   top: 12,
@@ -119,8 +120,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                         .updateFurnitureColor(state.selectedId!, color),
                   ),
                 ),
-              // Size edit button (top-right)
-              if (state.selectedId != null && !_isDragging)
+              // Size edit button (top-right, hide in wall mode)
+              if (state.selectedId != null && !_isDragging && wallHighlight == null)
                 Positioned(
                   right: 12,
                   top: 12,
@@ -184,8 +185,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     },
                   ),
                 ),
-              // Delete button when item selected
-              if (state.selectedId != null && !_isDragging)
+              // Delete button (hide in wall mode)
+              if (state.selectedId != null && !_isDragging && wallHighlight == null)
                 Positioned(
                   right: 12,
                   bottom: 62,
@@ -215,8 +216,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     ),
                   ),
                 ),
-              // Undo/Redo — fixed position, always visible when history exists
-              if (!_isDragging &&
+              // Undo/Redo (hide in wall mode)
+              if (!_isDragging && wallHighlight == null &&
                   (ref.read(placementProvider.notifier).canUndo ||
                       ref.read(placementProvider.notifier).canRedo))
                 Positioned(
