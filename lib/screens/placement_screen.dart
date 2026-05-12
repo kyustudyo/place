@@ -772,7 +772,8 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                           ? () => _showWallDimensionDialog()
                           : () => _showDimensionDialog(),
                       theme: theme,
-                      highlight: !isWallMode && state.furniture.isEmpty,
+                      highlight: (!isWallMode && state.furniture.isEmpty) ||
+                          (isWallMode && _selectedWall != SelectedWall.none),
                     ),
                     const SizedBox(width: 6),
                     if (state.furniture.isNotEmpty) ...[
