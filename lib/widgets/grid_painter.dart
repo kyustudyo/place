@@ -184,18 +184,14 @@ class GridPainter extends CustomPainter {
     final wx1 = x.clamp(0.0, room.width);
     final wx2 = (x + w).clamp(0.0, room.width);
 
-    // Detect wall-attached items: thin dimension + flush with wall
-    final isOnBackWall = z < 0.01 && d < 0.2;   // z=0, thin depth
-    final isOnLeftWall = x < 0.01 && w < 0.2;    // x=0, thin width
-
     // Soft horizontal lines only (no vertical Y-axis lines)
     final softPaint = Paint()
       ..color = guideColor.withValues(alpha: (1.0 * guideOpacity).clamp(0.0, 1.0))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
-    // Left wall (x=0): skip if item is on back wall (thin cross-section)
-    if (wz2 > wz1 && !isOnBackWall) {
+    // Left wall (x=0)
+    if (wz2 > wz1) {
       // Fill from baseY to top (follows item's actual height)
       final leftRect = Path()
         ..moveTo(IsometricMath.worldToScreen(0, baseY, wz1).dx,
@@ -219,8 +215,8 @@ class GridPainter extends CustomPainter {
           IsometricMath.worldToScreen(0, h, wz2), softPaint);
     }
 
-    // Back wall (z=0): skip if item is on left wall (thin cross-section)
-    if (wx2 > wx1 && !isOnLeftWall) {
+    // Back wall (z=0)
+    if (wx2 > wx1) {
       final backRect = Path()
         ..moveTo(IsometricMath.worldToScreen(wx1, baseY, 0).dx,
             IsometricMath.worldToScreen(wx1, baseY, 0).dy)
@@ -247,31 +243,29 @@ class GridPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    // Floor projection lines (skip for wall-attached items)
-    if (!isOnBackWall && !isOnLeftWall) {
-      // Item → left wall (clamped to map range)
-      if (x > 0) {
-        _drawDashedLine(canvas,
-            IsometricMath.worldToScreen(x.clamp(0.0, room.width), 0, wz1),
-            IsometricMath.worldToScreen(0, 0, wz1), floorGuide);
-        _drawDashedLine(canvas,
-            IsometricMath.worldToScreen(x.clamp(0.0, room.width), 0, wz2),
-            IsometricMath.worldToScreen(0, 0, wz2), floorGuide);
-      }
-
-      // Item → back wall (clamped to map range)
-      if (z > 0) {
-        _drawDashedLine(canvas,
-            IsometricMath.worldToScreen(wx1, 0, z.clamp(0.0, room.depth)),
-            IsometricMath.worldToScreen(wx1, 0, 0), floorGuide);
-        _drawDashedLine(canvas,
-            IsometricMath.worldToScreen(wx2, 0, z.clamp(0.0, room.depth)),
-            IsometricMath.worldToScreen(wx2, 0, 0), floorGuide);
-      }
+    // Floor projection lines
+    // Item → left wall (clamped to map range)
+    if (x > 0) {
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(x.clamp(0.0, room.width), 0, wz1),
+          IsometricMath.worldToScreen(0, 0, wz1), floorGuide);
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(x.clamp(0.0, room.width), 0, wz2),
+          IsometricMath.worldToScreen(0, 0, wz2), floorGuide);
     }
 
-    // Floor shadow when elevated (Y > 0) — skip for wall-attached items
-    if (baseY > 0.01 && !isOnBackWall && !isOnLeftWall) {
+    // Item → back wall (clamped to map range)
+    if (z > 0) {
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(wx1, 0, z.clamp(0.0, room.depth)),
+          IsometricMath.worldToScreen(wx1, 0, 0), floorGuide);
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(wx2, 0, z.clamp(0.0, room.depth)),
+          IsometricMath.worldToScreen(wx2, 0, 0), floorGuide);
+    }
+
+    // Floor shadow when elevated (Y > 0)
+    if (baseY > 0.01) {
       final shadowPaint = Paint()
         ..color = guideColor.withValues(alpha: (0.8 * guideOpacity).clamp(0.0, 1.0))
         ..style = PaintingStyle.stroke
