@@ -471,6 +471,16 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
       if (state.selectedId == hit.id) {
         // Tap already-selected item → rotate
         notifier.rotateFurniture(hit.id);
+        // Update wall highlight after rotation
+        if (wallHighlight != null) {
+          final rotated = ref.read(placementProvider).furniture
+              .firstWhere((f) => f.id == hit.id);
+          if (rotated.position.z < 0.01 && rotated.effectiveDepth < 1.0) {
+            ref.read(wallHighlightProvider.notifier).set('back');
+          } else if (rotated.position.x < 0.01 && rotated.effectiveWidth < 1.0) {
+            ref.read(wallHighlightProvider.notifier).set('left');
+          }
+        }
       } else {
         notifier.selectFurniture(hit.id);
       }
