@@ -567,15 +567,23 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     double nextY = item.position.y;
 
     if (isWallMode && wallHighlight == 'back' && item.effectiveDepth < 1.0) {
-      // Wall mode + back wall item: drag along X and Y (no forced Z snap)
+      // Wall mode + back wall: X+Y from wall-plane, Z from floor-plane (corrected)
       final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
       nextX = item.position.x + wallDelta.dx;
       nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
+      final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
+      final currWorld = IsometricMath.screenToWorld(pos);
+      final floorDz = currWorld.dy - prevWorld.dy;
+      nextZ = item.position.z + floorDz + wallDelta.dx / 2;
     } else if (isWallMode && wallHighlight == 'left' && item.effectiveWidth < 1.0) {
-      // Wall mode + left wall item: drag along Z and Y (no forced X snap)
+      // Wall mode + left wall: Z+Y from wall-plane, X from floor-plane (corrected)
       final wallDelta = IsometricMath.screenDeltaToLeftWall(screenDelta);
       nextZ = item.position.z + wallDelta.dx;
       nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
+      final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
+      final currWorld = IsometricMath.screenToWorld(pos);
+      final floorDx = currWorld.dx - prevWorld.dx;
+      nextX = item.position.x + floorDx + wallDelta.dx / 2;
     } else {
       // Floor drag (X+Z) — works for floor items and wall items in floor mode
       final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
