@@ -203,7 +203,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       _showingReference = false;
       if (mode == PlacementMode.wall) {
         _selectedWall = SelectedWall.none;
-        // Highlight both walls
+        ref.read(placementProvider.notifier).selectFurniture(null);
         ref.read(wallHighlightProvider.notifier).set('both');
       } else {
         _selectedWall = SelectedWall.none;
