@@ -86,6 +86,30 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
               // Loupe while dragging
               if (_isDragging && _dragScreenPos != null)
                 _buildLoupe(state, theme, constraints),
+              // "벽을 선택하세요" prompt when both walls highlighted
+              if (wallHighlight == 'both')
+                Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        '벽을 선택하세요',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               // Zoom toggle button (hide in wall mode)
               if (wallHighlight == null)
               Positioned(
