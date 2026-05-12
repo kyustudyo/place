@@ -163,8 +163,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     ),
                   ),
                 ),
-              // Fine-tune controls when item selected
-              if (state.selectedId != null && !_isDragging)
+              // Fine-tune controls when item selected (hide in wall mode)
+              if (state.selectedId != null && !_isDragging && wallHighlight == null)
                 Positioned(
                   left: 12,
                   bottom: 12,
