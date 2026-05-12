@@ -558,33 +558,13 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     }
 
     final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
-    final screenDelta = pos - _lastDragScreen!;
-    final wallHighlight = ref.read(wallHighlightProvider);
-    final isWallMode = wallHighlight != null && wallHighlight != 'both';
 
-    double nextX = item.position.x;
-    double nextZ = item.position.z;
-    double nextY = item.position.y;
-
-    if (isWallMode && wallHighlight == 'back' && item.effectiveDepth < 1.0) {
-      // Wall mode + back wall: drag along X and Y, snap to wall
-      final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
-      nextX = item.position.x + wallDelta.dx;
-      nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
-      nextZ = 0.0;
-    } else if (isWallMode && wallHighlight == 'left' && item.effectiveWidth < 1.0) {
-      // Wall mode + left wall: drag along Z and Y, snap to wall
-      final wallDelta = IsometricMath.screenDeltaToLeftWall(screenDelta);
-      nextZ = item.position.z + wallDelta.dx;
-      nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
-      nextX = 0.0;
-    } else {
-      // Floor mode (or floor item): drag along X and Z
-      final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
-      final currWorld = IsometricMath.screenToWorld(pos);
-      nextX = item.position.x + (currWorld.dx - prevWorld.dx);
-      nextZ = item.position.z + (currWorld.dy - prevWorld.dy);
-    }
+    // All items use floor-plane drag (X+Z) — wall items can be pulled into room
+    final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
+    final currWorld = IsometricMath.screenToWorld(pos);
+    final nextX = item.position.x + (currWorld.dx - prevWorld.dx);
+    final nextZ = item.position.z + (currWorld.dy - prevWorld.dy);
+    final nextY = item.position.y;
 
     ref.read(placementProvider.notifier).placeFurnitureXYZ(
           state.selectedId!,
