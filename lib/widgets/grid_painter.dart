@@ -358,14 +358,16 @@ class GridPainter extends CustomPainter {
     final zRight = axisMapping.flipLD ? '−' : '+';
 
     // X axis: outer edge (z=depth side, bottom-right of floor)
-    final xAngle = atan2(IsometricMath.sinA, IsometricMath.cosA);
+    final xAngleRaw = atan2(IsometricMath.sinA, IsometricMath.cosA);
+    final xAngle = _readableAngle(xAngleRaw);
     final xMid = IsometricMath.worldToScreen(
         room.width * 0.5, 0, room.depth);
     _drawRotatedLabel(
         canvas, '$xLeft $xLabel $xRight', xMid + const Offset(0, 14), xAngle, theme.accent);
 
     // Z axis: outer edge (x=width side, bottom-left of floor)
-    final zAngle = atan2(IsometricMath.sinA, -IsometricMath.cosA);
+    final zAngleRaw = atan2(IsometricMath.sinA, -IsometricMath.cosA);
+    final zAngle = _readableAngle(zAngleRaw);
     final zMid = IsometricMath.worldToScreen(
         room.width, 0, room.depth * 0.5);
     _drawRotatedLabel(
@@ -381,6 +383,13 @@ class GridPainter extends CustomPainter {
     _drawFlatLabel(canvas, upLabel, Offset(yTop.dx - 16, yMidY), theme.textSecondary);
     _drawFlatLabel(canvas, upPlus, Offset(yTop.dx - 16, yMidY - 14), theme.textSecondary.withValues(alpha: 0.5));
     _drawFlatLabel(canvas, upMinus, Offset(yTop.dx - 16, yMidY + 14), theme.textSecondary.withValues(alpha: 0.5));
+  }
+
+  /// Normalize angle so text is always readable (not upside down)
+  double _readableAngle(double angle) {
+    if (angle > pi / 2) return angle - pi;
+    if (angle < -pi / 2) return angle + pi;
+    return angle;
   }
 
   void _drawRotatedLabel(
