@@ -212,7 +212,13 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   }
 
   void _switchMode(PlacementMode mode) {
-    if (_currentMode == mode) return;
+    // Return from reference image if showing
+    if (_showingReference) {
+      _pageController.animateToPage(0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut);
+    }
+    if (_currentMode == mode && !_showingReference) return;
     setState(() {
       _currentMode = mode;
       _showingReference = false;
@@ -693,14 +699,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             label: '바닥',
             active: _currentMode == PlacementMode.floor && !_showingReference,
             theme: theme,
-            onTap: () {
-              _switchMode(PlacementMode.floor);
-              if (_showingReference) {
-                _pageController.animateToPage(0,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut);
-              }
-            },
+            onTap: () => _switchMode(PlacementMode.floor),
           ),
           const SizedBox(width: 6),
           _ModeTab(
