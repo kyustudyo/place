@@ -315,11 +315,13 @@ class PlacementNotifier extends Notifier<PlacementState> {
         double finalY = clampedY;
         double finalZ = clampedZ;
 
-        if (_isOnBackWall(f)) {
+        // Wall clamping only when item stays on wall (z≈0 or x≈0)
+        // If moved away from wall, treat as floor item
+        if (_isOnBackWall(f) && finalZ < 0.01) {
           finalZ = 0.0;
           finalX = finalX.clamp(0.0, room.width - f.effectiveWidth);
           finalY = finalY.clamp(0.0, room.height - f.size.y);
-        } else if (_isOnLeftWall(f)) {
+        } else if (_isOnLeftWall(f) && finalX < 0.01) {
           finalX = 0.0;
           finalZ = finalZ.clamp(0.0, room.depth - f.effectiveDepth);
           finalY = finalY.clamp(0.0, room.height - f.size.y);
@@ -347,8 +349,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
     final updated = state.furniture.map((f) {
       if (f.id == id) {
-        final finalX = _isOnLeftWall(f) ? 0.0 : clampedX;
-        final finalZ = _isOnBackWall(f) ? 0.0 : clampedZ;
+        final finalX = clampedX;
+        final finalZ = clampedZ;
 
         return f.copyWith(
           position: Vec3(x: finalX, y: f.position.y, z: finalZ),

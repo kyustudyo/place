@@ -559,6 +559,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
 
     final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
     final screenDelta = pos - _lastDragScreen!;
+    final wallHighlight = ref.read(wallHighlightProvider);
+    final isWallMode = wallHighlight != null && wallHighlight != 'both';
     final isOnBackWall = item.position.z < 0.01 && item.effectiveDepth < 1.0;
     final isOnLeftWall = item.position.x < 0.01 && item.effectiveWidth < 1.0;
 
@@ -566,18 +568,18 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
     double nextZ = item.position.z;
     double nextY = item.position.y;
 
-    if (isOnBackWall) {
-      // Back wall: drag along X and Y
+    if (isWallMode && isOnBackWall) {
+      // Wall mode + back wall: drag along X and Y
       final wallDelta = IsometricMath.screenDeltaToBackWall(screenDelta);
       nextX = item.position.x + wallDelta.dx;
       nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
-    } else if (isOnLeftWall) {
-      // Left wall: drag along Z and Y
+    } else if (isWallMode && isOnLeftWall) {
+      // Wall mode + left wall: drag along Z and Y
       final wallDelta = IsometricMath.screenDeltaToLeftWall(screenDelta);
       nextZ = item.position.z + wallDelta.dx;
       nextY = (item.position.y + wallDelta.dy).clamp(0.0, 100.0);
     } else {
-      // Floor item: drag along X and Z
+      // Floor mode (or floor item): drag along X and Z
       final prevWorld = IsometricMath.screenToWorld(_lastDragScreen!);
       final currWorld = IsometricMath.screenToWorld(pos);
       nextX = item.position.x + (currWorld.dx - prevWorld.dx);
