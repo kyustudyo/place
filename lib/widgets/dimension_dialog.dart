@@ -346,7 +346,7 @@ class _DimensionDialogState extends State<DimensionDialog> {
   late final TextEditingController _xCtrl;
   late final TextEditingController _yCtrl;
   late final TextEditingController _zCtrl;
-  bool _keepRatio = true;
+  bool _keepRatio = false;
   bool _updatingRatio = false;
 
   // Original values for ratio calculation
