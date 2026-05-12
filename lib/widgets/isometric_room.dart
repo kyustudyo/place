@@ -549,8 +549,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
 
     final item = state.furniture.firstWhere((f) => f.id == state.selectedId);
     final screenDelta = pos - _lastDragScreen!;
-    final isOnBackWall = item.position.z < 0.01 && item.effectiveDepth < 0.2;
-    final isOnLeftWall = item.position.x < 0.01 && item.effectiveWidth < 0.2;
+    final isOnBackWall = item.position.z < 0.01 && item.effectiveDepth < 1.0;
+    final isOnLeftWall = item.position.x < 0.01 && item.effectiveWidth < 1.0;
 
     double nextX = item.position.x;
     double nextZ = item.position.z;

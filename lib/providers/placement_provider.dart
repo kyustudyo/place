@@ -293,11 +293,11 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
   /// Check if furniture is attached to back wall (z=0, thin depth)
   static bool _isOnBackWall(Furniture f) =>
-      f.position.z < 0.01 && f.effectiveDepth < 0.2;
+      f.position.z < 0.01 && f.effectiveDepth < 1.0;
 
   /// Check if furniture is attached to left wall (x=0, thin width)
   static bool _isOnLeftWall(Furniture f) =>
-      f.position.x < 0.01 && f.effectiveWidth < 0.2;
+      f.position.x < 0.01 && f.effectiveWidth < 1.0;
 
   /// Move furniture with Y — for wall items dragged along wall
   void placeFurnitureXYZ(String id, double x, double y, double z) {
@@ -444,8 +444,8 @@ class PlacementNotifier extends Notifier<PlacementState> {
 
         // After rotation, check if wall attachment changed
         if (wasOnBackWall || wasOnLeftWall) {
-          final nowThinW = rotated.effectiveWidth < 0.2;
-          final nowThinD = rotated.effectiveDepth < 0.2;
+          final nowThinW = rotated.effectiveWidth < 1.0;
+          final nowThinD = rotated.effectiveDepth < 1.0;
 
           if (nowThinD && !nowThinW) {
             // Now thin depth → snap to back wall (z=0)
