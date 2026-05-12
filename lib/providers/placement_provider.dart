@@ -494,11 +494,11 @@ class PlacementNotifier extends Notifier<PlacementState> {
     // Offset position by 1 tile, keeping wall items on their wall
     final tile = state.room.tileSize;
     final Vec3 copyPos;
-    if (_isOnBackWall(source)) {
-      // Back wall: offset along X only, keep z=0
+    if (source.position.z < 0.01) {
+      // On/near back wall: offset along X only, keep z=0
       copyPos = Vec3(x: source.position.x + tile, y: source.position.y, z: 0.0);
-    } else if (_isOnLeftWall(source)) {
-      // Left wall: offset along Z only, keep x=0
+    } else if (source.position.x < 0.01) {
+      // On/near left wall: offset along Z only, keep x=0
       copyPos = Vec3(x: 0.0, y: source.position.y, z: source.position.z + tile);
     } else {
       copyPos = Vec3(
