@@ -185,8 +185,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     },
                   ),
                 ),
-              // Delete button (hide in wall mode)
-              if (state.selectedId != null && !_isDragging && wallHighlight == null)
+              // Delete button
+              if (state.selectedId != null && !_isDragging)
                 Positioned(
                   right: 12,
                   bottom: 62,
@@ -216,8 +216,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     ),
                   ),
                 ),
-              // Undo/Redo (hide in wall mode)
-              if (!_isDragging && wallHighlight == null &&
+              // Undo/Redo
+              if (!_isDragging &&
                   (ref.read(placementProvider.notifier).canUndo ||
                       ref.read(placementProvider.notifier).canRedo))
                 Positioned(
