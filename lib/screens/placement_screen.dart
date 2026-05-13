@@ -60,6 +60,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
   String? _currentRoomName;
   PlacementMode _currentMode = PlacementMode.floor;
   SelectedWall _selectedWall = SelectedWall.none;
+  SelectedWall _lastSelectedWall = SelectedWall.none;
   final PageController _pageController = PageController();
 
   @override
@@ -221,9 +222,15 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       _currentMode = mode;
       _showingReference = false;
       if (mode == PlacementMode.wall) {
-        _selectedWall = SelectedWall.none;
         ref.read(placementProvider.notifier).selectFurniture(null);
-        ref.read(wallHighlightProvider.notifier).set('both');
+        if (_lastSelectedWall != SelectedWall.none) {
+          _selectedWall = _lastSelectedWall;
+          ref.read(wallHighlightProvider.notifier).set(
+              _lastSelectedWall == SelectedWall.right ? 'right' : 'left');
+        } else {
+          _selectedWall = SelectedWall.none;
+          ref.read(wallHighlightProvider.notifier).set('both');
+        }
       } else {
         _selectedWall = SelectedWall.none;
         ref.read(wallHighlightProvider.notifier).set(null);
@@ -621,6 +628,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
       if (_currentMode == PlacementMode.wall && next != null && next != 'both') {
         setState(() {
           _selectedWall = next == 'right' ? SelectedWall.right : SelectedWall.left;
+          _lastSelectedWall = _selectedWall;
         });
       }
     });
@@ -715,7 +723,10 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                 final other = _selectedWall == SelectedWall.right
                     ? SelectedWall.left
                     : SelectedWall.right;
-                setState(() => _selectedWall = other);
+                setState(() {
+                  _selectedWall = other;
+                  _lastSelectedWall = other;
+                });
                 ref.read(wallHighlightProvider.notifier).set(
                     other == SelectedWall.right ? 'right' : 'left');
               },
