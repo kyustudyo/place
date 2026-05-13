@@ -2254,15 +2254,20 @@ class _SaveDialogState extends State<_SaveDialog> {
     final hasExisting = widget.existingName != null;
     final editable = !hasExisting || _newName;
 
-    return Dialog(
-      backgroundColor: t.headerBg,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 14),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ) + const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      child: Dialog(
+        backgroundColor: t.headerBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('파일 저장', style: TextStyle(color: t.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
@@ -2358,6 +2363,7 @@ class _SaveDialogState extends State<_SaveDialog> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
