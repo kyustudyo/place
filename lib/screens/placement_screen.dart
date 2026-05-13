@@ -714,39 +714,6 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             theme: theme,
             onTap: () => _switchMode(PlacementMode.wall),
           ),
-          // Show which wall is selected — tap to go back to wall selection
-          if (isWallMode && wallSelected) ...[
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () {
-                // Toggle to the other wall
-                final other = _selectedWall == SelectedWall.right
-                    ? SelectedWall.left
-                    : SelectedWall.right;
-                setState(() {
-                  _selectedWall = other;
-                  _lastSelectedWall = other;
-                });
-                ref.read(wallHighlightProvider.notifier).set(
-                    other == SelectedWall.right ? 'right' : 'left');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE74C3C),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  _selectedWall == SelectedWall.right ? '오른벽' : '왼벽',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
           if (hasRefImage) ...[
             const SizedBox(width: 6),
             _RefImageBtn(
