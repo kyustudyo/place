@@ -281,32 +281,9 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Example + Help buttons
+              // Help + Example buttons
               Row(
                 children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      controller.text = _jsonExample;
-                      controller.selection = TextSelection.collapsed(
-                          offset: controller.text.length);
-                    },
-                    icon: Icon(Icons.code,
-                        size: 14, color: theme.accent),
-                    label: Text(
-                      '예시 채우기',
-                      style: TextStyle(
-                        color: theme.accent,
-                        fontSize: 12,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () {
                       showDialog(
@@ -355,12 +332,36 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () {
+                      controller.text = _jsonExample;
+                      controller.selection = TextSelection.collapsed(
+                          offset: controller.text.length);
+                    },
+                    icon: Icon(Icons.code,
+                        size: 14, color: theme.accent),
+                    label: Text(
+                      '예시 채우기',
+                      style: TextStyle(
+                        color: theme.accent,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 260,
-                child: TextField(
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 260),
+                  child: TextField(
                   controller: controller,
                   autofocus: true,
                   maxLines: null,
@@ -382,6 +383,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
                     ),
                   ),
                 ),
+              ),
               ),
             ],
           ),
