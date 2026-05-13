@@ -110,8 +110,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                     ),
                   ),
                 ),
-              // Zoom toggle button (hide in wall mode)
-              if (wallHighlight == null)
+              // Zoom toggle button
+              if (wallHighlight != 'both')
               Positioned(
                 right: 12,
                 bottom: 12,
