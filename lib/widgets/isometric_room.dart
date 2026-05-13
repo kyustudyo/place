@@ -514,8 +514,8 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
           _zoomFocus = _itemCenter(hit);
         });
       }
-    } else if (state.selectedId != null) {
-      // Tap empty space with item selected → move item there (only if inside map)
+    } else if (state.selectedId != null && wallHighlight == null) {
+      // Tap empty space with item selected → move item there (floor mode only)
       final worldPos = IsometricMath.screenToWorld(pos);
       final room = state.room;
       if (worldPos.dx >= 0 &&
