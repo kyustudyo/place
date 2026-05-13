@@ -196,6 +196,7 @@ class _IsometricRoomState extends ConsumerState<IsometricRoom> {
                   child: _FineTunePanel(
                     item: state.selectedFurniture!,
                     theme: theme,
+                    axisMapping: axisMapping,
                     onNudge: (dx, dy, dz) {
                       final notifier =
                           ref.read(placementProvider.notifier);
@@ -931,11 +932,13 @@ class _ItemInfoPanelState extends State<_ItemInfoPanel> {
 class _FineTunePanel extends StatelessWidget {
   final Furniture item;
   final AppTheme theme;
+  final AxisMapping axisMapping;
   final void Function(double dx, double dy, double dz) onNudge;
 
   const _FineTunePanel({
     required this.item,
     required this.theme,
+    required this.axisMapping,
     required this.onNudge,
   });
 
@@ -979,20 +982,26 @@ class _FineTunePanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          // All controls in one column
-          // X row
-          _buildAxisRow('X', theme.accent,
-              () => onNudge(-0.1, 0, 0), () => onNudge(0.1, 0, 0),
+          // All controls in one column — respect axis flip
+          // X row (rightDown axis)
+          _buildAxisRow(
+              AxisMapping.axisName(axisMapping.rightDown), theme.accent,
+              () => onNudge(axisMapping.flipRD ? 0.1 : -0.1, 0, 0),
+              () => onNudge(axisMapping.flipRD ? -0.1 : 0.1, 0, 0),
               item.position.x),
           const SizedBox(height: 6),
-          // Z row
-          _buildAxisRow('Z', theme.accentSecondary,
-              () => onNudge(0, 0, -0.1), () => onNudge(0, 0, 0.1),
+          // Z row (leftDown axis)
+          _buildAxisRow(
+              AxisMapping.axisName(axisMapping.leftDown), theme.accentSecondary,
+              () => onNudge(0, 0, axisMapping.flipLD ? 0.1 : -0.1),
+              () => onNudge(0, 0, axisMapping.flipLD ? -0.1 : 0.1),
               item.position.z),
           const SizedBox(height: 6),
-          // Y row
-          _buildAxisRow('Y', theme.textSecondary,
-              () => onNudge(0, -0.1, 0), () => onNudge(0, 0.1, 0),
+          // Y row (up axis)
+          _buildAxisRow(
+              AxisMapping.axisName(axisMapping.up), theme.textSecondary,
+              () => onNudge(0, axisMapping.flipUp ? 0.1 : -0.1, 0),
+              () => onNudge(0, axisMapping.flipUp ? -0.1 : 0.1, 0),
               item.position.y),
         ],
       ),

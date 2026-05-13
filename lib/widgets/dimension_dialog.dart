@@ -185,7 +185,7 @@ class _RoomSizeDialogState extends State<RoomSizeDialog> {
             ),
             const SizedBox(height: 8),
             Text(
-              '배치할 공간의 크기를 입력하세요.\n기본값은 15 × 15 (타일 1) 입니다.',
+              '배치할 공간의 크기를 입력하세요.',
               style: TextStyle(
                 color: t.textSecondary,
                 fontSize: 13,
