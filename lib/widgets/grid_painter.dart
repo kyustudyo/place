@@ -394,23 +394,25 @@ class GridPainter extends CustomPainter {
   void _drawAxisLabels(Canvas canvas) {
     final xLabel = AxisMapping.axisName(axisMapping.rightDown);
     final zLabel = AxisMapping.axisName(axisMapping.leftDown);
-    // Flip: swap + and − signs
-    final xLeft = axisMapping.flipRD ? '+' : '−';
-    final xRight = axisMapping.flipRD ? '−' : '+';
-    final zLeft = axisMapping.flipLD ? '+' : '−';
-    final zRight = axisMapping.flipLD ? '−' : '+';
 
-    // X axis: outer edge (z=depth side, bottom-right of floor)
+    // X axis: outer edge (z=depth side)
     final xAngleRaw = atan2(IsometricMath.sinA, IsometricMath.cosA);
+    final xFlipped = xAngleRaw.abs() > pi / 2;
     final xAngle = _readableAngle(xAngleRaw);
+    // When _readableAngle reverses text direction, swap left/right signs
+    final xLeft = (axisMapping.flipRD ^ xFlipped) ? '+' : '−';
+    final xRight = (axisMapping.flipRD ^ xFlipped) ? '−' : '+';
     final xMid = IsometricMath.worldToScreen(
         room.width * 0.5, 0, room.depth);
     _drawRotatedLabel(
         canvas, '$xLeft $xLabel $xRight', xMid + const Offset(0, 14), xAngle, theme.accent);
 
-    // Z axis: outer edge (x=width side, bottom-left of floor)
+    // Z axis: outer edge (x=width side)
     final zAngleRaw = atan2(IsometricMath.sinA, -IsometricMath.cosA);
+    final zFlipped = zAngleRaw.abs() > pi / 2;
     final zAngle = _readableAngle(zAngleRaw);
+    final zLeft = (axisMapping.flipLD ^ zFlipped) ? '+' : '−';
+    final zRight = (axisMapping.flipLD ^ zFlipped) ? '−' : '+';
     final zMid = IsometricMath.worldToScreen(
         room.width, 0, room.depth * 0.5);
     _drawRotatedLabel(
