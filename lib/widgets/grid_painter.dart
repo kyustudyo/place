@@ -162,6 +162,49 @@ class GridPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5)
         : wallBorderPaint);
+
+    // Wall grid lines (dashed)
+    _drawWallGrid(canvas);
+  }
+
+  void _drawWallGrid(Canvas canvas) {
+    final gridPaint = Paint()
+      ..color = theme.gridColor.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+
+    final ts = room.tileSize;
+    final yCount = (room.height / ts).round();
+
+    // Left wall (x=0): horizontal Y lines + vertical Z lines
+    final zCount = (room.depth / ts).round();
+    for (int i = 1; i < yCount; i++) {
+      final y = i * ts;
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(0, y, 0),
+          IsometricMath.worldToScreen(0, y, room.depth), gridPaint);
+    }
+    for (int i = 1; i < zCount; i++) {
+      final z = i * ts;
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(0, 0, z),
+          IsometricMath.worldToScreen(0, room.height, z), gridPaint);
+    }
+
+    // Right wall (z=0): horizontal Y lines + vertical X lines
+    final xCount = (room.width / ts).round();
+    for (int i = 1; i < yCount; i++) {
+      final y = i * ts;
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(0, y, 0),
+          IsometricMath.worldToScreen(room.width, y, 0), gridPaint);
+    }
+    for (int i = 1; i < xCount; i++) {
+      final x = i * ts;
+      _drawDashedLine(canvas,
+          IsometricMath.worldToScreen(x, 0, 0),
+          IsometricMath.worldToScreen(x, room.height, 0), gridPaint);
+    }
   }
 
   /// Draw projection lines from selected item to both walls
