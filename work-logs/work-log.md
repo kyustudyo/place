@@ -502,3 +502,10 @@
   - 뒷벽: position.z=0, size.z < 1.0
   - 왼벽: position.x=0, size.x < 1.0
 - unity팀에 회신 완료 (`from_place_wall_json_format_reply.md`)
+
+## 2026-05-19
+### 모든 변경 강제 재설정: 6dfc6a6으로 force reset
+- 주인님 결정: 벽 투영/드래그 관련 일련의 변경에서 UX 이상 발생 → 6dfc6a6 이후 22개 커밋 전부 제거
+- `git reset --hard 6dfc6a6 && git push --force-with-lease`
+- 함께 사라진 변경: Cloudflare deploy fix(d95477b), 스냅고스트 footprint fix(42e600b), 벽 투영 Y 추적 일련의 수정(13831e3, 5e11ecc, 52eebe6, 71e268e, e507ba5), 벽 근처 가구 Y 변경(88f3135), 디버그 표시, 점선 숨김 테스트들, UX 이상해진 드래그 자동 분기
+- 이후 CI가 다시 UTF-8 commit-message 에러로 실패할 수 있음 (Cloudflare deploy fix 없음)
