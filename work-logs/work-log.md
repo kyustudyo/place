@@ -509,3 +509,14 @@
 - `git reset --hard 6dfc6a6 && git push --force-with-lease`
 - 함께 사라진 변경: Cloudflare deploy fix(d95477b), 스냅고스트 footprint fix(42e600b), 벽 투영 Y 추적 일련의 수정(13831e3, 5e11ecc, 52eebe6, 71e268e, e507ba5), 벽 근처 가구 Y 변경(88f3135), 디버그 표시, 점선 숨김 테스트들, UX 이상해진 드래그 자동 분기
 - 이후 CI가 다시 UTF-8 commit-message 에러로 실패할 수 있음 (Cloudflare deploy fix 없음)
+
+## 2026-05-25
+### v1.7.1 태그로 강제 재설정 (v1.7.1+17 빌드 메타 폐기)
+- 주인님 결정: 마지막 태그 v1.7.1(43d370d)로 hard reset + force push
+- 사라진 커밋 3개:
+  - `97a8f35` v1.7.1+17 배포 빌드 (pubspec.yaml 1.7.1+17)
+  - `4cbc6db` docs: 바닥 가구 벽 붙음 시 투영 숨김 기록
+  - `ea5d77c` 바닥 가구가 벽에 붙어 있을 때 벽 투영 숨김
+- 명령: `git reset --hard v1.7.1 && git push --force-with-lease`
+- 결과: `97a8f35...43d370d main -> main (forced update)`
+- 주의: iOS 앱스토어에는 v1.7.1+17이 이미 업로드되어 있음 (소스는 v1.7.1로 되돌아간 상태). 다음 배포 시 빌드 번호 +18부터 시작 필요
