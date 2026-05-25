@@ -520,3 +520,11 @@
 - 명령: `git reset --hard v1.7.1 && git push --force-with-lease`
 - 결과: `97a8f35...43d370d main -> main (forced update)`
 - 주의: iOS 앱스토어에는 v1.7.1+17이 이미 업로드되어 있음 (소스는 v1.7.1로 되돌아간 상태). 다음 배포 시 빌드 번호 +18부터 시작 필요
+
+### v1.7.1+18 iOS/Android 재배포
+- `pubspec.yaml`: 1.7.0+14 → 1.7.1+18 (커밋 fde2591)
+- `flutter clean && pub get && analyze` 통과 (info 1건만 잔존)
+- iOS 빌드: `build/ios/ipa/어디에둘까.ipa` (19MB)
+- iOS 업로드: `xcrun altool --apiKey 2K889RPK8Q` 성공 (Delivery UUID 49283952-9af9-4ace-aa22-1b3ba5efc052)
+- Android 빌드: `build/app/outputs/bundle/release/app-release.aab` (42.6MB)
+- Android: 프로덕션 심사 중인 앱이므로 주인님이 Google Play Console에서 프로덕션 트랙에 수동 업로드 필요 (alpha 거치지 마라 — 메모리 참조 [[project_play_store_status]])
